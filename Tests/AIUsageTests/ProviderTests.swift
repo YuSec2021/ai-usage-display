@@ -74,6 +74,11 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(result.snapshot.todayTokens?.cachedInput, 75)
         XCTAssertEqual(result.snapshot.todayTokens?.output, 30)
         XCTAssertEqual(result.snapshot.estimatedCostUSD, Decimal(string: "1.25"))
+        XCTAssertEqual(result.dailyUsage.count, 1)
+        XCTAssertEqual(result.dailyUsage.first?.provider, .claudeCode)
+        XCTAssertEqual(result.dailyUsage.first?.tokens.input, 150)
+        XCTAssertEqual(result.dailyUsage.first?.tokens.cachedInput, 75)
+        XCTAssertEqual(result.dailyUsage.first?.tokens.output, 30)
 
         let updatedTranscript = transcript + """
 
@@ -89,6 +94,9 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(updatedResult.snapshot.todayTokens?.input, 175)
         XCTAssertEqual(updatedResult.snapshot.todayTokens?.cachedInput, 85)
         XCTAssertEqual(updatedResult.snapshot.todayTokens?.output, 35)
+        XCTAssertEqual(updatedResult.dailyUsage.first?.tokens.input, 175)
+        XCTAssertEqual(updatedResult.dailyUsage.first?.tokens.cachedInput, 85)
+        XCTAssertEqual(updatedResult.dailyUsage.first?.tokens.output, 35)
     }
 
     func testMissingDirectoriesReportCLIUnavailable() async {

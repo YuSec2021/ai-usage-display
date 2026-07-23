@@ -23,7 +23,7 @@ struct AIUsageApp: App {
             HistoryView()
                 .environmentObject(store)
         }
-        .defaultSize(width: 760, height: 500)
+        .defaultSize(width: 800, height: 620)
 
         Settings {
             SettingsView()

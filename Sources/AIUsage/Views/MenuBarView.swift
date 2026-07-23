@@ -118,7 +118,7 @@ struct MenuBarView: View {
                 Task { await store.refresh() }
             }
             footerButton(L10n.text("历史", "History"), icon: "clock") {
-                openWindow(id: "history")
+                showHistoryWindow()
             }
             settingsControl
 
@@ -136,6 +136,42 @@ struct MenuBarView: View {
         .buttonStyle(.plain)
         .padding(.horizontal, 6)
         .padding(.vertical, 4)
+    }
+
+    private func showHistoryWindow() {
+        if focusExistingHistoryWindow() {
+            return
+        }
+
+        openWindow(id: "history")
+
+        // The Window scene is created asynchronously on its first opening.
+        // Focus it twice so both fast and slower systems reliably bring it forward.
+        DispatchQueue.main.async {
+            _ = focusExistingHistoryWindow()
+        }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) {
+            _ = focusExistingHistoryWindow()
+        }
+    }
+
+    @discardableResult
+    private func focusExistingHistoryWindow() -> Bool {
+        let historyTitles = Set(["使用历史", "Usage History"])
+        guard let historyWindow = NSApp.windows.first(where: { window in
+            window.identifier?.rawValue == "history"
+                || historyTitles.contains(window.title)
+        }) else {
+            return false
+        }
+
+        NSApp.activate(ignoringOtherApps: true)
+        if historyWindow.isMiniaturized {
+            historyWindow.deminiaturize(nil)
+        }
+        historyWindow.makeKeyAndOrderFront(nil)
+        historyWindow.orderFrontRegardless()
+        return true
     }
 
     private func footerButton(_ title: String, icon: String, action: @escaping () -> Void) -> some View {

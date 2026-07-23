@@ -24,8 +24,12 @@ struct HistoryView: View {
         store.history.filter { selectedProviders.contains($0.provider) }
     }
 
+    private var displayedProviders: [ProviderID] {
+        ProviderID.allCases.filter { selectedProviders.contains($0) }
+    }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 18) {
+        VStack(alignment: .leading, spacing: 16) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
                     Text(L10n.text("最近 7 天", "Last 7 days"))
@@ -54,18 +58,106 @@ struct HistoryView: View {
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                Chart(filteredHistory) { entry in
+                VStack(spacing: 14) {
+                    ForEach(displayedProviders) { provider in
+                        HistoryProviderChart(
+                            provider: provider,
+                            entries: filteredHistory.filter { $0.provider == provider }
+                        )
+                        .frame(maxHeight: .infinity)
+                    }
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            }
+        }
+        .padding(20)
+        .frame(minWidth: 720, minHeight: 560)
+        .appTheme(selectedTheme, systemColorScheme: systemColorScheme)
+        .appLanguage(selectedLanguage)
+    }
+}
+
+private struct HistoryProviderChart: View {
+    let provider: ProviderID
+    let entries: [DailyUsage]
+
+    private var totalTokens: Int {
+        entries.reduce(0) { $0 + $1.tokens.total }
+    }
+
+    private var chartEntries: [DailyUsage] {
+        let calendar = Calendar.current
+        let today = calendar.startOfDay(for: Date())
+        let usageByDay = Dictionary(
+            entries.map { (calendar.startOfDay(for: $0.date), $0.tokens) },
+            uniquingKeysWith: { $0 + $1 }
+        )
+
+        return (-6...0).compactMap { offset in
+            guard let date = calendar.date(byAdding: .day, value: offset, to: today) else {
+                return nil
+            }
+            return DailyUsage(
+                date: date,
+                provider: provider,
+                tokens: usageByDay[date] ?? .zero
+            )
+        }
+    }
+
+    private var chartUpperBound: Int {
+        let maximum = chartEntries.map(\.tokens.total).max() ?? 0
+        return max(Int((Double(maximum) * 1.18).rounded(.up)), 1)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            HStack(spacing: 8) {
+                ProviderLogo(provider: provider, size: 16)
+                Text(provider.displayName)
+                    .font(.headline)
+                Spacer()
+                Text(L10n.text(
+                    "7 天合计 \(UsageFormatting.compactNumber(totalTokens)) tokens",
+                    "7-day total \(UsageFormatting.compactNumber(totalTokens)) tokens"
+                ))
+                .font(.subheadline.monospacedDigit())
+                .foregroundStyle(.secondary)
+            }
+
+            if entries.isEmpty {
+                HStack(spacing: 8) {
+                    Image(systemName: "chart.bar.xaxis")
+                    Text(L10n.text(
+                        "最近 7 天暂无本地 token 记录",
+                        "No local token records in the last 7 days"
+                    ))
+                }
+                .foregroundStyle(.secondary)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                Chart(chartEntries) { entry in
                     BarMark(
                         x: .value(L10n.text("日期", "Date"), entry.date, unit: .day),
-                        y: .value("Token", entry.tokens.total)
+                        y: .value("Token", entry.tokens.total),
+                        width: .ratio(0.52)
                     )
-                    .foregroundStyle(by: .value(L10n.text("提供商", "Provider"), entry.provider.displayName))
-                    .position(by: .value(L10n.text("提供商", "Provider"), entry.provider.displayName))
+                    .foregroundStyle(provider.accent)
+                    .cornerRadius(4)
+                    .annotation(position: .top, alignment: .center) {
+                        if entry.tokens.total > 0 {
+                            Text(UsageFormatting.compactNumber(entry.tokens.total))
+                                .font(.caption2.monospacedDigit())
+                                .foregroundStyle(.secondary)
+                        }
+                    }
                 }
-                .chartForegroundStyleScale(
-                    domain: ProviderID.allCases.map(\.displayName),
-                    range: ProviderID.allCases.map(\.accent)
-                )
+                .chartYScale(domain: 0...chartUpperBound)
+                .chartXAxis {
+                    AxisMarks(values: .stride(by: .day)) {
+                        AxisValueLabel(format: .dateTime.month(.defaultDigits).day())
+                    }
+                }
                 .chartYAxis {
                     AxisMarks(position: .leading) { value in
                         AxisGridLine()
@@ -76,12 +168,17 @@ struct HistoryView: View {
                         }
                     }
                 }
-                .frame(minHeight: 300)
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .frame(minHeight: 130)
             }
         }
-        .padding(24)
-        .frame(minWidth: 680, minHeight: 440)
-        .appTheme(selectedTheme, systemColorScheme: systemColorScheme)
-        .appLanguage(selectedLanguage)
+        .padding(.horizontal, 16)
+        .padding(.vertical, 13)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 12))
+        .overlay {
+            RoundedRectangle(cornerRadius: 12)
+                .stroke(.separator.opacity(0.45), lineWidth: 1)
+        }
     }
 }
