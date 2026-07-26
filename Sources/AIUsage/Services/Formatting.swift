@@ -12,10 +12,26 @@ enum UsageFormatting {
         return String(value)
     }
 
-    static func resetDescription(_ date: Date?, now: Date = Date()) -> String {
+    static func resetDescription(
+        _ date: Date?,
+        precision: ResetTimePrecision = .exact,
+        now: Date = Date()
+    ) -> String {
         guard let date else { return L10n.text("重置时间未知", "Reset time unknown") }
         let seconds = date.timeIntervalSince(now)
-        guard seconds > 0 else { return L10n.text("即将重置", "Resetting soon") }
+        guard seconds > 0 else {
+            return L10n.text("重置时间待更新", "Reset time pending")
+        }
+
+        if precision == .day {
+            let formatter = DateFormatter()
+            formatter.locale = AppLanguage.current.locale
+            formatter.setLocalizedDateFormatFromTemplate("MMM d")
+            return L10n.text(
+                "\(formatter.string(from: date))刷新",
+                "Refreshes \(formatter.string(from: date))"
+            )
+        }
 
         if seconds < 86_400 {
             let hours = Int(seconds) / 3_600
@@ -28,7 +44,7 @@ enum UsageFormatting {
 
         let formatter = DateFormatter()
         formatter.locale = AppLanguage.current.locale
-        formatter.setLocalizedDateFormatFromTemplate("EEEE HH:mm")
+        formatter.setLocalizedDateFormatFromTemplate("MMM d HH:mm")
         return L10n.text("\(formatter.string(from: date))重置", "Resets \(formatter.string(from: date))")
     }
 

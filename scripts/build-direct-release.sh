@@ -10,7 +10,7 @@ staging_dir="$build_root/dmg-root"
 dist_dir="$project_root/dist"
 app_source="$products_dir/AIUsage.app"
 app_destination="$staging_dir/AI Usage.app"
-version="1.0.1"
+version="1.1.0"
 dmg_name="AI-Usage-$version.dmg"
 dmg_path="$dist_dir/$dmg_name"
 

@@ -32,6 +32,8 @@ enum L10n {
 enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case codex
     case claudeCode
+    case kimiCode
+    case miniMax
 
     var id: Self { self }
 
@@ -39,6 +41,8 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         switch self {
         case .codex: "Codex"
         case .claudeCode: "Claude Code"
+        case .kimiCode: "Kimi Code"
+        case .miniMax: "MiniMax"
         }
     }
 
@@ -46,6 +50,8 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         switch self {
         case .codex: Color(red: 0.20, green: 0.68, blue: 0.25)
         case .claudeCode: Color(red: 0.96, green: 0.38, blue: 0.02)
+        case .kimiCode: Color(red: 0.20, green: 0.45, blue: 0.96)
+        case .miniMax: Color(red: 0.95, green: 0.10, blue: 0.48)
         }
     }
 
@@ -54,15 +60,23 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         switch self {
         case .codex: "ChatGPTLogo"
         case .claudeCode: "ClaudeLogo"
+        case .kimiCode: "KimiLogo"
+        case .miniMax: "MiniMaxLogo"
         }
     }
 
-    var logoUsesPrimaryColor: Bool { self == .codex }
+    var logoUsesPrimaryColor: Bool { self == .codex || self == .kimiCode }
 
     static let selectionStorageKey = "providers.selected"
+    static let orderStorageKey = "providers.order"
+    static let menuBarDisplayLimit = 3
 
     static var defaultSelectionRawValue: String {
         allCases.map(\.rawValue).joined(separator: ",")
+    }
+
+    static var defaultOrderRawValue: String {
+        orderRawValue(for: allCases)
     }
 
     static func selectedProviders(from rawValue: String) -> Set<ProviderID> {
@@ -72,11 +86,64 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     static func selectionRawValue(for providers: Set<ProviderID>) -> String {
         allCases.filter { providers.contains($0) }.map(\.rawValue).joined(separator: ",")
     }
+
+    /// Restores the user's preferred order while appending providers introduced
+    /// by a newer app version so an older preference never hides new models.
+    static func orderedProviders(from rawValue: String) -> [ProviderID] {
+        var seen = Set<ProviderID>()
+        let stored = rawValue.split(separator: ",").compactMap { value -> ProviderID? in
+            guard let provider = ProviderID(rawValue: String(value)),
+                  seen.insert(provider).inserted else {
+                return nil
+            }
+            return provider
+        }
+        return stored + allCases.filter { !seen.contains($0) }
+    }
+
+    static func orderRawValue(for providers: [ProviderID]) -> String {
+        providers.map(\.rawValue).joined(separator: ",")
+    }
+
+    /// The detail view keeps every selected provider, while the constrained
+    /// system menu bar uses only the first selected providers in user order.
+    static func menuBarProviders(
+        orderRawValue: String,
+        selectedProviders: Set<ProviderID>
+    ) -> [ProviderID] {
+        Array(
+            orderedProviders(from: orderRawValue)
+                .filter { selectedProviders.contains($0) }
+                .prefix(menuBarDisplayLimit)
+        )
+    }
+
+    static func moving(
+        _ provider: ProviderID,
+        toPositionOf destination: ProviderID,
+        in providers: [ProviderID]
+    ) -> [ProviderID] {
+        guard provider != destination,
+              let sourceIndex = providers.firstIndex(of: provider),
+              let destinationIndex = providers.firstIndex(of: destination) else {
+            return providers
+        }
+
+        var reordered = providers
+        reordered.remove(at: sourceIndex)
+        reordered.insert(provider, at: min(destinationIndex, reordered.endIndex))
+        return reordered
+    }
 }
 
 enum WindowKind: String, Codable, Sendable {
     case short
     case long
+}
+
+enum ResetTimePrecision: String, Codable, Sendable {
+    case exact
+    case day
 }
 
 struct RateLimitWindow: Codable, Equatable, Sendable, Identifiable {
@@ -85,27 +152,38 @@ struct RateLimitWindow: Codable, Equatable, Sendable, Identifiable {
     let usedPercentage: Double
     let resetsAt: Date?
     let durationMinutes: Int?
+    let resetTimePrecision: ResetTimePrecision
 
-    var id: WindowKind { kind }
+    var id: String { "\(kind.rawValue)-\(label)" }
 
-    init(kind: WindowKind, label: String, usedPercentage: Double, resetsAt: Date?, durationMinutes: Int? = nil) {
+    init(
+        kind: WindowKind,
+        label: String,
+        usedPercentage: Double,
+        resetsAt: Date?,
+        durationMinutes: Int? = nil,
+        resetTimePrecision: ResetTimePrecision = .exact
+    ) {
         self.kind = kind
         self.label = label
         self.usedPercentage = min(max(usedPercentage, 0), 100)
         self.resetsAt = resetsAt
         self.durationMinutes = durationMinutes
+        self.resetTimePrecision = resetTimePrecision
     }
 }
 
 struct TokenUsage: Codable, Equatable, Sendable {
+    /// Total input tokens, including the cached-input subset.
     var input: Int
+    /// Cached tokens are informational and already included in `input`.
     var cachedInput: Int
     var output: Int
     var reasoningOutput: Int
 
     static let zero = TokenUsage(input: 0, cachedInput: 0, output: 0, reasoningOutput: 0)
 
-    var total: Int { input + cachedInput + output }
+    var total: Int { input + output }
 
     static func + (lhs: TokenUsage, rhs: TokenUsage) -> TokenUsage {
         TokenUsage(

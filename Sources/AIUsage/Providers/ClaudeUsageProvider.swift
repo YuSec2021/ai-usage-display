@@ -47,10 +47,22 @@ actor ClaudeUsageProvider: UsageProvider {
         let observedAt = useDesktopSample ? desktopSample!.observedAt : statusObservedAt
         var windows: [RateLimitWindow] = []
         let fiveHour = useDesktopSample
-            ? desktopSample?.fiveHour.map { ClaudeRateWindow(usedPercentage: $0, resetsAt: statusValue?.rateLimits?.fiveHour?.resetsAt) }
+            ? desktopSample?.fiveHour.map {
+                ClaudeRateWindow(
+                    usedPercentage: $0,
+                    resetsAt: desktopSample?.fiveHourResetsAt?.timeIntervalSince1970
+                        ?? futureResetTimestamp(statusValue?.rateLimits?.fiveHour?.resetsAt)
+                )
+            }
             : statusValue?.rateLimits?.fiveHour
         let sevenDay = useDesktopSample
-            ? desktopSample?.sevenDay.map { ClaudeRateWindow(usedPercentage: $0, resetsAt: statusValue?.rateLimits?.sevenDay?.resetsAt) }
+            ? desktopSample?.sevenDay.map {
+                ClaudeRateWindow(
+                    usedPercentage: $0,
+                    resetsAt: futureResetTimestamp(statusValue?.rateLimits?.sevenDay?.resetsAt)
+                        ?? desktopSample?.sevenDayResetsAt?.timeIntervalSince1970
+                )
+            }
             : statusValue?.rateLimits?.sevenDay
         if let fiveHour {
             windows.append(RateLimitWindow(
@@ -81,7 +93,9 @@ actor ClaudeUsageProvider: UsageProvider {
         let snapshot = UsageSnapshot(
             provider: id,
             windows: windows,
-            todayTokens: today ?? statusValue?.contextWindow?.currentUsage?.asUsage,
+            // The status-line value describes one context window, not a daily
+            // total. Never present an old session snapshot as today's usage.
+            todayTokens: today,
             estimatedCostUSD: statusValue?.cost?.totalCostUSD.map { Decimal($0) },
             observedAt: observedAt,
             availability: availability
@@ -94,9 +108,71 @@ actor ClaudeUsageProvider: UsageProvider {
               let history = try? JSONDecoder().decode(ClaudeDesktopUsageHistory.self, from: data) else {
             return nil
         }
-        return history.samples
+        let samples = history.samples
             .compactMap(\.normalized)
-            .max { $0.observedAt < $1.observedAt }
+            .sorted { $0.observedAt < $1.observedAt }
+        guard var latest = samples.last else { return nil }
+        latest.fiveHourResetsAt = inferredFiveHourReset(from: samples)
+        latest.sevenDayResetsAt = inferredSevenDayReset(from: samples)
+        return latest
+    }
+
+    private func inferredFiveHourReset(from samples: [ClaudeDesktopUsageSample]) -> Date? {
+        var windowStartedAt: Date?
+        var previousUsage: Double?
+
+        for sample in samples {
+            guard let usage = sample.fiveHour else { continue }
+            defer { previousUsage = usage }
+
+            if usage <= 0 {
+                windowStartedAt = nil
+                continue
+            }
+
+            if let previousUsage, previousUsage == 0 || usage < previousUsage {
+                windowStartedAt = sample.observedAt
+            }
+        }
+
+        guard let windowStartedAt else { return nil }
+        let reset = windowStartedAt.addingTimeInterval(5 * 60 * 60)
+        return reset > Date() ? reset : nil
+    }
+
+    /// Claude Desktop stores weekly usage samples but not the corresponding
+    /// reset timestamp. A weekly window begins when usage changes from zero to
+    /// a positive value. A non-zero drop also represents a reset followed by
+    /// immediate use. Preserve the most recent detected start and derive the
+    /// seven-day boundary from it.
+    private func inferredSevenDayReset(from samples: [ClaudeDesktopUsageSample]) -> Date? {
+        var windowStartedAt: Date?
+        var previousUsage: Double?
+
+        for sample in samples {
+            guard let usage = sample.sevenDay else { continue }
+            defer { previousUsage = usage }
+
+            if usage <= 0 {
+                windowStartedAt = nil
+                continue
+            }
+
+            if let previousUsage, previousUsage <= 0 || usage < previousUsage {
+                windowStartedAt = sample.observedAt
+            }
+        }
+
+        guard let windowStartedAt else { return nil }
+        let reset = windowStartedAt.addingTimeInterval(7 * 24 * 60 * 60)
+        return reset > Date() ? reset : nil
+    }
+
+    private func futureResetTimestamp(_ timestamp: Double?) -> Double? {
+        guard let timestamp, timestamp > Date().timeIntervalSince1970 else {
+            return nil
+        }
+        return timestamp
     }
 
     private func loadDailyUsage() -> [DailyUsage] {
@@ -291,9 +367,10 @@ struct ClaudeTokenValues: Decodable {
     }
 
     var asUsage: TokenUsage {
-        TokenUsage(
-            input: inputTokens ?? 0,
-            cachedInput: (cacheCreationInputTokens ?? 0) + (cacheReadInputTokens ?? 0),
+        let cached = (cacheCreationInputTokens ?? 0) + (cacheReadInputTokens ?? 0)
+        return TokenUsage(
+            input: (inputTokens ?? 0) + cached,
+            cachedInput: cached,
             output: outputTokens ?? 0,
             reasoningOutput: 0
         )
@@ -324,6 +401,7 @@ struct ClaudeTranscriptEntry: Decodable {
 
 struct ClaudeMessage: Decodable {
     let id: String?
+    let model: String?
     let usage: ClaudeTokenValues?
 }
 
@@ -365,4 +443,6 @@ private struct ClaudeDesktopUsageSample {
     let observedAt: Date
     let fiveHour: Double?
     let sevenDay: Double?
+    var fiveHourResetsAt: Date? = nil
+    var sevenDayResetsAt: Date? = nil
 }

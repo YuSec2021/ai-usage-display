@@ -4,6 +4,7 @@ struct ProviderCard: View {
     let snapshot: UsageSnapshot
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
+    var showsDragHandle = false
 
     private var accent: Color { snapshot.provider.accent }
 
@@ -22,6 +23,15 @@ struct ProviderCard: View {
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                if showsDragHandle {
+                    Image(systemName: "line.3.horizontal")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
+                        .help(L10n.text("拖动以调整显示顺序", "Drag to reorder"))
+                        .accessibilityLabel(L10n.text("拖动以调整显示顺序", "Drag to reorder"))
+                }
             }
 
             if snapshot.windows.isEmpty {
@@ -32,22 +42,24 @@ struct ProviderCard: View {
                 }
             }
 
-            Divider()
+            if snapshot.provider != .miniMax {
+                Divider()
 
-            HStack {
-                Text(L10n.text("今日 Token", "Tokens today"))
-                    .foregroundStyle(.secondary)
-                Spacer()
-                Text(snapshot.todayTokens.map { UsageFormatting.compactNumber($0.total) } ?? "—")
-                    .fontWeight(.semibold)
-                    .monospacedDigit()
-            }
+                HStack {
+                    Text(L10n.text("今日 Token", "Tokens today"))
+                        .foregroundStyle(.secondary)
+                    Spacer()
+                    Text(snapshot.todayTokens.map { UsageFormatting.compactNumber($0.total) } ?? "—")
+                        .fontWeight(.semibold)
+                        .monospacedDigit()
+                }
 
-            if let tokens = snapshot.todayTokens, tokens.total > 0 {
-                HStack(spacing: 12) {
-                    tokenDetail(L10n.text("输入", "Input"), tokens.input)
-                    tokenDetail(L10n.text("缓存", "Cached"), tokens.cachedInput)
-                    tokenDetail(L10n.text("输出", "Output"), tokens.output)
+                if let tokens = snapshot.todayTokens, tokens.total > 0 {
+                    HStack(spacing: 12) {
+                        tokenDetail(L10n.text("输入", "Input"), tokens.input)
+                        tokenDetail(L10n.text("缓存", "Cached"), tokens.cachedInput)
+                        tokenDetail(L10n.text("输出", "Output"), tokens.output)
+                    }
                 }
             }
         }
@@ -64,7 +76,7 @@ struct ProviderCard: View {
             HStack(spacing: 8) {
                 Image(systemName: "info.circle")
                     .foregroundStyle(.secondary)
-                Text(snapshot.availability.message)
+                Text(emptyStateMessage)
                     .font(.callout)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -77,6 +89,16 @@ struct ProviderCard: View {
             }
         }
         .frame(minHeight: 42)
+    }
+
+    private var emptyStateMessage: String {
+        if snapshot.provider == .kimiCode, snapshot.availability.isReady {
+            return L10n.text(
+                "暂无额度百分比，仅统计本地 Token",
+                "Local tokens only; quota percentage unavailable"
+            )
+        }
+        return snapshot.availability.message
     }
 
     private func tokenDetail(_ title: String, _ value: Int) -> some View {
@@ -127,7 +149,7 @@ private struct RateWindowRow: View {
                 ProgressView(value: window.usedPercentage, total: 100)
                     .progressViewStyle(.linear)
                     .tint(usageColor)
-                Text(UsageFormatting.resetDescription(window.resetsAt))
+                Text(resetDescription)
                     .font(.caption)
                     .foregroundStyle(.secondary)
                     .frame(minWidth: 104, alignment: .trailing)
@@ -135,9 +157,16 @@ private struct RateWindowRow: View {
         }
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.text(
-            "\(window.label)额度已使用百分之\(Int(window.usedPercentage.rounded()))，\(UsageFormatting.resetDescription(window.resetsAt))",
-            "\(window.label), \(Int(window.usedPercentage.rounded())) percent used, \(UsageFormatting.resetDescription(window.resetsAt))"
+            "\(window.label)额度已使用百分之\(Int(window.usedPercentage.rounded()))，\(resetDescription)",
+            "\(window.label), \(Int(window.usedPercentage.rounded())) percent used, \(resetDescription)"
         ))
+    }
+
+    private var resetDescription: String {
+        UsageFormatting.resetDescription(
+            window.resetsAt,
+            precision: window.resetTimePrecision
+        )
     }
 
     private var usageColor: Color {

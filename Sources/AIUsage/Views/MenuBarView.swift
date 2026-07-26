@@ -8,7 +8,13 @@ struct MenuBarView: View {
     @AppStorage(AppLanguage.storageKey) private var languageRawValue = AppLanguage.simplifiedChinese.rawValue
     @AppStorage("appearance.theme") private var themeRawValue = AppTheme.system.rawValue
     @AppStorage(ProviderID.selectionStorageKey) private var selectedProvidersRaw = ProviderID.defaultSelectionRawValue
+    @AppStorage(ProviderID.orderStorageKey) private var providerOrderRaw = ProviderID.defaultOrderRawValue
     @State private var integrationMessage: String?
+    @State private var draggedProvider: ProviderID?
+    @State private var dropTargetProvider: ProviderID?
+    @State private var providerCardFrames: [ProviderID: CGRect] = [:]
+    @State private var dragReferenceFrames: [ProviderID: CGRect] = [:]
+    @State private var dragTranslation: CGSize = .zero
 
     private var selectedTheme: AppTheme {
         AppTheme(rawValue: themeRawValue) ?? .system
@@ -22,6 +28,11 @@ struct MenuBarView: View {
         ProviderID.selectedProviders(from: selectedProvidersRaw)
     }
 
+    private var displayedProviders: [ProviderID] {
+        ProviderID.orderedProviders(from: providerOrderRaw)
+            .filter { selectedProviders.contains($0) }
+    }
+
     var body: some View {
         VStack(spacing: 0) {
             header
@@ -31,8 +42,54 @@ struct MenuBarView: View {
                     if selectedProviders.isEmpty {
                         noProvidersSelected
                     } else {
-                        ForEach(ProviderID.allCases.filter { selectedProviders.contains($0) }) { provider in
+                        if displayedProviders.count > 1 {
+                            Label(
+                                L10n.text("上下拖动卡片可调整显示顺序", "Drag cards vertically to reorder"),
+                                systemImage: "arrow.up.arrow.down"
+                            )
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        ForEach(displayedProviders) { provider in
                             providerCard(for: provider)
+                                .contentShape(Rectangle())
+                                .background {
+                                    GeometryReader { proxy in
+                                        Color.clear.preference(
+                                            key: ProviderCardFramePreferenceKey.self,
+                                            value: [provider: proxy.frame(in: .named("providerList"))]
+                                        )
+                                    }
+                                }
+                                .offset(draggedProvider == provider ? dragTranslation : .zero)
+                                .opacity(draggedProvider == provider ? 0.94 : 1)
+                                .scaleEffect(dropTargetProvider == provider ? 1.015 : 1)
+                                .zIndex(draggedProvider == provider ? 10 : 0)
+                                .shadow(
+                                    color: draggedProvider == provider ? .black.opacity(0.22) : .clear,
+                                    radius: 10,
+                                    y: 5
+                                )
+                                .overlay {
+                                    if dropTargetProvider == provider {
+                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                            .stroke(provider.accent, lineWidth: 2)
+                                            .allowsHitTesting(false)
+                                    }
+                                }
+                                .overlay(alignment: .top) {
+                                    if dropTargetProvider == provider {
+                                        Capsule()
+                                            .fill(provider.accent)
+                                            .frame(width: 54, height: 4)
+                                            .offset(y: -7)
+                                            .shadow(color: provider.accent.opacity(0.4), radius: 3)
+                                            .allowsHitTesting(false)
+                                    }
+                                }
+                                .simultaneousGesture(providerDragGesture(for: provider))
                         }
                     }
                     if let integrationMessage {
@@ -43,7 +100,13 @@ struct MenuBarView: View {
                     }
                 }
                 .padding(14)
+                .animation(.easeInOut(duration: 0.18), value: providerOrderRaw)
+                .animation(.easeOut(duration: 0.12), value: dropTargetProvider)
+                .onPreferenceChange(ProviderCardFramePreferenceKey.self) {
+                    providerCardFrames = $0
+                }
             }
+            .coordinateSpace(name: "providerList")
 
             Divider()
             footer
@@ -53,6 +116,57 @@ struct MenuBarView: View {
         .appLanguage(selectedLanguage)
     }
 
+    private func providerDragGesture(for provider: ProviderID) -> some Gesture {
+        DragGesture(minimumDistance: 4, coordinateSpace: .named("providerList"))
+            .onChanged { value in
+                if draggedProvider == nil {
+                    draggedProvider = provider
+                    dragReferenceFrames = providerCardFrames
+                }
+                guard draggedProvider == provider else { return }
+
+                dragTranslation = value.translation
+                dropTargetProvider = nearestDropTarget(
+                    to: value.location.y,
+                    excluding: provider
+                )
+            }
+            .onEnded { _ in
+                guard draggedProvider == provider else { return }
+                if let destination = dropTargetProvider {
+                    let currentOrder = ProviderID.orderedProviders(from: providerOrderRaw)
+                    let reordered = ProviderID.moving(
+                        provider,
+                        toPositionOf: destination,
+                        in: currentOrder
+                    )
+                    providerOrderRaw = ProviderID.orderRawValue(for: reordered)
+                }
+
+                withAnimation(.easeOut(duration: 0.16)) {
+                    draggedProvider = nil
+                    dropTargetProvider = nil
+                    dragTranslation = .zero
+                    dragReferenceFrames = [:]
+                }
+            }
+    }
+
+    private func nearestDropTarget(to pointerY: CGFloat, excluding provider: ProviderID) -> ProviderID? {
+        let frames = dragReferenceFrames.isEmpty ? providerCardFrames : dragReferenceFrames
+        guard let sourceFrame = frames[provider],
+              pointerY < sourceFrame.minY || pointerY > sourceFrame.maxY else {
+            return nil
+        }
+
+        return displayedProviders
+            .filter { $0 != provider && frames[$0] != nil }
+            .min { lhs, rhs in
+                abs((frames[lhs]?.midY ?? pointerY) - pointerY)
+                    < abs((frames[rhs]?.midY ?? pointerY) - pointerY)
+            }
+    }
+
     @ViewBuilder
     private func providerCard(for provider: ProviderID) -> some View {
         let snapshot = store.snapshot(for: provider)
@@ -60,10 +174,11 @@ struct MenuBarView: View {
             ProviderCard(
                 snapshot: snapshot,
                 actionTitle: L10n.text("安装 Claude Code 用量集成", "Install Claude Code usage integration"),
-                action: installClaudeIntegration
+                action: installClaudeIntegration,
+                showsDragHandle: true
             )
         } else {
-            ProviderCard(snapshot: snapshot)
+            ProviderCard(snapshot: snapshot, showsDragHandle: true)
         }
     }
 
@@ -235,14 +350,22 @@ struct MenuBarLabel: View {
     @EnvironmentObject private var store: UsageStore
     @AppStorage("menubar.display") private var displayMode = MenuBarDisplayMode.highestUsage.rawValue
     @AppStorage(ProviderID.selectionStorageKey) private var selectedProvidersRaw = ProviderID.defaultSelectionRawValue
+    @AppStorage(ProviderID.orderStorageKey) private var providerOrderRaw = ProviderID.defaultOrderRawValue
     @AppStorage(AppLanguage.storageKey) private var languageRawValue = AppLanguage.simplifiedChinese.rawValue
 
     private var selectedProviders: Set<ProviderID> {
         ProviderID.selectedProviders(from: selectedProvidersRaw)
     }
 
-    private var displayedProviders: [ProviderID] {
-        ProviderID.allCases.filter { selectedProviders.contains($0) }
+    private var menuBarProviders: [ProviderID] {
+        ProviderID.menuBarProviders(
+            orderRawValue: providerOrderRaw,
+            selectedProviders: selectedProviders
+        )
+    }
+
+    private var menuBarProviderSet: Set<ProviderID> {
+        Set(menuBarProviders)
     }
 
     private var allModelsImage: NSImage? {
@@ -251,12 +374,14 @@ struct MenuBarLabel: View {
             .font: font,
             .foregroundColor: NSColor.black
         ]
-        let items = displayedProviders.compactMap { provider -> MenuBarImageItem? in
+        let items = menuBarProviders.compactMap { provider -> MenuBarImageItem? in
             guard let logo = NSImage(named: NSImage.Name(provider.logoAssetName)) else { return nil }
             let snapshot = store.snapshot(for: provider)
             let usage = snapshot.windows.first?.usedPercentage
             let stalePrefix = snapshot.availability.isStale ? "~" : ""
-            let text = usage.map { "\(stalePrefix)\(Int($0.rounded()))%" } ?? "—"
+            let text = usage.map { "\(stalePrefix)\(Int($0.rounded()))%" }
+                ?? snapshot.todayTokens.map { UsageFormatting.compactNumber($0.total) }
+                ?? "—"
             return MenuBarImageItem(
                 logo: logo,
                 text: text,
@@ -300,7 +425,7 @@ struct MenuBarLabel: View {
     var body: some View {
         let mode = MenuBarDisplayMode(rawValue: displayMode) ?? .highestUsage
         Group {
-            if mode == .bothProviders, !displayedProviders.isEmpty {
+            if mode == .bothProviders, !menuBarProviders.isEmpty {
                 if let image = allModelsImage {
                     Image(nsImage: image)
                         .renderingMode(.template)
@@ -311,7 +436,7 @@ struct MenuBarLabel: View {
             } else {
                 HStack(spacing: 4) {
                     Image(systemName: "gauge.with.dots.needle.67percent")
-                    if let title = store.menuBarTitle(mode: mode, selectedProviders: selectedProviders) {
+                    if let title = store.menuBarTitle(mode: mode, selectedProviders: menuBarProviderSet) {
                         Text(title)
                             .monospacedDigit()
                     }
@@ -327,4 +452,15 @@ private struct MenuBarImageItem {
     let logo: NSImage
     let text: String
     let textSize: NSSize
+}
+
+private struct ProviderCardFramePreferenceKey: PreferenceKey {
+    static let defaultValue: [ProviderID: CGRect] = [:]
+
+    static func reduce(
+        value: inout [ProviderID: CGRect],
+        nextValue: () -> [ProviderID: CGRect]
+    ) {
+        value.merge(nextValue(), uniquingKeysWith: { _, latest in latest })
+    }
 }

@@ -19,16 +19,42 @@ final class UsageStore: ObservableObject {
 
     init(
         codexProvider: any UsageProvider = CodexUsageProvider(),
-        claudeProvider: any UsageProvider = ClaudeUsageProvider()
+        claudeProvider: any UsageProvider = ClaudeUsageProvider(),
+        kimiProvider: any UsageProvider = KimiUsageProvider(),
+        miniMaxProvider: any UsageProvider = MiniMaxUsageProvider()
     ) {
         self.providers = [
             .codex: codexProvider,
-            .claudeCode: claudeProvider
+            .claudeCode: claudeProvider,
+            .kimiCode: kimiProvider,
+            .miniMax: miniMaxProvider
         ]
+        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+            migrateProviderSelectionForMiniMax()
+        }
         // The XCTest host also constructs the app scene. Do not scan the user's
         // real CLI history while isolated provider tests are running.
         if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
             start()
+        }
+    }
+
+    private func migrateProviderSelectionForMiniMax() {
+        let defaults = UserDefaults.standard
+        let migrationKey = "providers.selection.migrated.minimax"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+        defer { defaults.set(true, forKey: migrationKey) }
+
+        let previousDefault = [
+            ProviderID.codex.rawValue,
+            ProviderID.claudeCode.rawValue,
+            ProviderID.kimiCode.rawValue
+        ].joined(separator: ",")
+        if defaults.string(forKey: ProviderID.selectionStorageKey) == previousDefault {
+            defaults.set(
+                ProviderID.defaultSelectionRawValue,
+                forKey: ProviderID.selectionStorageKey
+            )
         }
     }
 

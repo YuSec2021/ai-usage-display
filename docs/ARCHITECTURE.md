@@ -8,10 +8,15 @@
 flowchart LR
     C["Codex JSONL"] --> CP["CodexUsageProvider"]
     CC["Claude statusLine JSON"] --> H["本地收集器"]
+    KC["Kimi wire.jsonl"] --> KP["KimiUsageProvider"]
+    KD["Kimi Desktop main.log"] --> KP
+    MM["MiniMax Desktop HTTP cache"] --> MP["MiniMaxUsageProvider"]
     H --> CS["claude-snapshot.json"]
     CS --> AP["ClaudeUsageProvider"]
     CP --> S["UsageStore"]
     AP --> S
+    KP --> S
+    MP --> S
     S --> VM["AppState / ViewModel"]
     VM --> MB["MenuBarExtra"]
     VM --> HI["历史与设置"]
@@ -32,6 +37,8 @@ flowchart LR
 enum ProviderID: String, Codable, Sendable {
     case codex
     case claudeCode
+    case kimiCode
+    case miniMax
 }
 
 struct RateLimitWindow: Codable, Sendable {
@@ -166,7 +173,59 @@ version
 
 `rate_limits` 仅对符合条件的 Claude.ai 订阅会话出现，并且通常要等待第一次 API 响应。provider 必须把字段缺失视为“等待数据”，不能当作 0%。
 
-## 5. 文件监听
+Claude Desktop 的 `plan-usage-history.json` 保存 5 小时与 7 天用量历史，但不总是包含重置时间。provider 优先使用 status line 中仍有效的官方 `resets_at`；缺失时，根据 Desktop 历史里用量从 0 变为正数或周期重置后回落的最近时间，分别推断 5 小时与 7 天窗口边界，避免已有用量时持续显示“重置时间未知”。
+
+## 5. Kimi Code 数据流
+
+Kimi Code 会话默认位于 `~/.kimi-code/sessions`，也支持通过 `KIMI_CODE_HOME` 更改根目录。每个主代理和子代理分别保存 `agents/<id>/wire.jsonl`。
+
+provider 只处理 `usage.record` 事件中的以下字段：
+
+```text
+time
+usage.inputOther
+usage.inputCacheRead
+usage.inputCacheCreation
+usage.output
+```
+
+输入 Token 为 `inputOther + inputCacheRead + inputCacheCreation`，其中两类缓存 Token 是输入的子集，不会在总 Token 中重复相加。旧版 `StatusUpdate.payload.token_usage` 按 `message_id` 保留最新累计值，避免重复统计。
+
+Kimi Desktop 的 `~/Library/Logs/kimi-desktop/main.log` 包含 `SubscriptionManager` 输出的 `omniRatio` 与 `resetAt`。provider 从日志尾部增量读取最新记录，把比例展示为“订阅总额度”。其中 `resetAt` 是订阅额度的到期日期，并非精确的滚动窗口时刻，因此界面只显示日期，避免将 UTC 午夜换算出的本地时刻误认为官方刷新时间。
+
+Kimi Code 的 5 小时与每周额度来自官方 `https://api.kimi.com/coding/v1/usages`。用户必须主动在设置中配置 API Key，凭证只写入 macOS 钥匙串；应用不读取 Kimi Desktop Cookie 或内部令牌。接口顶层 `usage` 映射为每周额度，`limits` 中 `duration == 300` 且单位为分钟的窗口映射为 5 小时额度。该远程额度与本地 Token、Desktop 订阅总额度是独立指标；`conversation-context-usage.json` 只是上下文快照，不能作为每日 Token 汇总，因此不读取。
+
+## 6. MiniMax 数据流
+
+MiniMax Desktop 会把订阅额度接口的响应写入 Chromium HTTP 缓存：
+
+```text
+~/Library/Application Support/MiniMax/Cache/Cache_Data/*
+```
+
+缓存文件名是 Chromium 生成的哈希值，不能依赖固定文件名。`MiniMaxUsageProvider` 扫描目录中的普通文件，根据修改时间优先处理新文件，在二进制缓存中定位完整的 JSON 对象，并且只解码以下字段：
+
+```text
+model_remains[].model_name
+model_remains[].current_interval_remaining_percent
+model_remains[].start_time
+model_remains[].end_time
+model_remains[].current_weekly_remaining_percent
+model_remains[].weekly_start_time
+model_remains[].weekly_end_time
+```
+
+provider 选择 `model_name == "general"` 的记录作为编程/文本订阅额度。界面中的已用百分比由官方剩余百分比转换：
+
+```text
+used = clamp(100 - remaining, 0, 100)
+```
+
+`end_time` 是 5 小时窗口重置时间，`weekly_end_time` 是本周窗口重置时间。该 Desktop 缓存是 MiniMax 的唯一事实源：不扫描 `~/.claude/projects` 或 `~/.claude-minimax`，不读取可能含凭证的 API 日志，也不通过本地 Token 或订阅计划反推额度。缓存不包含可靠的逐日 Token 历史，因此 MiniMax 不生成 `dailyUsage`，历史页也不展示 MiniMax Token 图表。
+
+模型显示优先级保存在 `UserDefaults` 的 `providers.order` 中。详情卡片通过应用内 `DragGesture` 跟踪指针与卡片坐标，绕开 `MenuBarExtra(.window)` 中不稳定的系统文件拖放会话；菜单栏多模型视图、历史页和设置页读取同一顺序。恢复设置时会去除无效项和重复项，并把新版本新增的 provider 自动追加到末尾。
+
+## 7. 文件监听
 
 - 启动时执行一次受限扫描。
 - 运行期间使用 FSEvents 或目录级文件事件监听。
@@ -175,7 +234,7 @@ version
 - 单文件按 byte offset 增量读取；只保留最后不完整的一行等待下次拼接。
 - 文件 I/O 与解析在独立 actor 中完成，UI 更新回到 MainActor。
 
-## 6. 错误模型
+## 8. 错误模型
 
 ```swift
 enum ProviderAvailability: Equatable, Sendable {
@@ -191,7 +250,7 @@ enum ProviderAvailability: Equatable, Sendable {
 
 界面永远显示上次有效值，并单独标注其新鲜度。一次损坏行只产生诊断事件，不应清空已有数据。
 
-## 7. 配置与权限
+## 9. 配置与权限
 
 ### 首版分发
 
@@ -205,7 +264,7 @@ enum ProviderAvailability: Equatable, Sendable {
 - 保存 security-scoped bookmark。
 - 每次访问前解析 bookmark，并处理 stale bookmark。
 
-## 8. 安全边界
+## 10. 安全边界
 
 明确禁止读取：
 
@@ -218,21 +277,21 @@ enum ProviderAvailability: Equatable, Sendable {
 
 日志中不得记录原始 JSON 行。诊断信息只包含 provider、应用版本、CLI 版本、错误类型和去标识后的字段路径。
 
-## 9. 可测试性
+## 11. 可测试性
 
 - provider 初始化时注入根目录，不在实现中写死用户 home。
 - 所有测试使用 `Tests/Fixtures` 下的匿名 JSONL。
 - 使用可注入 Clock 验证重置倒计时和跨日聚合。
 - 对日志追加、半行写入、文件轮转、重复事件、未知字段和损坏行分别建立测试。
 
-## 10. 兼容性策略
+## 12. 兼容性策略
 
 - 原始解析结构包含 `sourceVersion`，方便按 CLI 版本定位问题。
 - 允许字段新增，不要求完整 schema 匹配。
 - 关键字段重命名时显示“格式不支持”，绝不猜测百分比。
 - 发布前至少验证当前版本和一个旧版本 fixture。
 
-## 11. 主题传播
+## 13. 主题传播
 
 ```mermaid
 flowchart LR

@@ -7,6 +7,7 @@ struct HistoryView: View {
     @AppStorage(AppLanguage.storageKey) private var languageRawValue = AppLanguage.simplifiedChinese.rawValue
     @AppStorage("appearance.theme") private var themeRawValue = AppTheme.system.rawValue
     @AppStorage(ProviderID.selectionStorageKey) private var selectedProvidersRaw = ProviderID.defaultSelectionRawValue
+    @AppStorage(ProviderID.orderStorageKey) private var providerOrderRaw = ProviderID.defaultOrderRawValue
 
     private var selectedTheme: AppTheme {
         AppTheme(rawValue: themeRawValue) ?? .system
@@ -21,11 +22,16 @@ struct HistoryView: View {
     }
 
     private var filteredHistory: [DailyUsage] {
-        store.history.filter { selectedProviders.contains($0.provider) }
+        store.history.filter { historyProviders.contains($0.provider) }
+    }
+
+    private var historyProviders: Set<ProviderID> {
+        selectedProviders.subtracting([.miniMax])
     }
 
     private var displayedProviders: [ProviderID] {
-        ProviderID.allCases.filter { selectedProviders.contains($0) }
+        ProviderID.orderedProviders(from: providerOrderRaw)
+            .filter { historyProviders.contains($0) }
     }
 
     var body: some View {
@@ -51,9 +57,7 @@ struct HistoryView: View {
                         .font(.system(size: 30))
                     Text(L10n.text("暂无历史数据", "No usage history"))
                         .font(.headline)
-                    Text(selectedProviders.isEmpty
-                         ? L10n.text("请先在设置中勾选需要收集和显示的模型。", "Select models to collect and display in Settings.")
-                         : L10n.text("使用所选模型后，这里会显示最近 7 天的本地统计。", "Use a selected model to see local statistics for the last 7 days."))
+                    Text(emptyHistoryDescription)
                         .foregroundStyle(.secondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -74,6 +78,25 @@ struct HistoryView: View {
         .frame(minWidth: 720, minHeight: 560)
         .appTheme(selectedTheme, systemColorScheme: systemColorScheme)
         .appLanguage(selectedLanguage)
+    }
+
+    private var emptyHistoryDescription: String {
+        if selectedProviders.isEmpty {
+            return L10n.text(
+                "请先在设置中勾选需要收集和显示的模型。",
+                "Select models to collect and display in Settings."
+            )
+        }
+        if historyProviders.isEmpty, selectedProviders.contains(.miniMax) {
+            return L10n.text(
+                "MiniMax Desktop 仅提供当前订阅额度，不提供本地 Token 历史。",
+                "MiniMax Desktop provides current subscription quotas, but no local token history."
+            )
+        }
+        return L10n.text(
+            "使用所选模型后，这里会显示最近 7 天的本地统计。",
+            "Use a selected model to see local statistics for the last 7 days."
+        )
     }
 }
 
@@ -110,6 +133,11 @@ private struct HistoryProviderChart: View {
         return max(Int((Double(maximum) * 1.18).rounded(.up)), 1)
     }
 
+    private func dayLabel(for date: Date) -> String {
+        let components = Calendar.current.dateComponents([.month, .day], from: date)
+        return "\(components.month ?? 0)/\(components.day ?? 0)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             HStack(spacing: 8) {
@@ -138,7 +166,10 @@ private struct HistoryProviderChart: View {
             } else {
                 Chart(chartEntries) { entry in
                     BarMark(
-                        x: .value(L10n.text("日期", "Date"), entry.date, unit: .day),
+                        // A categorical day key keeps every bar centered exactly
+                        // above its label. Date binning places labels on interval
+                        // boundaries and makes bars appear half a day offset.
+                        x: .value(L10n.text("日期", "Date"), dayLabel(for: entry.date)),
                         y: .value("Token", entry.tokens.total),
                         width: .ratio(0.52)
                     )
@@ -154,8 +185,8 @@ private struct HistoryProviderChart: View {
                 }
                 .chartYScale(domain: 0...chartUpperBound)
                 .chartXAxis {
-                    AxisMarks(values: .stride(by: .day)) {
-                        AxisValueLabel(format: .dateTime.month(.defaultDigits).day())
+                    AxisMarks {
+                        AxisValueLabel()
                     }
                 }
                 .chartYAxis {

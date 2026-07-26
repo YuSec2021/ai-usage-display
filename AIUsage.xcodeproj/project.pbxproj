@@ -8,7 +8,10 @@
 
 /* Begin PBXBuildFile section */
 		2162F719728544AC6E0EA25E /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B625E0FD17B0A8ECABCC172E /* HistoryView.swift */; };
+		2224CFED8415A4E2FADF5808 /* KimiUsageAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */; };
 		238033A6545B5EFFDC48F050 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD051C307F7C3D1051C4C2C2 /* MenuBarView.swift */; };
+		2E7800353D144F77C5821D9E /* MiniMaxUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DE1279A39AAEF52526649C /* MiniMaxUsageProvider.swift */; };
+		40265C968D22781FD55F4B9B /* KimiUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAF13F6D55521B10C52180B /* KimiUsageProvider.swift */; };
 		4DD6E709E7DF6B00D5CFBC3A /* UsageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F0A9E1BF9FCB8EDB321A3 /* UsageModels.swift */; };
 		70B35AD5D8A6B04E45E3FA86 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 80DE39695B9D5FB0C31751FE /* Assets.xcassets */; };
 		73B9198AEDC5BA1B751CBDF2 /* ClaudeUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A19069E5E5624EABF7A0EB5 /* ClaudeUsageProvider.swift */; };
@@ -18,6 +21,7 @@
 		9E15CADCBB98F37FF93CC5A3 /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71B1B3A4E9171B5AF82C6C6D /* UsageStore.swift */; };
 		A29341C0339345C3CCCE44FC /* ProviderCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D35D5DF7E5AFBCDB754EDB /* ProviderCard.swift */; };
 		ACBC43A4BF85A8A91706F53E /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729E18F5403A29B34DD2FCAF /* LaunchAtLoginManager.swift */; };
+		BF044493D299E5128795AD0E /* KimiCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B660901612C9B73678D920A4 /* KimiCredentialStore.swift */; };
 		C922694AF7E4289C977CBF93 /* FormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0920E19EFB1829F7E82554 /* FormattingTests.swift */; };
 		CA2857314B4032CAD32128A0 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30ADD10D6846046ADEBE111B /* Formatting.swift */; };
 		DA8FCEA9A3E390F4374A6668 /* ClaudeIntegrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */; };
@@ -38,6 +42,7 @@
 /* Begin PBXFileReference section */
 		0A19069E5E5624EABF7A0EB5 /* ClaudeUsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeUsageProvider.swift; sourceTree = "<group>"; };
 		2555313622A85A5E1B06B280 /* AIUsage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIUsage.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiUsageAPI.swift; sourceTree = "<group>"; };
 		2C4B7757DDBC2CE43F38B097 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		30ADD10D6846046ADEBE111B /* Formatting.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Formatting.swift; sourceTree = "<group>"; };
 		47D35D5DF7E5AFBCDB754EDB /* ProviderCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderCard.swift; sourceTree = "<group>"; };
@@ -46,9 +51,12 @@
 		729E18F5403A29B34DD2FCAF /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		80DE39695B9D5FB0C31751FE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeIntegrationManager.swift; sourceTree = "<group>"; };
+		92DE1279A39AAEF52526649C /* MiniMaxUsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniMaxUsageProvider.swift; sourceTree = "<group>"; };
 		A56AC9119115392F4436BCB3 /* AIUsageApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIUsageApp.swift; sourceTree = "<group>"; };
+		AAAF13F6D55521B10C52180B /* KimiUsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiUsageProvider.swift; sourceTree = "<group>"; };
 		AD051C307F7C3D1051C4C2C2 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
 		B625E0FD17B0A8ECABCC172E /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		B660901612C9B73678D920A4 /* KimiCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiCredentialStore.swift; sourceTree = "<group>"; };
 		CD3DF2A0D600E39C03692805 /* AIUsageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIUsageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		E761DB0B70E7FFD0A4E86A6E /* ProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTests.swift; sourceTree = "<group>"; };
 		ED0920E19EFB1829F7E82554 /* FormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingTests.swift; sourceTree = "<group>"; };
@@ -75,6 +83,8 @@
 			children = (
 				86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */,
 				30ADD10D6846046ADEBE111B /* Formatting.swift */,
+				B660901612C9B73678D920A4 /* KimiCredentialStore.swift */,
+				28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */,
 				729E18F5403A29B34DD2FCAF /* LaunchAtLoginManager.swift */,
 			);
 			path = Services;
@@ -121,6 +131,8 @@
 			children = (
 				0A19069E5E5624EABF7A0EB5 /* ClaudeUsageProvider.swift */,
 				FBFF3BC3667F1686DE8843B9 /* CodexUsageProvider.swift */,
+				AAAF13F6D55521B10C52180B /* KimiUsageProvider.swift */,
+				92DE1279A39AAEF52526649C /* MiniMaxUsageProvider.swift */,
 				F9170BAE8DAC8B812599F83D /* UsageProvider.swift */,
 			);
 			path = Providers;
@@ -278,8 +290,12 @@
 				F8084AC996C8C3670E636651 /* CodexUsageProvider.swift in Sources */,
 				CA2857314B4032CAD32128A0 /* Formatting.swift in Sources */,
 				2162F719728544AC6E0EA25E /* HistoryView.swift in Sources */,
+				BF044493D299E5128795AD0E /* KimiCredentialStore.swift in Sources */,
+				2224CFED8415A4E2FADF5808 /* KimiUsageAPI.swift in Sources */,
+				40265C968D22781FD55F4B9B /* KimiUsageProvider.swift in Sources */,
 				ACBC43A4BF85A8A91706F53E /* LaunchAtLoginManager.swift in Sources */,
 				238033A6545B5EFFDC48F050 /* MenuBarView.swift in Sources */,
+				2E7800353D144F77C5821D9E /* MiniMaxUsageProvider.swift in Sources */,
 				A29341C0339345C3CCCE44FC /* ProviderCard.swift in Sources */,
 				FABB369E075B25D6AB8C77A9 /* SettingsView.swift in Sources */,
 				4DD6E709E7DF6B00D5CFBC3A /* UsageModels.swift in Sources */,
@@ -304,7 +320,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -316,7 +332,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yusec.aiusage;
 				PRODUCT_NAME = AIUsage;
 				SDKROOT = macosx;
@@ -329,7 +345,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 2;
+				CURRENT_PROJECT_VERSION = 3;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -341,7 +357,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.0.1;
+				MARKETING_VERSION = 1.1.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yusec.aiusage;
 				PRODUCT_NAME = AIUsage;
 				SDKROOT = macosx;
