@@ -16,6 +16,11 @@ struct SettingsView: View {
     @State private var kimiAPIKeyConfigured = false
     @State private var kimiAPIKeyVerified = false
     @State private var kimiOperationMessage: String?
+    @AppStorage(MiniMaxAPIRegion.storageKey) private var miniMaxRegionRaw = MiniMaxAPIRegion.mainlandChina.rawValue
+    @State private var miniMaxAPIKeyDraft = ""
+    @State private var miniMaxAPIKeyConfigured = false
+    @State private var miniMaxAPIKeyVerified = false
+    @State private var miniMaxOperationMessage: String?
 
     private var selectedTheme: AppTheme {
         AppTheme(rawValue: theme) ?? .system
@@ -23,6 +28,10 @@ struct SettingsView: View {
 
     private var selectedLanguage: AppLanguage {
         AppLanguage(rawValue: languageRawValue) ?? .simplifiedChinese
+    }
+
+    private var miniMaxRegion: MiniMaxAPIRegion {
+        MiniMaxAPIRegion(rawValue: miniMaxRegionRaw) ?? .mainlandChina
     }
 
     private var orderedProviders: [ProviderID] {
@@ -85,6 +94,10 @@ struct SettingsView: View {
             kimiAPIKeyConfigured = KimiCredentialStore.isConfigured
             if kimiAPIKeyConfigured {
                 Task { await verifyKimiConnection(showSuccessMessage: false) }
+            }
+            miniMaxAPIKeyConfigured = MiniMaxCredentialStore.isConfigured
+            if miniMaxAPIKeyConfigured {
+                Task { await verifyMiniMaxConnection(showSuccessMessage: false) }
             }
         }
     }
@@ -197,7 +210,8 @@ struct SettingsView: View {
     }
 
     private var integrationPane: some View {
-        VStack(spacing: 12) {
+        ScrollView {
+            VStack(spacing: 12) {
                 GroupBox("Claude Code") {
                     VStack(alignment: .leading, spacing: 10) {
                         HStack {
@@ -341,13 +355,78 @@ struct SettingsView: View {
                             .foregroundStyle(desktopDataDetected ? Color.green : Color.orange)
                         }
 
+                        Picker(
+                            L10n.text("API 区域", "API region"),
+                            selection: $miniMaxRegionRaw
+                        ) {
+                            ForEach(MiniMaxAPIRegion.allCases) { region in
+                                Text(region.title).tag(region.rawValue)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .onChange(of: miniMaxRegionRaw) { _ in
+                            miniMaxAPIKeyVerified = false
+                            if miniMaxAPIKeyConfigured {
+                                Task { await verifyMiniMaxConnection(showSuccessMessage: false) }
+                            }
+                        }
+
+                        HStack(spacing: 8) {
+                            SecureField(
+                                miniMaxAPIKeyConfigured
+                                    ? L10n.text("API Key 已保存", "API Key saved")
+                                    : "MiniMax API Key",
+                                text: $miniMaxAPIKeyDraft
+                            )
+                            .textFieldStyle(.roundedBorder)
+
+                            Button(L10n.text("保存", "Save")) {
+                                saveMiniMaxAPIKey()
+                            }
+                            .disabled(
+                                miniMaxAPIKeyDraft
+                                    .trimmingCharacters(in: .whitespacesAndNewlines)
+                                    .isEmpty
+                            )
+
+                            if miniMaxAPIKeyConfigured {
+                                Button(L10n.text("移除", "Remove"), role: .destructive) {
+                                    removeMiniMaxAPIKey()
+                                }
+                            }
+                        }
+
+                        HStack {
+                            Label(
+                                miniMaxConnectionStatus,
+                                systemImage: miniMaxAPIKeyVerified
+                                    ? "checkmark.shield.fill"
+                                    : (miniMaxAPIKeyConfigured ? "clock.badge.questionmark" : "key")
+                            )
+                            .foregroundStyle(
+                                miniMaxAPIKeyVerified ? Color.green : Color.secondary
+                            )
+                            Spacer()
+                            Link(
+                                L10n.text("打开 MiniMax 控制台", "Open MiniMax Console"),
+                                destination: miniMaxRegion.consoleURL
+                            )
+                        }
+                        .font(.caption)
+
                         Text(L10n.text(
-                            "从 MiniMax Code Desktop 的本地 HTTP 缓存读取官方 5 小时与每周订阅用量。不会读取 API Key、Cookie、API 日志或对话正文。",
-                            "Reads official 5-hour and weekly subscription usage from MiniMax Code Desktop's local HTTP cache. API keys, cookies, API logs, and conversation content are not read."
+                            "订阅额度仍从 MiniMax Desktop 本地缓存读取。API Key 仅保存在 macOS 钥匙串，并只发送到所选区域的 MiniMax 官方域名进行授权验证；不会发送提示词或生成内容。",
+                            "Subscription limits still come from the local MiniMax Desktop cache. The API Key is stored only in macOS Keychain and sent only to the selected official MiniMax domain for authorization verification; no prompts or generated content are sent."
                         ))
                             .font(.caption)
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
+
+                        if let miniMaxOperationMessage {
+                            Text(miniMaxOperationMessage)
+                                .font(.caption)
+                                .foregroundStyle(.secondary)
+                        }
                     }
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(.vertical, 4)
@@ -355,17 +434,19 @@ struct SettingsView: View {
 
                 GroupBox(L10n.text("隐私", "Privacy")) {
                     Text(L10n.text(
-                        "除你主动配置并保存在 macOS 钥匙串中的 Kimi API Key 外，不读取其他登录凭证；不会保存提示词、回答、代码或工具参数。",
-                        "Except for the Kimi API Key you explicitly save in macOS Keychain, the app does not read login credentials or save prompts, responses, code, or tool parameters."
+                        "Kimi 与 MiniMax API Key 仅在你主动配置后保存至 macOS 钥匙串；不会保存提示词、回答、代码或工具参数。",
+                        "Kimi and MiniMax API keys are saved to macOS Keychain only when explicitly configured; prompts, responses, code, and tool parameters are not saved."
                     ))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, alignment: .leading)
                         .padding(.vertical, 4)
                 }
+            }
+            .padding(16)
+            .frame(maxWidth: .infinity, alignment: .top)
         }
-        .padding(16)
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func updateLaunchAtLogin(_ newValue: Bool) {
@@ -453,6 +534,78 @@ struct SettingsView: View {
             Task { await store.refresh() }
         } catch {
             kimiOperationMessage = error.localizedDescription
+        }
+    }
+
+    private func saveMiniMaxAPIKey() {
+        do {
+            try MiniMaxCredentialStore.save(miniMaxAPIKeyDraft)
+            miniMaxAPIKeyDraft = ""
+            miniMaxAPIKeyConfigured = true
+            miniMaxAPIKeyVerified = false
+            miniMaxOperationMessage = L10n.text(
+                "API Key 已安全保存，正在验证。",
+                "API Key saved securely. Verifying."
+            )
+            Task { await verifyMiniMaxConnection(showSuccessMessage: true) }
+        } catch {
+            miniMaxOperationMessage = error.localizedDescription
+        }
+    }
+
+    private func removeMiniMaxAPIKey() {
+        do {
+            try MiniMaxCredentialStore.remove()
+            miniMaxAPIKeyDraft = ""
+            miniMaxAPIKeyConfigured = false
+            miniMaxAPIKeyVerified = false
+            miniMaxOperationMessage = L10n.text(
+                "API Key 已从 macOS 钥匙串移除。",
+                "API Key removed from macOS Keychain."
+            )
+        } catch {
+            miniMaxOperationMessage = error.localizedDescription
+        }
+    }
+
+    private var miniMaxConnectionStatus: String {
+        if miniMaxAPIKeyVerified {
+            return L10n.text("MiniMax API 已授权", "MiniMax API authorized")
+        }
+        if miniMaxAPIKeyConfigured {
+            return L10n.text("API Key 已配置，等待验证", "API Key configured; awaiting verification")
+        }
+        return L10n.text("配置 API Key 以授权 MiniMax API", "Add an API Key to authorize MiniMax API")
+    }
+
+    @MainActor
+    private func verifyMiniMaxConnection(showSuccessMessage: Bool) async {
+        let region = miniMaxRegion
+        let apiKey = MiniMaxCredentialStore.apiKey
+        let status = await MiniMaxAuthorizationAPI.verify(apiKey: apiKey, region: region)
+        guard region == miniMaxRegion, apiKey == MiniMaxCredentialStore.apiKey else { return }
+
+        switch status {
+        case .authorized(let modelCount):
+            miniMaxAPIKeyVerified = true
+            if showSuccessMessage {
+                miniMaxOperationMessage = L10n.text(
+                    "授权成功，可访问 \(modelCount) 个模型。",
+                    "Authorized. \(modelCount) models available."
+                )
+            }
+        case .rejected:
+            miniMaxAPIKeyVerified = false
+            miniMaxOperationMessage = L10n.text(
+                "API Key 未通过授权，请检查 Key 类型与所选区域。",
+                "API Key authorization failed. Check the key type and selected region."
+            )
+        case .unavailable:
+            miniMaxAPIKeyVerified = false
+            miniMaxOperationMessage = L10n.text(
+                "暂时无法连接 MiniMax，请检查网络后重试。",
+                "Unable to reach MiniMax. Check the network and try again."
+            )
         }
     }
 

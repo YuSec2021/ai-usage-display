@@ -238,6 +238,13 @@ enum ProviderAvailability: Equatable, Sendable {
         if case .stale = self { return true }
         return false
     }
+
+    /// Stale snapshots still contain the last successfully decoded quota.
+    /// Keep them eligible for aggregate menu-bar display while the UI clearly
+    /// labels the provider as outdated.
+    var hasUsableData: Bool {
+        isReady || isStale
+    }
 }
 
 struct UsageSnapshot: Equatable, Sendable, Identifiable {

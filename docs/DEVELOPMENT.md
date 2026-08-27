@@ -272,7 +272,21 @@ integration.claude
 ./scripts/build-direct-release.sh
 ```
 
-脚本会重新生成 Xcode 工程、构建 Release、添加临时代码签名、创建带“应用程序”快捷方式的 DMG，并生成 SHA-256 校验文件。产物位于 `dist/`。
+每次创建版本 Tag 前，必须同步更新 `project.yml` 中的
+`MARKETING_VERSION` 和 `CURRENT_PROJECT_VERSION`，并确认设置窗口“关于”页显示新版本。
+可在打 Tag 前运行：
+
+```bash
+./scripts/verify-release-version.sh 1.2.0
+```
+
+Tag 推送后，GitHub Actions 会再次检查 Tag、项目配置和“关于”页的版本来源，
+并构建 App 验证其 `CFBundleShortVersionString`。任一版本不一致时检查会失败，
+不得创建 GitHub Release。
+
+直接发布脚本也会执行同样的发布前与构建后检查，然后重新生成 Xcode 工程、
+构建 Release、添加临时代码签名、创建带“应用程序”快捷方式的 DMG，并生成
+SHA-256 校验文件。产物位于 `dist/`。
 
 此方式不需要 Apple Team ID，但没有 Developer ID 签名和 Apple 公证。首次启动时，用户需要在 Finder 中右键应用并选择“打开”，或在“系统设置 → 隐私与安全性”中选择“仍要打开”。它适合当前直接分发、内部测试和早期版本，不应描述为“Apple 已验证”或“已公证”。
 
@@ -291,6 +305,8 @@ Developer ID 发布流程：
 
 ## 9. 开发完成检查表
 
+- [ ] Tag、`MARKETING_VERSION` 与“关于”页显示的版本完全一致。
+- [ ] `CURRENT_PROJECT_VERSION` 已递增。
 - [ ] 无真实用户日志进入 git。
 - [ ] fixture 已去除路径、会话 ID 和内容字段。
 - [ ] 所有 provider 均支持无数据和格式错误状态。

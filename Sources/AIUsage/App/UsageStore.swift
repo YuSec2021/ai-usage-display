@@ -153,7 +153,7 @@ final class UsageStore: ObservableObject {
     func highestUsage(for providers: Set<ProviderID>) -> Int? {
         providers
             .compactMap { snapshots[$0] }
-            .filter { $0.availability.isReady }
+            .filter { $0.availability.hasUsableData }
             .flatMap(\.windows)
             .map { Int($0.usedPercentage.rounded()) }
             .max()

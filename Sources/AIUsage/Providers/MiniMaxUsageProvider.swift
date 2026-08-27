@@ -131,7 +131,7 @@ actor MiniMaxUsageProvider: UsageProvider {
     }
 
     nonisolated static func quotaResponse(from data: Data) -> MiniMaxQuotaResponse? {
-        let marker = Data(#"{"model_remains":["#.utf8)
+        let marker = Data(#""model_remains""#.utf8)
         var searchStart = data.startIndex
 
         while searchStart < data.endIndex,
@@ -140,17 +140,45 @@ actor MiniMaxUsageProvider: UsageProvider {
                 options: [],
                 in: searchStart..<data.endIndex
               ) {
-            if let json = completeJSONObject(in: data, startingAt: markerRange.lowerBound),
-               let response = try? JSONDecoder().decode(
-                MiniMaxQuotaResponse.self,
-                from: json
-               ),
-               !response.modelRemains.isEmpty {
+            for objectStart in objectStarts(
+                in: data,
+                before: markerRange.lowerBound
+            ) {
+                guard let json = completeJSONObject(in: data, startingAt: objectStart),
+                      json.range(of: marker) != nil,
+                      let response = try? JSONDecoder().decode(
+                        MiniMaxQuotaResponse.self,
+                        from: json
+                      ),
+                      !response.modelRemains.isEmpty else {
+                    continue
+                }
                 return response
             }
             searchStart = markerRange.upperBound
         }
         return nil
+    }
+
+    /// Chromium cache entries contain headers and other binary data around the
+    /// response body. Walk backwards from the quota key and try nearby object
+    /// boundaries so JSON whitespace and top-level field order remain flexible.
+    private nonisolated static func objectStarts(
+        in data: Data,
+        before markerStart: Data.Index
+    ) -> [Data.Index] {
+        let maximumLookBehind = 64 * 1_024
+        let lowerBound = max(data.startIndex, markerStart - maximumLookBehind)
+        var candidates: [Data.Index] = []
+        var index = markerStart
+
+        while index > lowerBound, candidates.count < 128 {
+            index = data.index(before: index)
+            if data[index] == 0x7B {
+                candidates.append(index)
+            }
+        }
+        return candidates
     }
 
     private nonisolated static func completeJSONObject(

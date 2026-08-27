@@ -20,6 +20,7 @@
 		943788ABFB9F00289DA60CC6 /* AIUsageApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = A56AC9119115392F4436BCB3 /* AIUsageApp.swift */; };
 		9E15CADCBB98F37FF93CC5A3 /* UsageStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 71B1B3A4E9171B5AF82C6C6D /* UsageStore.swift */; };
 		A29341C0339345C3CCCE44FC /* ProviderCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 47D35D5DF7E5AFBCDB754EDB /* ProviderCard.swift */; };
+		A8F8C7DD9B12998DBFA271D1 /* MiniMaxAuthorization.swift in Sources */ = {isa = PBXBuildFile; fileRef = 949AD41C0F7F1B43D4C6BBF1 /* MiniMaxAuthorization.swift */; };
 		ACBC43A4BF85A8A91706F53E /* LaunchAtLoginManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 729E18F5403A29B34DD2FCAF /* LaunchAtLoginManager.swift */; };
 		BF044493D299E5128795AD0E /* KimiCredentialStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = B660901612C9B73678D920A4 /* KimiCredentialStore.swift */; };
 		C922694AF7E4289C977CBF93 /* FormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0920E19EFB1829F7E82554 /* FormattingTests.swift */; };
@@ -52,6 +53,7 @@
 		80DE39695B9D5FB0C31751FE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeIntegrationManager.swift; sourceTree = "<group>"; };
 		92DE1279A39AAEF52526649C /* MiniMaxUsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniMaxUsageProvider.swift; sourceTree = "<group>"; };
+		949AD41C0F7F1B43D4C6BBF1 /* MiniMaxAuthorization.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniMaxAuthorization.swift; sourceTree = "<group>"; };
 		A56AC9119115392F4436BCB3 /* AIUsageApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AIUsageApp.swift; sourceTree = "<group>"; };
 		AAAF13F6D55521B10C52180B /* KimiUsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiUsageProvider.swift; sourceTree = "<group>"; };
 		AD051C307F7C3D1051C4C2C2 /* MenuBarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarView.swift; sourceTree = "<group>"; };
@@ -86,6 +88,7 @@
 				B660901612C9B73678D920A4 /* KimiCredentialStore.swift */,
 				28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */,
 				729E18F5403A29B34DD2FCAF /* LaunchAtLoginManager.swift */,
+				949AD41C0F7F1B43D4C6BBF1 /* MiniMaxAuthorization.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -295,6 +298,7 @@
 				40265C968D22781FD55F4B9B /* KimiUsageProvider.swift in Sources */,
 				ACBC43A4BF85A8A91706F53E /* LaunchAtLoginManager.swift in Sources */,
 				238033A6545B5EFFDC48F050 /* MenuBarView.swift in Sources */,
+				A8F8C7DD9B12998DBFA271D1 /* MiniMaxAuthorization.swift in Sources */,
 				2E7800353D144F77C5821D9E /* MiniMaxUsageProvider.swift in Sources */,
 				A29341C0339345C3CCCE44FC /* ProviderCard.swift in Sources */,
 				FABB369E075B25D6AB8C77A9 /* SettingsView.swift in Sources */,
@@ -320,7 +324,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -332,7 +336,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yusec.aiusage;
 				PRODUCT_NAME = AIUsage;
 				SDKROOT = macosx;
@@ -345,7 +349,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 3;
+				CURRENT_PROJECT_VERSION = 4;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -357,7 +361,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.1.0;
+				MARKETING_VERSION = 1.2.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yusec.aiusage;
 				PRODUCT_NAME = AIUsage;
 				SDKROOT = macosx;

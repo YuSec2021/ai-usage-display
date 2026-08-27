@@ -223,6 +223,8 @@ used = clamp(100 - remaining, 0, 100)
 
 `end_time` 是 5 小时窗口重置时间，`weekly_end_time` 是本周窗口重置时间。该 Desktop 缓存是 MiniMax 的唯一事实源：不扫描 `~/.claude/projects` 或 `~/.claude-minimax`，不读取可能含凭证的 API 日志，也不通过本地 Token 或订阅计划反推额度。缓存不包含可靠的逐日 Token 历史，因此 MiniMax 不生成 `dailyUsage`，历史页也不展示 MiniMax Token 图表。
 
+MiniMax API 授权与上述用量采集相互独立。用户选择中国大陆或海外区域后，API Key 写入 macOS 钥匙串；应用分别请求官方 `https://api.minimaxi.com/v1/models` 或 `https://api.minimax.io/v1/models`，以 Bearer 授权验证 Key 并解码返回的模型数量。验证请求不生成内容，Key 不写入 `UserDefaults` 或日志。当前没有公开的历史 Token 聚合接口，因此授权成功不会改变 MiniMax 的 `dailyUsage`。
+
 模型显示优先级保存在 `UserDefaults` 的 `providers.order` 中。详情卡片通过应用内 `DragGesture` 跟踪指针与卡片坐标，绕开 `MenuBarExtra(.window)` 中不稳定的系统文件拖放会话；菜单栏多模型视图、历史页和设置页读取同一顺序。恢复设置时会去除无效项和重复项，并把新版本新增的 provider 自动追加到末尾。
 
 ## 7. 文件监听

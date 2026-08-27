@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — 2026-08-27
+
+- Add MiniMax API Key authorization for Mainland China and Global regions, with credentials stored in macOS Keychain and verified only through official model-list endpoints.
+- Make MiniMax Desktop quota-cache parsing tolerate JSON whitespace and reordered top-level fields.
+- Fix missing Claude Code token history in large transcripts by scanning backward to the seven-day boundary and parsing new records incrementally.
+- Remove expired Claude history from in-memory caches while keeping the last valid quota sample displayed normally until Claude records a newer call.
+- Prevent outdated MiniMax authorization responses from overwriting the result after the selected region or API Key changes.
+- Add release-version validation for tags, project metadata, the About view, built apps, and GitHub tag builds.
+
 ## 1.1.0 — 2026-07-27
 
 - Add Kimi Code local token usage, menu bar display, provider selection, and seven-day history.

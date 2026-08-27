@@ -2,7 +2,7 @@
 
 AI Usage 是一个原生 macOS 菜单栏应用，用于查看 Codex、Claude Code、Kimi Code 与 MiniMax 的本机使用情况，以及可用的订阅额度窗口和重置时间。
 
-> 当前版本：1.1.0。仓库包含原生 macOS 工程、Codex/Claude Code/Claude Desktop/Kimi Code/MiniMax 数据采集、三态主题、历史图表、设置页、测试和视觉原型。
+> 当前版本：1.2.0。仓库包含原生 macOS 工程、Codex/Claude Code/Claude Desktop/Kimi Code/MiniMax 数据采集、三态主题、历史图表、设置页、测试和视觉原型。
 
 ## 产品目标
 
@@ -57,7 +57,9 @@ Kimi Code 的本地 Token 无需安装额外集成。应用会读取 `$KIMI_CODE
 如需显示 Kimi Code 的 5 小时与每周额度，请在“设置 → 集成 → Kimi Code”中填写从 Kimi Code 控制台获取的 API Key。Key 只保存在 macOS 钥匙串中，应用使用它直接请求 `https://api.kimi.com/coding/v1/usages`；不会发送到开发者服务器。也可在开发环境通过 `KIMI_API_KEY` 环境变量提供。
 
 MiniMax 只读取 MiniMax Desktop Chromium HTTP 缓存目录
-`~/Library/Application Support/MiniMax/Cache/Cache_Data` 中官方订阅额度接口的最近一次完整响应。应用选择 `model_name == "general"` 的套餐记录，展示 5 小时与本周已用百分比及重置时间。该缓存是 MiniMax 卡片的唯一事实源；应用不使用 Claude Code 会话推算 MiniMax 用量，也不读取 API 日志、API Key、Cookie 或对话内容。MiniMax Desktop 当前没有提供可用于每日汇总的历史 Token 数据，因此 MiniMax 不出现在 Token 历史图表中。
+`~/Library/Application Support/MiniMax/Cache/Cache_Data` 中官方订阅额度接口的最近一次完整响应。应用选择 `model_name == "general"` 的套餐记录，展示 5 小时与本周已用百分比及重置时间。该缓存仍是 MiniMax 用量卡片的唯一事实源；应用不使用 Claude Code 会话推算 MiniMax 用量，也不读取 API 日志、Cookie 或对话内容。MiniMax Desktop 当前没有提供可用于每日汇总的历史 Token 数据，因此 MiniMax 不出现在 Token 历史图表中。
+
+可以在“设置 → 集成 → MiniMax”中选择中国大陆或海外区域并配置 API Key。Key 只保存在 macOS 钥匙串中，应用通过所选区域的 MiniMax 官方模型列表接口验证授权，不会发起内容生成请求。中国大陆使用 `https://api.minimaxi.com/v1/models`，海外使用 `https://api.minimax.io/v1/models`；也可在开发环境通过 `MINIMAX_API_KEY` 提供。授权机制本身不提供历史 Token 汇总，MiniMax Token 显示仍需后续接入可靠的请求用量数据源。
 
 ## 直接构建发布包
 
@@ -67,13 +69,13 @@ MiniMax 只读取 MiniMax Desktop Chromium HTTP 缓存目录
 ./scripts/build-direct-release.sh
 ```
 
-构建结果位于 `dist/AI-Usage-1.1.0.dmg`，并同时生成 SHA-256 校验文件。该版本没有 Developer ID 签名，也没有经过 Apple 公证。其他用户首次打开时，需要在 Finder 中右键应用并选择“打开”；如果系统仍然阻止运行，请前往“系统设置 → 隐私与安全性”选择“仍要打开”。
+构建结果位于 `dist/AI-Usage-1.2.0.dmg`，并同时生成 SHA-256 校验文件。该版本没有 Developer ID 签名，也没有经过 Apple 公证。其他用户首次打开时，需要在 Finder 中右键应用并选择“打开”；如果系统仍然阻止运行，请前往“系统设置 → 隐私与安全性”选择“仍要打开”。
 
 正式配置 Apple Developer Team ID 后，应改用 Developer ID 签名并提交 Apple 公证，不再发布临时签名构建。
 
 ## 隐私原则
 
-应用只提取用量字段，不保存提示词、回答、工具调用参数或源代码。除用户主动配置并保存至 macOS 钥匙串的 Kimi Code API Key 外，应用不会读取 `~/.codex/auth.json`、浏览器 Cookie、Claude Code、Kimi Code 或 MiniMax 的认证信息。
+应用只提取用量字段，不保存提示词、回答、工具调用参数或源代码。用户主动配置的 Kimi Code 与 MiniMax API Key 只保存在 macOS 钥匙串；应用不会读取 `~/.codex/auth.json`、浏览器 Cookie 或其他 Claude Code、Kimi Code、MiniMax 认证信息。
 
 完整说明见 [PRIVACY.md](PRIVACY.md)。
 

@@ -2,6 +2,23 @@ import XCTest
 @testable import AIUsage
 
 final class ProviderTests: XCTestCase {
+    func testMiniMaxAuthorizationUsesOfficialRegionalEndpointsAndDecodesModels() throws {
+        XCTAssertEqual(
+            MiniMaxAPIRegion.mainlandChina.modelsEndpoint.absoluteString,
+            "https://api.minimaxi.com/v1/models"
+        )
+        XCTAssertEqual(
+            MiniMaxAPIRegion.global.modelsEndpoint.absoluteString,
+            "https://api.minimax.io/v1/models"
+        )
+        let response = #"{"object":"list","data":[{"id":"MiniMax-M2.7"},{"id":"MiniMax-M2.5"}]}"#
+        XCTAssertEqual(
+            MiniMaxAuthorizationAPI.modelCount(from: Data(response.utf8)),
+            2
+        )
+        XCTAssertNil(MiniMaxAuthorizationAPI.modelCount(from: Data("{}".utf8)))
+    }
+
     func testCodexParsesRateLimitsAndSessionDelta() async throws {
         let root = try makeTemporaryDirectory()
         let sessions = root.appendingPathComponent("sessions", isDirectory: true)
@@ -99,6 +116,92 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(updatedResult.dailyUsage.first?.tokens.output, 35)
     }
 
+    func testClaudeScansBackwardUntilAllRecentTranscriptUsageIsFound() async throws {
+        let claudeRoot = try makeTemporaryDirectory()
+        let projects = claudeRoot.appendingPathComponent("projects/sample", isDirectory: true)
+        try FileManager.default.createDirectory(at: projects, withIntermediateDirectories: true)
+        let support = try makeTemporaryDirectory()
+        let now = Date()
+        try """
+        {"collected_at":\(now.timeIntervalSince1970),"rate_limits":{"five_hour":{"used_percentage":1}}}
+        """.write(
+            to: support.appendingPathComponent("claude-snapshot.json"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let formatter = ISO8601DateFormatter()
+        let old = formatter.string(from: now.addingTimeInterval(-8 * 86_400))
+        let recent = formatter.string(from: now.addingTimeInterval(-86_400))
+        let current = formatter.string(from: now)
+        var lines = [
+            #"{"timestamp":"\#(old)","message":{"id":"old","usage":{"input_tokens":900,"output_tokens":90}}}"#,
+            #"{"timestamp":"\#(recent)","message":{"id":"recent","usage":{"input_tokens":100,"output_tokens":10}}}"#
+        ]
+        lines += (0..<40).map {
+            #"{"timestamp":"\#(recent)","type":"progress","text":"\#($0)-\#(String(repeating: "x", count: 80))"}"#
+        }
+        lines.append(
+            #"{"timestamp":"\#(current)","message":{"id":"current","usage":{"input_tokens":50,"output_tokens":5}}}"#
+        )
+        try lines.joined(separator: "\n").write(
+            to: projects.appendingPathComponent("large-session.jsonl"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let result = await ClaudeUsageProvider(
+            claudeDirectory: claudeRoot,
+            snapshotURL: support.appendingPathComponent("claude-snapshot.json"),
+            planUsageURL: support.appendingPathComponent("missing-plan-usage.json"),
+            transcriptScanChunkBytes: 256
+        ).load()
+
+        XCTAssertEqual(result.dailyUsage.count, 2)
+        XCTAssertEqual(result.dailyUsage.reduce(0) { $0 + $1.tokens.input }, 150)
+        XCTAssertEqual(result.dailyUsage.reduce(0) { $0 + $1.tokens.output }, 15)
+    }
+
+    func testClaudePrunesCachedUsageWhenHistoryWindowAdvances() async throws {
+        let claudeRoot = try makeTemporaryDirectory()
+        let projects = claudeRoot.appendingPathComponent("projects/sample", isDirectory: true)
+        try FileManager.default.createDirectory(at: projects, withIntermediateDirectories: true)
+        let support = try makeTemporaryDirectory()
+        let calendar = Calendar(identifier: .gregorian)
+        let clock = MutableTestClock(date: Date())
+        let timestamp = ISO8601DateFormatter().string(
+            from: calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: clock.date))!
+        )
+        try """
+        {"timestamp":"\(timestamp)","message":{"id":"boundary","usage":{"input_tokens":100,"output_tokens":10}}}
+        """.write(
+            to: projects.appendingPathComponent("session.jsonl"),
+            atomically: true,
+            encoding: .utf8
+        )
+        try """
+        {"collected_at":\(clock.date.timeIntervalSince1970),"rate_limits":{"five_hour":{"used_percentage":1}}}
+        """.write(
+            to: support.appendingPathComponent("claude-snapshot.json"),
+            atomically: true,
+            encoding: .utf8
+        )
+
+        let provider = ClaudeUsageProvider(
+            claudeDirectory: claudeRoot,
+            snapshotURL: support.appendingPathComponent("claude-snapshot.json"),
+            planUsageURL: support.appendingPathComponent("missing-plan-usage.json"),
+            calendar: calendar,
+            now: { clock.date }
+        )
+        let initial = await provider.load()
+        XCTAssertEqual(initial.dailyUsage.count, 1)
+
+        clock.date = calendar.date(byAdding: .day, value: 1, to: clock.date)!
+        let advanced = await provider.load()
+        XCTAssertTrue(advanced.dailyUsage.isEmpty)
+    }
+
     func testKimiParsesUsageRecordsAndIncrementalUpdates() async throws {
         let root = try makeTemporaryDirectory()
         let agents = root.appendingPathComponent(
@@ -194,6 +297,42 @@ final class ProviderTests: XCTestCase {
         )
         XCTAssertNil(result.snapshot.todayTokens)
         XCTAssertTrue(result.dailyUsage.isEmpty)
+    }
+
+    func testMiniMaxQuotaParserAllowsWhitespaceAndReorderedFields() throws {
+        let response = """
+        binary-prefix\u{0}{
+          "base_resp": {"status_code": 0},
+          "model_remains" : [
+            {
+              "model_name": "general",
+              "current_interval_remaining_percent": 125,
+              "current_weekly_remaining_percent": -5
+            }
+          ]
+        }binary-suffix
+        """
+
+        let quota = try XCTUnwrap(
+            MiniMaxUsageProvider.quotaResponse(from: Data(response.utf8))?
+                .preferredTextQuota
+        )
+        XCTAssertEqual(quota.modelName, "general")
+
+        let shortWindow = RateLimitWindow(
+            kind: .short,
+            label: "5 hours",
+            usedPercentage: 100 - (quota.currentIntervalRemainingPercent ?? 0),
+            resetsAt: nil
+        )
+        let weeklyWindow = RateLimitWindow(
+            kind: .long,
+            label: "This week",
+            usedPercentage: 100 - (quota.currentWeeklyRemainingPercent ?? 0),
+            resetsAt: nil
+        )
+        XCTAssertEqual(shortWindow.usedPercentage, 0)
+        XCTAssertEqual(weeklyWindow.usedPercentage, 100)
     }
 
     func testKimiLegacyStatusUpdatesAreDeduplicatedByMessage() async throws {
@@ -361,7 +500,7 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(miniMax.snapshot.availability, .cliNotInstalled)
     }
 
-    func testClaudeMarksOldRateLimitSnapshotAsStale() async throws {
+    func testClaudeKeepsLastRateLimitSnapshotReady() async throws {
         let claudeRoot = try makeTemporaryDirectory()
         let support = try makeTemporaryDirectory()
         let snapshotURL = support.appendingPathComponent("claude-snapshot.json")
@@ -377,7 +516,7 @@ final class ProviderTests: XCTestCase {
             planUsageURL: support.appendingPathComponent("missing-plan-usage.json")
         ).load()
 
-        XCTAssertTrue(result.snapshot.availability.isStale)
+        XCTAssertTrue(result.snapshot.availability.isReady)
         XCTAssertEqual(result.snapshot.windows.first?.usedPercentage, 1)
     }
 
@@ -460,5 +599,13 @@ final class ProviderTests: XCTestCase {
         try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
         addTeardownBlock { try? FileManager.default.removeItem(at: url) }
         return url
+    }
+}
+
+private final class MutableTestClock: @unchecked Sendable {
+    var date: Date
+
+    init(date: Date) {
+        self.date = date
     }
 }

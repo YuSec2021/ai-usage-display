@@ -78,6 +78,13 @@ final class FormattingTests: XCTestCase {
         XCTAssertEqual(RateLimitWindow(kind: .short, label: "Test", usedPercentage: -4, resetsAt: nil).usedPercentage, 0)
     }
 
+    func testStaleProviderDataRemainsUsableButVisiblyStale() {
+        let availability = ProviderAvailability.stale(lastUpdated: .distantPast)
+        XCTAssertTrue(availability.hasUsableData)
+        XCTAssertTrue(availability.isStale)
+        XCTAssertFalse(availability.isReady)
+    }
+
     func testProviderSelectionDefaultsToEveryProvider() {
         XCTAssertEqual(
             ProviderID.selectedProviders(from: ProviderID.defaultSelectionRawValue),
