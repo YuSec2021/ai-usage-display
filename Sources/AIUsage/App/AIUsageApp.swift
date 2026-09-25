@@ -5,6 +5,10 @@ struct AIUsageApp: App {
     @StateObject private var store = UsageStore()
     @AppStorage(AppLanguage.storageKey) private var languageRawValue = AppLanguage.simplifiedChinese.rawValue
 
+    init() {
+        LaunchAtLoginManager.refreshRegistrationIfMoved()
+    }
+
     private var selectedLanguage: AppLanguage {
         AppLanguage(rawValue: languageRawValue) ?? .simplifiedChinese
     }
