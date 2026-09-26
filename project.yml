@@ -20,8 +20,8 @@ targets:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.yusec.aiusage
         PRODUCT_NAME: AIUsage
-        MARKETING_VERSION: 1.2.0
-        CURRENT_PROJECT_VERSION: 4
+        MARKETING_VERSION: 1.2.1
+        CURRENT_PROJECT_VERSION: 5
         GENERATE_INFOPLIST_FILE: YES
         INFOPLIST_KEY_LSUIElement: YES
         INFOPLIST_KEY_CFBundleDisplayName: AI Usage

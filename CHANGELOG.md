@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.2.1 — 2026-09-26
+
+- Re-register the launch-at-login item when AI Usage runs from a new location, so macOS no longer keeps starting an outdated copy (such as an Xcode build) at login.
+- Keep Debug builds from taking over the installed app's launch-at-login item.
+
 ## 1.2.0 — 2026-08-27
 
 - Add MiniMax API Key authorization for Mainland China and Global regions, with credentials stored in macOS Keychain and verified only through official model-list endpoints.

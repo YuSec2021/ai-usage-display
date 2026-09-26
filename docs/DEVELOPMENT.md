@@ -277,7 +277,7 @@ integration.claude
 可在打 Tag 前运行：
 
 ```bash
-./scripts/verify-release-version.sh 1.2.0
+./scripts/verify-release-version.sh 1.2.1
 ```
 
 Tag 推送后，GitHub Actions 会再次检查 Tag、项目配置和“关于”页的版本来源，

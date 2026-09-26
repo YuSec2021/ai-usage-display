@@ -2,7 +2,7 @@
 
 AI Usage 是一个原生 macOS 菜单栏应用，用于查看 Codex、Claude Code、Kimi Code 与 MiniMax 的本机使用情况，以及可用的订阅额度窗口和重置时间。
 
-> 当前版本：1.2.0。仓库包含原生 macOS 工程、Codex/Claude Code/Claude Desktop/Kimi Code/MiniMax 数据采集、三态主题、历史图表、设置页、测试和视觉原型。
+> 当前版本：1.2.1。仓库包含原生 macOS 工程、Codex/Claude Code/Claude Desktop/Kimi Code/MiniMax 数据采集、三态主题、历史图表、设置页、测试和视觉原型。
 
 ## 产品目标
 
@@ -69,7 +69,7 @@ MiniMax 只读取 MiniMax Desktop Chromium HTTP 缓存目录
 ./scripts/build-direct-release.sh
 ```
 
-构建结果位于 `dist/AI-Usage-1.2.0.dmg`，并同时生成 SHA-256 校验文件。该版本没有 Developer ID 签名，也没有经过 Apple 公证。其他用户首次打开时，需要在 Finder 中右键应用并选择“打开”；如果系统仍然阻止运行，请前往“系统设置 → 隐私与安全性”选择“仍要打开”。
+构建结果位于 `dist/AI-Usage-1.2.1.dmg`，并同时生成 SHA-256 校验文件。该版本没有 Developer ID 签名，也没有经过 Apple 公证。其他用户首次打开时，需要在 Finder 中右键应用并选择“打开”；如果系统仍然阻止运行，请前往“系统设置 → 隐私与安全性”选择“仍要打开”。
 
 正式配置 Apple Developer Team ID 后，应改用 Developer ID 签名并提交 Apple 公证，不再发布临时签名构建。
 
