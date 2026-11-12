@@ -24,8 +24,7 @@ struct ProviderCard: View {
                     Text(L10n.text("5 小时已用额度", "5-hour quota used"))
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text(fiveHourWindow.map { UsageFormatting.resetDescription($0.resetsAt) }
-                        ?? L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable"))
+                    Text(snapshot.fiveHourStatusDescription())
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }

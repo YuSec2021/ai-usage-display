@@ -18,7 +18,7 @@ final class UsageStore: ObservableObject {
     private var lastClaudeDataModificationDate: Date?
 
     init(
-        codexProvider: any UsageProvider = CodexUsageProvider(),
+        codexProvider: any UsageProvider = CodexUsageProvider(rateLimitReader: { await CodexRateLimitClient().read() }),
         claudeProvider: any UsageProvider = ClaudeUsageProvider(),
         kimiProvider: any UsageProvider = KimiUsageProvider(),
         miniMaxProvider: any UsageProvider = MiniMaxUsageProvider()

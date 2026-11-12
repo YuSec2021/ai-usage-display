@@ -164,7 +164,9 @@ enum AppTheme: String, CaseIterable, Identifiable {
 3. 从文件尾部寻找最新 `token_count`，建立初始额度快照。
 4. 扫描历史事件并按会话累计差值生成每日 token 汇总。
 5. 保存每个文件的读取偏移和会话累计值。
-6. 启用目录监听，只处理追加内容。
+6. 定时刷新时只读取文件追加内容；生产环境注入官方 App Server 额度 reader，最多等待 8 秒，失败返回本地日志额度。
+7. 通过 PATH 和常用 Homebrew / ~/.local/bin 路径查找已安装 CLI，只执行初始化和 account/rateLimits/read；用假 stdio 可执行文件验证握手、bucket、超时和错误，不读取测试机器的真实登录。
+8. 打开菜单面板立即刷新；真实读取验证只输出额度字段，禁止将用户原始日志或 RPC 响应提交到仓库。
 
 建议采用宽容解码：
 

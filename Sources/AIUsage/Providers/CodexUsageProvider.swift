@@ -5,24 +5,23 @@ actor CodexUsageProvider: UsageProvider {
 
     private let rootDirectory: URL
     private let calendar: Calendar
+    private let rateLimitReader: @Sendable () async -> CodexRateLimits?
     private var fileStates: [URL: FileState] = [:]
     private let initialTailBytes = 1_048_576
 
-    init(rootDirectory: URL = ProviderPaths.codexDirectory, calendar: Calendar = .current) {
+    init(
+        rootDirectory: URL = ProviderPaths.codexDirectory,
+        calendar: Calendar = .current,
+        rateLimitReader: @escaping @Sendable () async -> CodexRateLimits? = { nil }
+    ) {
         self.rootDirectory = rootDirectory
         self.calendar = calendar
+        self.rateLimitReader = rateLimitReader
     }
 
     func load() async -> ProviderResult {
         let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: rootDirectory.path) else {
-            return ProviderResult(snapshot: .empty(id, availability: .cliNotInstalled), dailyUsage: [])
-        }
-
         let files = jsonlFiles(fileManager: fileManager)
-        guard !files.isEmpty else {
-            return ProviderResult(snapshot: .empty(id, availability: .waitingForFirstSample), dailyUsage: [])
-        }
 
         let cutoff = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: Date())) ?? .distantPast
         let fileSet = Set(files)
@@ -40,28 +39,31 @@ actor CodexUsageProvider: UsageProvider {
             fileStates[file] = parseChanges(in: file, metadata: metadata, previousState: existing)
         }
 
-        var latest: LatestEvent?
         var buckets: [Date: TokenUsage] = [:]
         for state in fileStates.values {
-            if let candidate = state.latest, latest == nil || candidate.date >= latest!.date {
-                latest = candidate
-            }
             for (day, usage) in state.dailyUsage where day >= cutoff {
                 buckets[day, default: .zero] = buckets[day, default: .zero] + usage
             }
         }
+        let events = fileStates.values.compactMap(\.latest)
+        let latest = events.filter { $0.event.rateLimits?.hasUsage == true }.max { $0.date < $1.date }
+            ?? events.max { $0.date < $1.date }
 
-        guard let latest else {
-            return ProviderResult(snapshot: .empty(id, availability: .unsupportedFormat), dailyUsage: [])
+        let liveWindows = Self.makeWindows(await rateLimitReader())
+        guard latest != nil || !liveWindows.isEmpty else {
+            let availability: ProviderAvailability = !fileManager.fileExists(atPath: rootDirectory.path)
+                ? .cliNotInstalled : files.isEmpty ? .waitingForFirstSample : .unsupportedFormat
+            return ProviderResult(snapshot: .empty(id, availability: availability), dailyUsage: [])
         }
+        let observedAt = liveWindows.isEmpty ? (latest?.date ?? Date()) : Date()
 
         let snapshot = UsageSnapshot(
             provider: id,
-            windows: Self.makeWindows(latest.event.rateLimits),
+            windows: liveWindows.isEmpty ? Self.makeWindows(latest?.event.rateLimits) : liveWindows,
             todayTokens: buckets[calendar.startOfDay(for: Date())],
             estimatedCostUSD: nil,
-            observedAt: latest.date,
-            availability: .ready(lastUpdated: latest.date)
+            observedAt: observedAt,
+            availability: .ready(lastUpdated: observedAt)
         )
         let daily = buckets.map { DailyUsage(date: $0.key, provider: id, tokens: $0.value) }.sorted { $0.date < $1.date }
         return ProviderResult(snapshot: snapshot, dailyUsage: daily)
@@ -149,7 +151,8 @@ actor CodexUsageProvider: UsageProvider {
             state.dailyUsage[day, default: .zero] = state.dailyUsage[day, default: .zero] + delta
         }
 
-        if state.latest == nil || timestamp >= state.latest!.date {
+        if state.latest == nil || (timestamp >= state.latest!.date
+            && (event.rateLimits?.hasUsage == true || state.latest!.event.rateLimits?.hasUsage != true)) {
             state.latest = LatestEvent(date: timestamp, event: event)
         }
         return true
@@ -180,10 +183,10 @@ actor CodexUsageProvider: UsageProvider {
     private static func makeWindows(_ limits: CodexRateLimits?) -> [RateLimitWindow] {
         guard let limits else { return [] }
         var result: [RateLimitWindow] = []
-        if let primary = limits.primary {
+        if let primary = limits.primary, primary.usedPercent?.isFinite == true {
             result.append(window(primary, kind: .short, fallbackLabel: L10n.text("短周期", "Short window")))
         }
-        if let secondary = limits.secondary {
+        if let secondary = limits.secondary, secondary.usedPercent?.isFinite == true {
             result.append(window(secondary, kind: .long, fallbackLabel: L10n.text("长周期", "Long window")))
         }
         return result
@@ -290,12 +293,16 @@ struct CodexTokenValues: Decodable {
     }
 }
 
-struct CodexRateLimits: Decodable {
+struct CodexRateLimits: Decodable, Sendable {
     let primary: CodexRateWindow?
     let secondary: CodexRateWindow?
+
+    var hasUsage: Bool {
+        primary?.usedPercent?.isFinite == true || secondary?.usedPercent?.isFinite == true
+    }
 }
 
-struct CodexRateWindow: Decodable {
+struct CodexRateWindow: Decodable, Sendable {
     let usedPercent: Double?
     let resetsAt: Double?
     let windowMinutes: Int?

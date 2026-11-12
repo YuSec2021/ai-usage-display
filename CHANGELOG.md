@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Read current Codex quotas through the installed CLI’s official read-only app-server interface, retain local-log fallback with a bounded timeout, refresh when opening the panel, and explain expired windows instead of reporting missing data.
+
 ## 1.2.2 — 2026-11-12
 
 - Automatically prepare a patch version and build number on main updates, synchronize release records, push the version commit and tag atomically, and call the existing Release workflow without extra credentials.

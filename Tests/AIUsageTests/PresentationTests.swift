@@ -57,6 +57,17 @@ final class PresentationTests: XCTestCase {
         XCTAssertTrue(MenuBarDisplayMode.highestUsage.displayedSnapshots(from: []).isEmpty)
     }
 
+    func testExpiredFiveHourStatusExplainsResetWithoutInventingCurrentUsage() {
+        let value = snapshot()
+        let reset = value.fiveHourWindow()!.resetsAt!
+        XCTAssertNil(value.fiveHourWindow(at: reset))
+        XCTAssertEqual(value.fiveHourStatusDescription(at: reset), "上个周期已结束，等待 Codex 更新额度")
+        XCTAssertEqual(snapshot(fiveHour: nil).fiveHourStatusDescription(), "暂无 5 小时额度数据")
+        let newWindow = snapshot(fiveHour: 0)
+        XCTAssertEqual(newWindow.fiveHourWindow()?.usedPercentage, 0)
+        XCTAssertNotEqual(newWindow.fiveHourStatusDescription(), value.fiveHourStatusDescription(at: reset))
+    }
+
     func testTransparencyBoundsAndAccessibilityOverride() {
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 0, reduceTransparency: false), 1)
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 1, reduceTransparency: false), 0)
