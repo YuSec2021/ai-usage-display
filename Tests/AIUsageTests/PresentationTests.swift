@@ -78,6 +78,22 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 1, reduceTransparency: true), 1)
     }
 
+    func testUnlimitedQuotaSurvivesCodingAndLegacyWindowsDefaultToLimited() throws {
+        let unlimited = RateLimitWindow(
+            kind: .short, label: "5 小时", usedPercentage: 0, resetsAt: nil,
+            durationMinutes: 300, isUnlimited: true
+        )
+        let decoded = try JSONDecoder().decode(RateLimitWindow.self, from: JSONEncoder().encode(unlimited))
+        XCTAssertTrue(decoded.isUnlimited)
+        var value = snapshot(.miniMax)
+        value.windows = [decoded]
+        XCTAssertEqual(value.fiveHourStatusDescription(), "无限制")
+        let legacy = Data(#"{"kind":"long","label":"Weekly","usedPercentage":37}"#.utf8)
+        let oldWindow = try JSONDecoder().decode(RateLimitWindow.self, from: legacy)
+        XCTAssertFalse(oldWindow.isUnlimited)
+        XCTAssertEqual(oldWindow.usedPercentage, 37)
+    }
+
     @MainActor
     func testMenuBarImagesDistinguishUnknownZeroPartialAndFullUsage() async throws {
         let images = try [nil, 0.0, 50.0, 100.0].map { usage in
@@ -103,6 +119,12 @@ final class PresentationTests: XCTestCase {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent(".build/ui-previews", isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        var miniMax = snapshot(.miniMax, fiveHour: 24)
+        miniMax.windows.removeAll { $0.kind == .long }
+        miniMax.windows.append(RateLimitWindow(
+            kind: .long, label: "本周", usedPercentage: 0, resetsAt: nil,
+            durationMinutes: 10_080, isUnlimited: true
+        ))
         for (name, scheme) in [("light", ColorScheme.light), ("dark", ColorScheme.dark)] {
             let content = VStack(spacing: 14) {
                 HStack {
@@ -112,6 +134,7 @@ final class PresentationTests: XCTestCase {
                 }
                 ProviderCard(snapshot: snapshot(), showsDragHandle: true)
                 ProviderCard(snapshot: snapshot(.claudeCode, fiveHour: 82, weekly: 45), showsDragHandle: true)
+                ProviderCard(snapshot: miniMax, showsDragHandle: true)
                 HStack(spacing: 20) {
                     ForEach([0.0, 50.0, 100.0], id: \.self) { usage in
                         UsageRing(provider: .codex, window: self.snapshot(fiveHour: usage).fiveHourWindow(), size: 38)

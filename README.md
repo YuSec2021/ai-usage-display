@@ -72,7 +72,7 @@ Kimi Code 的本地 Token 无需安装额外集成。应用会读取 `$KIMI_CODE
 如需显示 Kimi Code 的 5 小时与每周额度，请在“设置 → 集成 → Kimi Code”中填写从 Kimi Code 控制台获取的 API Key。Key 只保存在 macOS 钥匙串中，应用使用它直接请求 `https://api.kimi.com/coding/v1/usages`；不会发送到开发者服务器。也可在开发环境通过 `KIMI_API_KEY` 环境变量提供。
 
 MiniMax 只读取 MiniMax Desktop Chromium HTTP 缓存目录
-`~/Library/Application Support/MiniMax/Cache/Cache_Data` 中官方订阅额度接口的最近一次完整响应。应用选择 `model_name == "general"` 的套餐记录，展示 5 小时与本周已用百分比及重置时间。该缓存仍是 MiniMax 用量卡片的唯一事实源；应用不使用 Claude Code 会话推算 MiniMax 用量，也不读取 API 日志、Cookie 或对话内容。MiniMax Desktop 当前没有提供可用于每日汇总的历史 Token 数据，因此 MiniMax 不出现在 Token 历史图表中。
+`~/Library/Application Support/MiniMax/Cache/Cache_Data` 中官方订阅额度接口的最近一次完整响应。应用选择 `model_name == "general"` 的套餐记录，兼容新版 Brotli 压缩、`"24%"` 形式的已用百分比与旧版明文剩余百分比，展示 5 小时用量、周额度及重置时间。周额度无限制时直接显示“无限制”，不当作 0% 的有限额度；缓存正写入或损坏时保留并标记上次有效样本。刷新会重新读取此缓存；MiniMax Desktop 尚未写入新响应时，请先打开 MiniMax Code 的额度面板。已过期短窗口不会继续显示为当前用量。该缓存仍是 MiniMax 用量卡片的唯一事实源；应用不使用 Claude Code 会话推算 MiniMax 用量，也不读取 API 日志、Cookie 或对话内容。MiniMax Desktop 当前没有提供可用于每日汇总的历史 Token 数据，因此 MiniMax 不出现在 Token 历史图表中。
 
 可以在“设置 → 集成 → MiniMax”中选择中国大陆或海外区域并配置 API Key。Key 只保存在 macOS 钥匙串中，应用通过所选区域的 MiniMax 官方模型列表接口验证授权，不会发起内容生成请求。中国大陆使用 `https://api.minimaxi.com/v1/models`，海外使用 `https://api.minimax.io/v1/models`；也可在开发环境通过 `MINIMAX_API_KEY` 提供。授权机制本身不提供历史 Token 汇总，MiniMax Token 显示仍需后续接入可靠的请求用量数据源。
 

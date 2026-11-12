@@ -52,7 +52,9 @@ final class ProviderTests: XCTestCase {
         try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
         let now = Date()
         try codexLine(
-            timestamp: ISO8601DateFormatter().string(from: now.addingTimeInterval(-3_600)),
+            // The quota is expired independently of when its token event was
+            // recorded; keep today's token fixture stable across local midnight.
+            timestamp: ISO8601DateFormatter().string(from: now),
             input: 160, cached: 30, output: 25, shortPercent: 83,
             reset: now.addingTimeInterval(-60).timeIntervalSince1970
         ).write(to: sessions.appendingPathComponent("old.jsonl"), atomically: true, encoding: .utf8)

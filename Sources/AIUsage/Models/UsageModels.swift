@@ -153,6 +153,7 @@ struct RateLimitWindow: Codable, Equatable, Sendable, Identifiable {
     let resetsAt: Date?
     let durationMinutes: Int?
     let resetTimePrecision: ResetTimePrecision
+    let isUnlimited: Bool
 
     var id: String { "\(kind.rawValue)-\(label)" }
 
@@ -162,7 +163,8 @@ struct RateLimitWindow: Codable, Equatable, Sendable, Identifiable {
         usedPercentage: Double,
         resetsAt: Date?,
         durationMinutes: Int? = nil,
-        resetTimePrecision: ResetTimePrecision = .exact
+        resetTimePrecision: ResetTimePrecision = .exact,
+        isUnlimited: Bool = false
     ) {
         self.kind = kind
         self.label = label
@@ -170,6 +172,24 @@ struct RateLimitWindow: Codable, Equatable, Sendable, Identifiable {
         self.resetsAt = resetsAt
         self.durationMinutes = durationMinutes
         self.resetTimePrecision = resetTimePrecision
+        self.isUnlimited = isUnlimited
+    }
+
+    enum CodingKeys: String, CodingKey {
+        case kind, label, usedPercentage, resetsAt, durationMinutes, resetTimePrecision, isUnlimited
+    }
+
+    init(from decoder: Decoder) throws {
+        let values = try decoder.container(keyedBy: CodingKeys.self)
+        self.init(
+            kind: try values.decode(WindowKind.self, forKey: .kind),
+            label: try values.decode(String.self, forKey: .label),
+            usedPercentage: try values.decode(Double.self, forKey: .usedPercentage),
+            resetsAt: try values.decodeIfPresent(Date.self, forKey: .resetsAt),
+            durationMinutes: try values.decodeIfPresent(Int.self, forKey: .durationMinutes),
+            resetTimePrecision: try values.decodeIfPresent(ResetTimePrecision.self, forKey: .resetTimePrecision) ?? .exact,
+            isUnlimited: try values.decodeIfPresent(Bool.self, forKey: .isUnlimited) ?? false
+        )
     }
 }
 
@@ -268,6 +288,7 @@ struct UsageSnapshot: Equatable, Sendable, Identifiable {
 
     func fiveHourStatusDescription(at date: Date = Date()) -> String {
         if let window = fiveHourWindow(at: date) {
+            if window.isUnlimited { return L10n.text("无限制", "Unlimited") }
             return UsageFormatting.resetDescription(window.resetsAt)
         }
         if windows.contains(where: {
