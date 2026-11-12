@@ -88,11 +88,13 @@ MiniMax 只读取 MiniMax Desktop Chromium HTTP 缓存目录
 
 ## 自动构建 Release
 
-[Release 工作流](.github/workflows/release.yml) 支持两种触发方式：推送 `vX.Y.Z` / `X.Y.Z` 版本 Tag，或在 GitHub「Actions → Release → Run workflow」中填写一个已有版本 Tag。Tag 对应的源码须包含当前 Make 验证入口与打包脚本；手动构建明确检出 `refs/tags/<tag>`。
+[Automatic release 工作流](.github/workflows/auto-release.yml) 在代码合入或推送到 `main` 后自动执行：补丁版本与构建号各加一，同步 Xcode 工程、README 和发布记录，提交版本后创建 `vX.Y.Z` Tag，再调用 [Release 工作流](.github/workflows/release.yml) 构建并发布。开发分支不用手动升版；例如 `1.2.1 (5)` 会自动变为 `1.2.2 (6)`。
 
 工作流会校验 Tag 与项目版本、运行测试、构建含 Apple Silicon/Intel 两种架构的通用 DMG、验证临时签名和 SHA-256，然后上传 Actions Artifact，并为该 Tag 创建或更新 GitHub Release，附上 `.dmg` 和 `.dmg.sha256`。构建或验证失败时不会执行发布；重跑同一 Tag 会更新其附件。
 
-创建 Tag 前，先递增 `project.yml` 中的版本和构建号，运行 `make generate`，同步版本说明与日志并完成验证，再提交和推送版本 Tag。工作流使用内置 `GITHUB_TOKEN`，无需额外 PAT 或 Apple 签名密钥；产物仍为临时签名、未公证版本，发布说明会明确标注。
+流程使用内置 `GITHUB_TOKEN`，通过 `workflow_call` 显式衔接构建，不依赖机器人推送 Tag 触发新事件，也不会循环升版。版本提交与 Tag 原子推送，不覆盖新提交或已有 Tag。若构建失败，可在「Actions → Automatic release → Run workflow」重试；main 仍指向已标记的版本提交时，会复用同一版本。
+
+仍保留推送版本 Tag 和「Actions → Release → Run workflow」指定已有 Tag 的单独重建入口，明确检出 `refs/tags/<tag>`。无需额外 PAT 或 Apple 签名密钥；产物仍为临时签名、未公证版本，发布说明会明确标注。
 
 ## 隐私原则
 

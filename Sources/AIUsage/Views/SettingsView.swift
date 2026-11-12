@@ -105,7 +105,7 @@ struct SettingsView: View {
                         destination: URL(string: "https://github.com/YuSec2021/ai-usage-display/blob/main/docs/changelog/README.md")!
                     )
                     Link(
-                        L10n.text("下载最新版本", "Download latest release"),
+                        L10n.text("下载最新安装包", "Download latest installer"),
                         destination: URL(string: "https://github.com/YuSec2021/ai-usage-display/releases/latest")!
                     )
                 }

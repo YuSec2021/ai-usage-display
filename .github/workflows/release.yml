@@ -11,6 +11,11 @@ on:
         description: "要构建和发布的已有版本 Tag，例如 v1.2.2"
         required: true
         type: string
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 permissions:
   contents: read

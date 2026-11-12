@@ -44,7 +44,7 @@
 
 `.github/workflows/pr-check.yml` 在 PR 中分别使用 Apple Silicon 和 Intel runner 执行 `make verify`，包括与 PR 基准的流程检查；任务限时 30 分钟，新提交会取消同一 PR 的旧任务。Tag 版本检查已整合到 `.github/workflows/release.yml`，保留构建前后门禁并自动打包。CI 工作流须推送到 GitHub 后才能验证运行结果。
 
-普通开发更新保留当前版本号。准备发布时才递增 `project.yml` 的 `MARKETING_VERSION` 和 `CURRENT_PROJECT_VERSION`，重新生成工程，更新 README、About 与发布日志，再执行下文发布步骤。此流程不自动提交、推送、打 Tag 或发布 Release。
+开发分支保留当前版本号。按用户授权，合入 `main` 后由 `auto-release.yml` 自动递增补丁版本与构建号，更新版本、生成工程、README、根目录摘要和编号发布记录，原子推送机器人版本提交及 Tag，然后调用 Release。About 从 Info.plist 读取版本，无需机器人反复修改 UI 源码。此自动流程不替换已安装应用。
 
 ## 1. 技术选择
 
@@ -324,15 +324,27 @@ integration.claude
 ./scripts/build-direct-release.sh
 ```
 
-每次创建版本 Tag 前，必须同步更新 `project.yml` 中的
-`MARKETING_VERSION` 和 `CURRENT_PROJECT_VERSION`，并确认设置窗口“关于”页显示新版本。
-可在打 Tag 前运行：
+main 合入后会自动同步 `project.yml` 的 `MARKETING_VERSION`、`CURRENT_PROJECT_VERSION`、
+生成的 Xcode 工程、README 和发布日志，再创建版本 Tag。日常开发不要手动升版；可随时运行版本来源检查：
 
 ```bash
-./scripts/verify-release-version.sh 1.2.1
+make release-check
 ```
 
-Tag 推送后，`.github/workflows/release.yml` 会再次检查 Tag、项目配置和“关于”页的版本来源，
+`.github/workflows/auto-release.yml` 监听 main 的 push（包括 PR 合并），串行执行版本准备。
+版本脚本要求干净工作区，以当前配置和已有正式版本 Tag 的最大值递增补丁号，构建号加一；
+不会将预发布 Tag 当作正式版本。Unreleased 摘要归档为新版本，并生成下一条编号发布记录。
+如果 HEAD 已带有匹配配置的版本 Tag，则复用该 Tag，重跑不会额外升版。
+
+版本提交与 Tag 通过 `git push --atomic` 一次推送，拒绝非快进与 Tag 冲突，不强制覆盖。
+若准备期间 main 又有新提交导致失败，可重跑 Automatic release，基于最新 main 重新准备。
+使用内置 GITHUB_TOKEN 的推送不会触发普通 push 工作流，因此通过 `workflow_call` 显式调用 Release，
+无需额外 PAT，也不依赖新增 push 事件。版本准备与发布任务分别授予所需的 `contents: write`；
+若分支保护阻止机器人提交，流程会明确失败，不修改保护配置。
+参考 [GitHub 事件触发说明](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
+和[复用工作流](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)。
+
+自动调用、Tag 推送或手动重建时，`.github/workflows/release.yml` 会再次检查 Tag、项目配置和“关于”页的版本来源，
 运行 `make verify`，再调用原有打包脚本构建 Release，检查 App 的 `CFBundleShortVersionString`、
 双架构及临时签名。原来的 `verify-release-tag.yml` 已合并到该流程，避免重复构建。
 任一版本不一致或测试失败时，依赖构建结果的发布任务不会执行。
