@@ -4,6 +4,7 @@
 
 ## 最新更新
 
+- [007：main 自动升版并调用 Release](007-auto-main-release.md)：main 更新后自动增加补丁号与构建号，同步版本记录并原子推送 Tag，再复用 Release 构建和发布；无需额外 Token。
 - [006：原生预览导出改为本机显式启用](006-local-preview-export.md)：避免 Intel 托管 runner 的虚拟 GPU 触发 Metal 崩溃，CI 继续执行全部逻辑与菜单圆环图像测试。
 - [005：自动构建通用 Release 安装包](005-automated-release-build.md)：Tag 或手动触发版本校验、测试、通用 DMG 构建及 GitHub Release 附件上传，整合原有 Tag 检查。
 - [004：导入 standard-dev-flow 完整技能包](004-import-standard-dev-flow.md)：从 `ai_novel_agent` 原样复制四个技能文件并提供本地入口，保留当前项目的 Git 与验证规则。
@@ -21,3 +22,4 @@
 | [004](004-import-standard-dev-flow.md) | chore | 导入 standard-dev-flow 完整技能包 | 2026-11-11 |
 | [005](005-automated-release-build.md) | chore | 自动构建通用 Release 安装包 | 2026-11-11 |
 | [006](006-local-preview-export.md) | test | 原生预览导出改为本机显式启用 | 2026-11-12 |
+| [007](007-auto-main-release.md) | chore | main 自动升版并调用 Release | 2026-11-12 |

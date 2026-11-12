@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Automatically prepare a patch version and build number on main updates, synchronize release records, push the version commit and tag atomically, and call the existing Release workflow without extra credentials.
 - Make GPU-dependent preview export opt-in so Intel hosted runners can complete all quota logic and menu-ring image tests without a Metal assertion crash.
 - Add automated universal DMG releases for version tags and manual rebuilds, preserving version/test gates and uploading DMG plus SHA-256 to Actions and GitHub Releases.
 - Import the complete `standard-dev-flow` skill from `ai_novel_agent`, including Issue/design templates and agent metadata, while retaining the current project's development workflow.
