@@ -85,6 +85,14 @@ final class MiniMaxCacheTests: XCTestCase {
         embedded.append(Data(" trailing bytes".utf8))
         XCTAssertNil(MiniMaxUsageProvider.quotaResponse(from: entry(try compress(embedded))))
         XCTAssertEqual(MiniMaxUsageProvider.quotaResponse(from: embedded)?.preferredTextQuota?.intervalUsedPercentage, 24)
+        let legacyObject: [String: Any] = [
+            "base_resp": ["status_code": 0, "status_msg": "braces } { and escaped quote \" with slash \\"],
+            "model_remains": [["model_name": "general", "current_interval_remaining_percent": 76]]
+        ]
+        var legacy = Data([0x00, 0x7B, 0xFF])
+        legacy.append(try JSONSerialization.data(withJSONObject: legacyObject, options: .sortedKeys))
+        legacy.append(Data([0xFF, 0x00]))
+        XCTAssertEqual(MiniMaxUsageProvider.quotaResponse(from: legacy)?.preferredTextQuota?.intervalUsedPercentage, 24)
     }
 
     func testRefreshReadsChangedFileAndRetainsSampleDuringPartialWrite() async throws {

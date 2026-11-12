@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Share ISO date parsing across Codex, Claude and Kimi without cross-provider utility dependencies, preserving offsets, fractional seconds and failure fallbacks. (#8)
+
 - Share Claude quota reset inference while preserving each window’s zero and negative-boundary policy and expiry protection. (#7)
 
 - Share incremental line I/O across providers while preserving scan and aggregation policies, bounded file snapshots, partial-line retries and rewrite recovery. (#6)
