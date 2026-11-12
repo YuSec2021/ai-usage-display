@@ -76,6 +76,17 @@ final class MiniMaxCacheTests: XCTestCase {
         XCTAssertTrue(quota.isWeeklyUnlimited)
     }
 
+    func testStandardBodyUsesJSONDecodingWithoutLegacyScanning() throws {
+        let escapedKey = response().replacing(Data("model_remains".utf8), with: Data(#"model\u005fremains"#.utf8))
+        let quota = MiniMaxUsageProvider.quotaResponse(from: entry(try compress(escapedKey)))?.preferredTextQuota
+        XCTAssertEqual(quota?.intervalUsedPercentage, 24)
+        var embedded = Data("non-json prefix ".utf8)
+        embedded.append(response())
+        embedded.append(Data(" trailing bytes".utf8))
+        XCTAssertNil(MiniMaxUsageProvider.quotaResponse(from: entry(try compress(embedded))))
+        XCTAssertEqual(MiniMaxUsageProvider.quotaResponse(from: embedded)?.preferredTextQuota?.intervalUsedPercentage, 24)
+    }
+
     func testRefreshReadsChangedFileAndRetainsSampleDuringPartialWrite() async throws {
         let root = try directory()
         let file = root.appendingPathComponent("quota_0")
