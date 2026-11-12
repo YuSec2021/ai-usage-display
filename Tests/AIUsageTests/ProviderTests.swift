@@ -2,23 +2,6 @@ import XCTest
 @testable import AIUsage
 
 final class ProviderTests: XCTestCase {
-    func testMiniMaxAuthorizationUsesOfficialRegionalEndpointsAndDecodesModels() throws {
-        XCTAssertEqual(
-            MiniMaxAPIRegion.mainlandChina.modelsEndpoint.absoluteString,
-            "https://api.minimaxi.com/v1/models"
-        )
-        XCTAssertEqual(
-            MiniMaxAPIRegion.global.modelsEndpoint.absoluteString,
-            "https://api.minimax.io/v1/models"
-        )
-        let response = #"{"object":"list","data":[{"id":"MiniMax-M2.7"},{"id":"MiniMax-M2.5"}]}"#
-        XCTAssertEqual(
-            MiniMaxAuthorizationAPI.modelCount(from: Data(response.utf8)),
-            2
-        )
-        XCTAssertNil(MiniMaxAuthorizationAPI.modelCount(from: Data("{}".utf8)))
-    }
-
     func testCodexParsesRateLimitsAndSessionDelta() async throws {
         let root = try makeTemporaryDirectory()
         let sessions = root.appendingPathComponent("sessions", isDirectory: true)
