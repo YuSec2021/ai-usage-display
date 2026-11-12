@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refresh only Claude on its file changes, share result merging, queue overlapping requests and reject results invalidated by selection changes or stopping. (#3)
+
 - Remove the unused MiniMax API-key and region authorization UI while retaining Desktop quota collection and Kimi authorization. (#9)
 
 - Fix MiniMax Desktop quota refresh by decoding Brotli cache responses and percentage strings, showing unlimited weekly quotas explicitly, and retaining marked stale samples during incomplete writes.

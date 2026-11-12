@@ -80,8 +80,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：移除 MiniMax API Key 与区域验证入口，额度仍由 Desktop 本地缓存刷新；Kimi 授权保留。",
-                            "This build: Remove the unused MiniMax API-key and region authorization UI while retaining Desktop quota collection and Kimi authorization."
+                            "本次构建：Claude 文件变化只刷新 Claude；全量刷新与定向刷新共用结果合并，并保留刷新期间的后续请求。",
+                            "This build: Refresh only Claude on its file changes, share result merging, queue overlapping requests and reject results invalidated by selection changes or stopping."
                         ))
                     }
                     .font(.callout)
