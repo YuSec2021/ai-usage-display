@@ -85,6 +85,9 @@ final class PresentationTests: XCTestCase {
 
     @MainActor
     func testRenderCardAndRingPreviewsWithIsolatedFixtures() async throws {
+        guard ProcessInfo.processInfo.environment["AI_USAGE_RENDER_PREVIEWS"] == "1" else {
+            throw XCTSkip("Preview export requires a local GPU; enable AI_USAGE_RENDER_PREVIEWS to render artifacts.")
+        }
         let output = URL(fileURLWithPath: #filePath)
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent(".build/ui-previews", isDirectory: true)
