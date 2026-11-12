@@ -500,6 +500,127 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(miniMax.snapshot.availability, .cliNotInstalled)
     }
 
+    func testClaudeExpiresCachedQuotasAndAcceptsFreshSnapshotOnRefresh() async throws {
+        let root = try makeTemporaryDirectory()
+        let snapshotURL = root.appendingPathComponent("snapshot.json")
+        let clock = MutableTestClock(date: Date(timeIntervalSince1970: Date().timeIntervalSince1970.rounded(.down)))
+        let collectedAt = clock.date
+        let shortReset = collectedAt.addingTimeInterval(3_600)
+        let longReset = collectedAt.addingTimeInterval(86_400)
+        try """
+        {"collected_at":\(collectedAt.timeIntervalSince1970),"rate_limits":{"five_hour":{"used_percentage":36,"resets_at":\(shortReset.timeIntervalSince1970)},"seven_day":{"used_percentage":19,"resets_at":\(longReset.timeIntervalSince1970)}}}
+        """.write(to: snapshotURL, atomically: true, encoding: .utf8)
+        let provider = ClaudeUsageProvider(
+            claudeDirectory: root,
+            snapshotURL: snapshotURL,
+            planUsageURL: root.appendingPathComponent("missing-desktop.json"),
+            now: { clock.date }
+        )
+
+        let initial = await provider.load()
+        XCTAssertEqual(initial.snapshot.windows.map(\.usedPercentage), [36, 19])
+        clock.date = shortReset
+        let shortExpired = await provider.load()
+        XCTAssertEqual(shortExpired.snapshot.windows.map(\.kind), [.long])
+        clock.date = longReset
+        let allExpired = await provider.load()
+        XCTAssertTrue(allExpired.snapshot.windows.isEmpty)
+        XCTAssertEqual(allExpired.snapshot.availability, .stale(lastUpdated: collectedAt))
+
+        try """
+        {"collected_at":\(clock.date.timeIntervalSince1970),"rate_limits":{"five_hour":{"used_percentage":2},"seven_day":{"used_percentage":3}}}
+        """.write(to: snapshotURL, atomically: true, encoding: .utf8)
+        let refreshed = await provider.load()
+        XCTAssertEqual(refreshed.snapshot.windows.map(\.usedPercentage), [2, 3])
+        XCTAssertTrue(refreshed.snapshot.availability.isReady)
+    }
+
+    func testClaudeExpiresDesktopQuotasWithoutKnownResetTimes() async throws {
+        let root = try makeTemporaryDirectory()
+        let planUsageURL = root.appendingPathComponent("desktop.json")
+        let now = Date()
+        let old = now.addingTimeInterval(-8 * 86_400)
+        try """
+        {"samples":[{"t":\(old.timeIntervalSince1970 * 1_000),"u":{"fh":36,"sd":19}}]}
+        """.write(to: planUsageURL, atomically: true, encoding: .utf8)
+        let result = await ClaudeUsageProvider(
+            claudeDirectory: root,
+            snapshotURL: root.appendingPathComponent("missing-snapshot.json"),
+            planUsageURL: planUsageURL,
+            now: { now }
+        ).load()
+        XCTAssertTrue(result.snapshot.windows.isEmpty)
+        XCTAssertTrue(result.snapshot.availability.isStale)
+    }
+
+    func testClaudeDoesNotReviveExpiredInferredDesktopWindow() async throws {
+        let root = try makeTemporaryDirectory()
+        let planUsageURL = root.appendingPathComponent("desktop.json")
+        let now = Date()
+        try """
+        {"samples":[
+          {"t":\(now.addingTimeInterval(-7 * 3_600).timeIntervalSince1970 * 1_000),"u":{"fh":0,"sd":0}},
+          {"t":\(now.addingTimeInterval(-6 * 3_600).timeIntervalSince1970 * 1_000),"u":{"fh":36,"sd":19}},
+          {"t":\(now.addingTimeInterval(-3_600).timeIntervalSince1970 * 1_000),"u":{"fh":36,"sd":19}}
+        ]}
+        """.write(to: planUsageURL, atomically: true, encoding: .utf8)
+        let result = await ClaudeUsageProvider(
+            claudeDirectory: root,
+            snapshotURL: root.appendingPathComponent("missing-snapshot.json"),
+            planUsageURL: planUsageURL,
+            now: { now }
+        ).load()
+        XCTAssertEqual(result.snapshot.windows.map(\.kind), [.long])
+        XCTAssertEqual(result.snapshot.windows.first?.usedPercentage, 19)
+    }
+
+    func testClaudeNewerSnapshotWithoutQuotaDoesNotHideDesktopWindows() async throws {
+        let root = try makeTemporaryDirectory()
+        let snapshotURL = root.appendingPathComponent("snapshot.json")
+        let planUsageURL = root.appendingPathComponent("desktop.json")
+        let now = Date()
+        let desktopDate = now.addingTimeInterval(-60)
+        try """
+        {"samples":[{"t":\(desktopDate.timeIntervalSince1970 * 1_000),"u":{"fh":36,"sd":19}}]}
+        """.write(to: planUsageURL, atomically: true, encoding: .utf8)
+        let provider = ClaudeUsageProvider(
+            claudeDirectory: root,
+            snapshotURL: snapshotURL,
+            planUsageURL: planUsageURL,
+            now: { now }
+        )
+        try """
+        {"collected_at":\(now.timeIntervalSince1970),"rate_limits":null}
+        """.write(to: snapshotURL, atomically: true, encoding: .utf8)
+        let noQuota = await provider.load()
+        XCTAssertEqual(noQuota.snapshot.windows.map(\.usedPercentage), [36, 19])
+        XCTAssertEqual(noQuota.snapshot.observedAt.timeIntervalSince(desktopDate), 0, accuracy: 0.001)
+
+        try """
+        {"collected_at":\(now.timeIntervalSince1970),"rate_limits":{"five_hour":{"used_percentage":40},"seven_day":{}}}
+        """.write(to: snapshotURL, atomically: true, encoding: .utf8)
+        let partial = await provider.load()
+        XCTAssertEqual(partial.snapshot.windows.map(\.usedPercentage), [40, 19])
+    }
+
+    func testClaudeShowsLocalTokensWithoutQuotaSnapshots() async throws {
+        let root = try makeTemporaryDirectory()
+        let projects = root.appendingPathComponent("projects/sample", isDirectory: true)
+        try FileManager.default.createDirectory(at: projects, withIntermediateDirectories: true)
+        let timestamp = ISO8601DateFormatter().string(from: Date())
+        try """
+        {"timestamp":"\(timestamp)","message":{"id":"m1","usage":{"input_tokens":100,"output_tokens":20}}}
+        """.write(to: projects.appendingPathComponent("session.jsonl"), atomically: true, encoding: .utf8)
+        let result = await ClaudeUsageProvider(
+            claudeDirectory: root,
+            snapshotURL: root.appendingPathComponent("missing-snapshot.json"),
+            planUsageURL: root.appendingPathComponent("missing-desktop.json")
+        ).load()
+        XCTAssertEqual(result.snapshot.todayTokens?.total, 120)
+        XCTAssertTrue(result.snapshot.windows.isEmpty)
+        XCTAssertTrue(result.snapshot.availability.isReady)
+    }
+
     func testClaudeKeepsLastRateLimitSnapshotReady() async throws {
         let claudeRoot = try makeTemporaryDirectory()
         let support = try makeTemporaryDirectory()

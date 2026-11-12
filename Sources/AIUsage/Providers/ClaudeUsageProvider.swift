@@ -39,7 +39,8 @@ actor ClaudeUsageProvider: UsageProvider {
             .flatMap { try? JSONDecoder().decode(ClaudeStatusSnapshot.self, from: $0) }
         let desktopSample = loadLatestDesktopUsage()
 
-        guard statusValue != nil || desktopSample != nil else {
+        let today = daily.first { calendar.isDate($0.date, inSameDayAs: now()) }?.tokens
+        guard statusValue != nil || desktopSample != nil || !daily.isEmpty else {
             let state: ProviderAvailability = ClaudeIntegrationManager.isInstalled
                 ? .waitingForFirstSample
                 : .integrationNotInstalled
@@ -49,47 +50,54 @@ actor ClaudeUsageProvider: UsageProvider {
         let statusObservedAt = statusValue?.collectedAt.map(Date.init(timeIntervalSince1970:))
             ?? (try? snapshotURL.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate)
             ?? .distantPast
-        let useDesktopSample = desktopSample.map { $0.observedAt > statusObservedAt } ?? false
-        let observedAt = useDesktopSample ? desktopSample!.observedAt : statusObservedAt
         var windows: [RateLimitWindow] = []
-        let fiveHour = useDesktopSample
-            ? desktopSample?.fiveHour.map {
-                ClaudeRateWindow(
-                    usedPercentage: $0,
-                    resetsAt: desktopSample?.fiveHourResetsAt?.timeIntervalSince1970
-                        ?? futureResetTimestamp(statusValue?.rateLimits?.fiveHour?.resetsAt)
-                )
+        var quotaDates: [Date] = []
+        for (kind, label, minutes, cliWindow, desktopPercentage, desktopReset) in [
+            (WindowKind.short, L10n.text("5 小时", "5 hours"), 300,
+             statusValue?.rateLimits?.fiveHour, desktopSample?.fiveHour, desktopSample?.fiveHourResetsAt),
+            (.long, L10n.text("7 天", "7 days"), 10_080,
+             statusValue?.rateLimits?.sevenDay, desktopSample?.sevenDay, desktopSample?.sevenDayResetsAt)
+        ] {
+            // Select each quota independently: a newer snapshot can omit a window.
+            var candidates: [(window: ClaudeRateWindow, date: Date)] = []
+            if let cliWindow, cliWindow.usedPercentage != nil {
+                candidates.append((cliWindow, statusObservedAt))
             }
-            : statusValue?.rateLimits?.fiveHour
-        let sevenDay = useDesktopSample
-            ? desktopSample?.sevenDay.map {
-                ClaudeRateWindow(
-                    usedPercentage: $0,
-                    resetsAt: futureResetTimestamp(statusValue?.rateLimits?.sevenDay?.resetsAt)
-                        ?? desktopSample?.sevenDayResetsAt?.timeIntervalSince1970
-                )
+            if let desktopSample, let desktopPercentage {
+                var resetTimestamp = desktopReset?.timeIntervalSince1970
+                if let cliReset = cliWindow?.resetsAt,
+                   desktopSample.observedAt.timeIntervalSince1970 < cliReset,
+                   desktopSample.observedAt.timeIntervalSince1970 >= cliReset - Double(minutes) * 60 {
+                    resetTimestamp = cliReset
+                }
+                candidates.append((ClaudeRateWindow(
+                    usedPercentage: desktopPercentage,
+                    resetsAt: resetTimestamp
+                ), desktopSample.observedAt))
             }
-            : statusValue?.rateLimits?.sevenDay
-        if let fiveHour {
+            let latest = candidates.max { $0.date < $1.date }
+            guard let latest else { continue }
+            quotaDates.append(latest.date)
+            let maximumExpiry = latest.date.addingTimeInterval(Double(minutes) * 60)
+            let expiresAt = min(
+                latest.window.resetsAt.map(Date.init(timeIntervalSince1970:)) ?? maximumExpiry,
+                maximumExpiry
+            )
+            // A refresh cannot make a quota from a previous window current again.
+            guard expiresAt > now() else { continue }
             windows.append(RateLimitWindow(
-                kind: .short,
-                label: L10n.text("5 小时", "5 hours"),
-                usedPercentage: fiveHour.usedPercentage ?? 0,
-                resetsAt: fiveHour.resetsAt.map(Date.init(timeIntervalSince1970:)),
-                durationMinutes: 300
-            ))
-        }
-        if let sevenDay {
-            windows.append(RateLimitWindow(
-                kind: .long,
-                label: L10n.text("7 天", "7 days"),
-                usedPercentage: sevenDay.usedPercentage ?? 0,
-                resetsAt: sevenDay.resetsAt.map(Date.init(timeIntervalSince1970:)),
-                durationMinutes: 10_080
+                kind: kind,
+                label: label,
+                usedPercentage: latest.window.usedPercentage ?? 0,
+                resetsAt: latest.window.resetsAt.map(Date.init(timeIntervalSince1970:)),
+                durationMinutes: minutes
             ))
         }
 
-        let today = daily.first { calendar.isDateInToday($0.date) }?.tokens
+        let observedAt = quotaDates.max() ?? max(statusObservedAt, daily.last?.date ?? .distantPast)
+        let availability: ProviderAvailability = !quotaDates.isEmpty && windows.isEmpty
+            ? .stale(lastUpdated: observedAt)
+            : .ready(lastUpdated: observedAt)
         let snapshot = UsageSnapshot(
             provider: id,
             windows: windows,
@@ -98,9 +106,7 @@ actor ClaudeUsageProvider: UsageProvider {
             todayTokens: today,
             estimatedCostUSD: statusValue?.cost?.totalCostUSD.map { Decimal($0) },
             observedAt: observedAt,
-            // Claude only updates usage while it is being called. The last
-            // valid sample remains current until the next Claude interaction.
-            availability: .ready(lastUpdated: observedAt)
+            availability: availability
         )
         return ProviderResult(snapshot: snapshot, dailyUsage: daily)
     }
@@ -138,8 +144,7 @@ actor ClaudeUsageProvider: UsageProvider {
         }
 
         guard let windowStartedAt else { return nil }
-        let reset = windowStartedAt.addingTimeInterval(5 * 60 * 60)
-        return reset > Date() ? reset : nil
+        return windowStartedAt.addingTimeInterval(5 * 60 * 60)
     }
 
     /// Claude Desktop stores weekly usage samples but not the corresponding
@@ -166,15 +171,7 @@ actor ClaudeUsageProvider: UsageProvider {
         }
 
         guard let windowStartedAt else { return nil }
-        let reset = windowStartedAt.addingTimeInterval(7 * 24 * 60 * 60)
-        return reset > Date() ? reset : nil
-    }
-
-    private func futureResetTimestamp(_ timestamp: Double?) -> Double? {
-        guard let timestamp, timestamp > Date().timeIntervalSince1970 else {
-            return nil
-        }
-        return timestamp
+        return windowStartedAt.addingTimeInterval(7 * 24 * 60 * 60)
     }
 
     private func loadDailyUsage() -> [DailyUsage] {

@@ -27,7 +27,7 @@
       buildConfiguration = "Debug"
       selectedDebuggerIdentifier = "Xcode.DebuggerFoundation.Debugger.LLDB"
       selectedLauncherIdentifier = "Xcode.DebuggerFoundation.Launcher.LLDB"
-      shouldUseLaunchSchemeArgsEnv = "YES"
+      shouldUseLaunchSchemeArgsEnv = "NO"
       onlyGenerateCoverageForSpecifiedTargets = "NO">
       <MacroExpansion>
          <BuildableReference
@@ -52,6 +52,14 @@
          </TestableReference>
       </Testables>
       <CommandLineArguments>
+         <CommandLineArgument
+            argument = "-appearance.language"
+            isEnabled = "YES">
+         </CommandLineArgument>
+         <CommandLineArgument
+            argument = "zh-Hans"
+            isEnabled = "YES">
+         </CommandLineArgument>
       </CommandLineArguments>
    </TestAction>
    <LaunchAction
@@ -74,8 +82,6 @@
             ReferencedContainer = "container:AIUsage.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"
@@ -93,8 +99,6 @@
             ReferencedContainer = "container:AIUsage.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
-      <CommandLineArguments>
-      </CommandLineArguments>
    </ProfileAction>
    <AnalyzeAction
       buildConfiguration = "Debug">

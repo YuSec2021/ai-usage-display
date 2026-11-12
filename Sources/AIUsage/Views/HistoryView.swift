@@ -206,10 +206,6 @@ private struct HistoryProviderChart: View {
         .padding(.horizontal, 16)
         .padding(.vertical, 13)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(.quaternary.opacity(0.35), in: RoundedRectangle(cornerRadius: 12))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12)
-                .stroke(.separator.opacity(0.45), lineWidth: 1)
-        }
+        .glassCard()
     }
 }

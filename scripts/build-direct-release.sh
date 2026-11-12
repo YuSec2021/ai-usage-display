@@ -11,7 +11,7 @@ dist_dir="$project_root/dist"
 app_source="$products_dir/AIUsage.app"
 app_destination="$staging_dir/AI Usage.app"
 version="$(awk '/MARKETING_VERSION:/ { print $2; exit }' "$project_root/project.yml")"
-tag_name="$(git describe --tags --exact-match HEAD 2>/dev/null || true)"
+tag_name="${1:-$(git describe --tags --exact-match HEAD 2>/dev/null || true)}"
 dmg_name="AI-Usage-$version.dmg"
 dmg_path="$dist_dir/$dmg_name"
 
@@ -35,6 +35,8 @@ xcodebuild \
     -configuration Release \
     -derivedDataPath "$build_root" \
     CODE_SIGNING_ALLOWED=NO \
+    ARCHS="arm64 x86_64" \
+    ONLY_ACTIVE_ARCH=NO \
     clean build
 
 if [[ ! -d "$app_source" ]]; then
@@ -44,6 +46,8 @@ fi
 
 echo "[4/6] 确认“关于”页面版本"
 "$script_dir/verify-release-version.sh" "${tag_name:-$version}" "$app_source"
+/usr/bin/lipo "$app_source/Contents/MacOS/AIUsage" -verify_arch arm64
+/usr/bin/lipo "$app_source/Contents/MacOS/AIUsage" -verify_arch x86_64
 
 echo "[5/6] 添加临时代码签名并创建 DMG"
 rm -rf "$staging_dir"

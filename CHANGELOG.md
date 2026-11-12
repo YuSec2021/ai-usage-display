@@ -1,5 +1,18 @@
 # Changelog
 
+## Unreleased
+
+- Make GPU-dependent preview export opt-in so Intel hosted runners can complete all quota logic and menu-ring image tests without a Metal assertion crash.
+- Add automated universal DMG releases for version tags and manual rebuilds, preserving version/test gates and uploading DMG plus SHA-256 to Actions and GitHub Releases.
+- Import the complete `standard-dev-flow` skill from `ai_novel_agent`, including Issue/design templates and agent metadata, while retaining the current project's development workflow.
+- Adopt native macOS 26 Liquid Glass with persistent background transparency, accessible material fallback, and model-logo rings for 5-hour quota usage in the menu bar and detail cards.
+- Adopt MacEverything's About/changelog update workflow, numbered change records, shared Make targets, and dual-architecture PR checks; pin the test language without changing user preferences.
+- Stop displaying expired Claude quota samples as current values after refresh, and explain how to collect a new sample.
+- Select Claude quota sources per window so newer snapshots with missing fields do not hide available limits.
+- Keep local Claude token totals visible when quota snapshots are unavailable.
+
+Detailed change records and validation: [change index](docs/changelog/README.md).
+
 ## 1.2.1 — 2026-09-26
 
 - Re-register the launch-at-login item when AI Usage runs from a new location, so macOS no longer keeps starting an outdated copy (such as an Xcode build) at login.
