@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [012：按模型定向刷新](012-targeted-provider-refresh.md)：Claude 文件变化只刷新 Claude；全量刷新与定向刷新共用结果合并，并保留刷新期间的后续请求。
+
 - [011：移除 MiniMax API 授权入口](011-remove-minimax-authorization.md)：移除 MiniMax API Key 与区域验证入口，额度仍由 Desktop 本地缓存刷新；Kimi 授权保留。
 
 - [010：修复 MiniMax 额度缓存刷新](010-minimax-cache-refresh.md)：解析新版 Brotli 与已用百分比字符串，明确周额度无限制，兼容旧明文响应并保留写入中的有效样本。
@@ -34,3 +36,4 @@
 | [009](009-codex-quota-refresh.md) | bugfix | 修复 Codex 重置后的额度缺失 | 2026-11-12 |
 | [010](010-minimax-cache-refresh.md) | bugfix | 修复 MiniMax 额度缓存刷新 | 2026-11-13 |
 | [011](011-remove-minimax-authorization.md) | refactor | 移除 MiniMax API 授权入口 | 2026-11-13 |
+| [012](012-targeted-provider-refresh.md) | refactor | 按模型定向刷新 | 2026-11-13 |

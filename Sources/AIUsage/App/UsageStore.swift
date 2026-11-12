@@ -13,6 +13,10 @@ final class UsageStore: ObservableObject {
     @Published private(set) var lastRefresh: Date?
 
     private let providers: [ProviderID: any UsageProvider]
+    private let defaults: UserDefaults
+    private let claudeModificationDate: () -> Date?
+    private var pendingProviders: Set<ProviderID> = []
+    private var refreshGeneration = 0
     private var refreshTask: Task<Void, Never>?
     private var claudeSnapshotMonitorTask: Task<Void, Never>?
     private var lastClaudeDataModificationDate: Date?
@@ -21,7 +25,17 @@ final class UsageStore: ObservableObject {
         codexProvider: any UsageProvider = CodexUsageProvider(rateLimitReader: { await CodexRateLimitClient().read() }),
         claudeProvider: any UsageProvider = ClaudeUsageProvider(),
         kimiProvider: any UsageProvider = KimiUsageProvider(),
-        miniMaxProvider: any UsageProvider = MiniMaxUsageProvider()
+        miniMaxProvider: any UsageProvider = MiniMaxUsageProvider(),
+        defaults: UserDefaults = .standard,
+        startsAutomatically: Bool = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
+        claudeModificationDate: @escaping () -> Date? = {
+            [
+                ProviderPaths.applicationSupport.appendingPathComponent("claude-snapshot.json"),
+                ProviderPaths.claudeDesktopUsageHistory
+            ].compactMap {
+                try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
+            }.max()
+        }
     ) {
         self.providers = [
             .codex: codexProvider,
@@ -29,18 +43,17 @@ final class UsageStore: ObservableObject {
             .kimiCode: kimiProvider,
             .miniMax: miniMaxProvider
         ]
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
-            migrateProviderSelectionForMiniMax()
-        }
+        self.defaults = defaults
+        self.claudeModificationDate = claudeModificationDate
         // The XCTest host also constructs the app scene. Do not scan the user's
         // real CLI history while isolated provider tests are running.
-        if ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil {
+        if startsAutomatically {
+            migrateProviderSelectionForMiniMax()
             start()
         }
     }
 
     private func migrateProviderSelectionForMiniMax() {
-        let defaults = UserDefaults.standard
         let migrationKey = "providers.selection.migrated.minimax"
         guard !defaults.bool(forKey: migrationKey) else { return }
         defer { defaults.set(true, forKey: migrationKey) }
@@ -60,11 +73,11 @@ final class UsageStore: ObservableObject {
 
     func start() {
         guard refreshTask == nil else { return }
-        lastClaudeDataModificationDate = claudeDataModificationDate
+        lastClaudeDataModificationDate = claudeModificationDate()
         refreshTask = Task { [weak self] in
             await self?.refresh()
             while !Task.isCancelled {
-                let storedInterval = UserDefaults.standard.integer(forKey: "refresh.interval")
+                let storedInterval = self?.defaults.integer(forKey: "refresh.interval") ?? 0
                 let seconds = storedInterval == 0 ? 30 : max(storedInterval, 15)
                 try? await Task.sleep(for: .seconds(seconds))
                 guard !Task.isCancelled else { break }
@@ -81,6 +94,9 @@ final class UsageStore: ObservableObject {
     }
 
     func stop() {
+        refreshGeneration += 1
+        pendingProviders.removeAll()
+        isRefreshing = false
         refreshTask?.cancel()
         refreshTask = nil
         claudeSnapshotMonitorTask?.cancel()
@@ -92,58 +108,66 @@ final class UsageStore: ObservableObject {
         start()
     }
 
-    func refresh() async {
+    func refresh(providers requested: Set<ProviderID> = Set(ProviderID.allCases)) async {
+        pendingProviders.formUnion(requested)
+        clearDeselectedProviders()
         guard !isRefreshing else { return }
         isRefreshing = true
-        let selectedProviders = ProviderID.selectedProviders(
-            from: UserDefaults.standard.string(forKey: ProviderID.selectionStorageKey)
-                ?? ProviderID.defaultSelectionRawValue
-        )
-        let activeProviders = providers.filter { selectedProviders.contains($0.key) }
+        let generation = refreshGeneration
+        defer {
+            if generation == refreshGeneration { isRefreshing = false }
+        }
 
+        while !pendingProviders.isEmpty, generation == refreshGeneration, !Task.isCancelled {
+            let active = pendingProviders.intersection(selectedProviders)
+            pendingProviders.removeAll()
+
+            await withTaskGroup(of: ProviderResult.self) { group in
+                for id in active {
+                    if let provider = providers[id] { group.addTask { await provider.load() } }
+                }
+
+                for await result in group {
+                    let id = result.snapshot.provider
+                    guard generation == refreshGeneration, !Task.isCancelled,
+                          selectedProviders.contains(id), !pendingProviders.contains(id) else { continue }
+                    apply(result)
+                }
+            }
+            if generation == refreshGeneration { clearDeselectedProviders() }
+        }
+    }
+
+    private var selectedProviders: Set<ProviderID> {
+        ProviderID.selectedProviders(from: defaults.string(forKey: ProviderID.selectionStorageKey)
+            ?? ProviderID.defaultSelectionRawValue)
+    }
+
+    private func clearDeselectedProviders() {
         for provider in ProviderID.allCases where !selectedProviders.contains(provider) {
             snapshots[provider] = .empty(provider, availability: .waitingForFirstSample)
             history.removeAll { $0.provider == provider }
         }
-
-        await withTaskGroup(of: ProviderResult.self) { group in
-            for provider in activeProviders.values {
-                group.addTask { await provider.load() }
-            }
-
-            for await result in group {
-                let provider = result.snapshot.provider
-                snapshots[provider] = result.snapshot
-                history.removeAll { $0.provider == provider }
-                history.append(contentsOf: result.dailyUsage)
-                history.sort { $0.date < $1.date }
-                lastRefresh = Date()
-            }
-        }
-        isRefreshing = false
     }
 
-    private var claudeDataModificationDate: Date? {
-        let urls = [
-            ProviderPaths.applicationSupport.appendingPathComponent("claude-snapshot.json"),
-            ProviderPaths.claudeDesktopUsageHistory
-        ]
-        return urls.compactMap {
-            try? $0.resourceValues(forKeys: [.contentModificationDateKey]).contentModificationDate
-        }.max()
+    private func apply(_ result: ProviderResult) {
+        let id = result.snapshot.provider
+        snapshots[id] = result.snapshot
+        history.removeAll { $0.provider == id }
+        history.append(contentsOf: result.dailyUsage)
+        history.sort { $0.date < $1.date }
+        lastRefresh = Date()
     }
 
-    private func refreshClaudeIfSnapshotChanged() async {
+    func refreshClaudeIfSnapshotChanged() async {
         guard !isRefreshing,
-              ProviderID.selectedProviders(
-                from: UserDefaults.standard.string(forKey: ProviderID.selectionStorageKey)
-                    ?? ProviderID.defaultSelectionRawValue
-              ).contains(.claudeCode),
-              let modifiedAt = claudeDataModificationDate,
+              selectedProviders.contains(.claudeCode),
+              let modifiedAt = claudeModificationDate(),
               modifiedAt != lastClaudeDataModificationDate else { return }
 
-        await refresh()
-        lastClaudeDataModificationDate = modifiedAt
+        let generation = refreshGeneration
+        await refresh(providers: [.claudeCode])
+        if generation == refreshGeneration { lastClaudeDataModificationDate = modifiedAt }
     }
 
     func snapshot(for provider: ProviderID) -> UsageSnapshot {
