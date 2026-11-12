@@ -1,0 +1,4 @@
+interface:
+  display_name: "标准开发流程"
+  short_description: "按 Issue 类型准备设计、根因说明和模块拆解"
+  default_prompt: "使用 $standard-dev-flow 在实施前准备这项开发任务。"

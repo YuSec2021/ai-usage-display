@@ -257,6 +257,15 @@ struct UsageSnapshot: Equatable, Sendable, Identifiable {
 
     var id: ProviderID { provider }
 
+    func fiveHourWindow(at date: Date = Date()) -> RateLimitWindow? {
+        guard availability.hasUsableData else { return nil }
+        return windows.first {
+            $0.kind == .short && $0.durationMinutes == 300
+                && $0.usedPercentage.isFinite
+                && ($0.resetsAt.map { $0 > date } ?? true)
+        }
+    }
+
     static func empty(_ provider: ProviderID, availability: ProviderAvailability) -> UsageSnapshot {
         UsageSnapshot(
             provider: provider,
@@ -320,10 +329,11 @@ private struct AppThemeModifier: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .foregroundStyle(resolvedColorScheme == .dark ? Color.white : Color.black)
+            .background { AppGlassBackground() }
+            .modifier(ClearWindowBackground())
             .environment(\.colorScheme, resolvedColorScheme)
             .preferredColorScheme(resolvedColorScheme)
-            .foregroundStyle(resolvedColorScheme == .dark ? Color.white : Color.black)
-            .background(resolvedColorScheme == .dark ? Color(red: 0.075, green: 0.075, blue: 0.085) : Color.white)
     }
 }
 
@@ -354,11 +364,26 @@ enum MenuBarDisplayMode: String, CaseIterable, Identifiable {
 
     var id: Self { self }
 
+    func displayedSnapshots(from snapshots: [UsageSnapshot]) -> [UsageSnapshot] {
+        switch self {
+        case .iconOnly:
+            return Array(snapshots.prefix(1))
+        case .bothProviders:
+            return snapshots
+        case .highestUsage:
+            let available = snapshots.filter { $0.fiveHourWindow() != nil }
+            let highest = available.max {
+                ($0.fiveHourWindow()?.usedPercentage ?? 0) < ($1.fiveHourWindow()?.usedPercentage ?? 0)
+            }
+            return highest.map { [$0] } ?? Array(snapshots.prefix(1))
+        }
+    }
+
     var title: String {
         switch self {
-        case .iconOnly: L10n.text("仅图标", "Icon only")
-        case .bothProviders: L10n.text("显示各模型", "Each model")
-        case .highestUsage: L10n.text("最高用量", "Highest usage")
+        case .iconOnly: L10n.text("仅模型图标", "Model icon only")
+        case .bothProviders: L10n.text("各模型额度圆环", "Each model's quota ring")
+        case .highestUsage: L10n.text("最高 5 小时额度圆环", "Highest 5-hour quota ring")
         }
     }
 }

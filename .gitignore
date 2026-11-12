@@ -5,3 +5,4 @@ xcuserdata/
 .DS_Store
 dist/
 tmp/
+__pycache__/

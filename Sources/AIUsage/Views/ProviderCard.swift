@@ -8,26 +8,33 @@ struct ProviderCard: View {
 
     private var accent: Color { snapshot.provider.accent }
 
+    private var fiveHourWindow: RateLimitWindow? { snapshot.fiveHourWindow() }
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            HStack(spacing: 8) {
-                Circle()
-                    .fill(snapshot.availability.isReady ? accent : Color.secondary)
-                    .frame(width: 10, height: 10)
-                Text(snapshot.provider.displayName)
-                    .font(.headline)
-                ProviderLogo(provider: snapshot.provider)
-                Spacer()
-                if !snapshot.availability.isReady {
-                    Text(snapshot.availability.message)
+        VStack(alignment: .leading, spacing: 16) {
+            HStack(spacing: 18) {
+                UsageRing(
+                    provider: snapshot.provider,
+                    window: fiveHourWindow,
+                    isStale: snapshot.availability.isStale
+                )
+                VStack(alignment: .leading, spacing: 6) {
+                    Text(snapshot.provider.displayName)
+                        .font(.title3.weight(.semibold))
+                    Text(L10n.text("5 小时已用额度", "5-hour quota used"))
+                        .font(.subheadline)
+                        .foregroundStyle(.secondary)
+                    Text(fiveHourWindow.map { UsageFormatting.resetDescription($0.resetsAt) }
+                        ?? L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable"))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
+                Spacer(minLength: 0)
                 if showsDragHandle {
                     Image(systemName: "line.3.horizontal")
                         .font(.caption.weight(.semibold))
                         .foregroundStyle(.tertiary)
-                        .frame(width: 22, height: 22)
+                        .frame(width: 22, height: 32)
                         .contentShape(Rectangle())
                         .help(L10n.text("拖动以调整显示顺序", "Drag to reorder"))
                         .accessibilityLabel(L10n.text("拖动以调整显示顺序", "Drag to reorder"))
@@ -36,9 +43,21 @@ struct ProviderCard: View {
 
             if snapshot.windows.isEmpty {
                 emptyState
-            } else {
-                ForEach(snapshot.windows) { window in
-                    RateWindowRow(window: window, accent: accent, isStale: snapshot.availability.isStale)
+            }
+            if !snapshot.availability.isReady, !snapshot.windows.isEmpty {
+                Text(snapshot.availability.message)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+            ForEach(snapshot.windows.filter { $0.kind != .short || $0.durationMinutes != 300 }) { window in
+                HStack(spacing: 10) {
+                    UsageRing(provider: snapshot.provider, window: window, size: 30, isStale: snapshot.availability.isStale)
+                    Text(window.label)
+                        .font(.callout)
+                    Spacer()
+                    Text(UsageFormatting.resetDescription(window.resetsAt, precision: window.resetTimePrecision))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
 
@@ -63,12 +82,8 @@ struct ProviderCard: View {
                 }
             }
         }
-        .padding(14)
-        .background(.background.opacity(0.45), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: 12, style: .continuous)
-                .stroke(.separator.opacity(0.65), lineWidth: 1)
-        }
+        .padding(18)
+        .glassCard()
     }
 
     private var emptyState: some View {
@@ -92,10 +107,16 @@ struct ProviderCard: View {
     }
 
     private var emptyStateMessage: String {
-        if snapshot.provider == .kimiCode, snapshot.availability.isReady {
+        if snapshot.provider == .claudeCode, snapshot.availability.isStale {
             return L10n.text(
-                "暂无额度百分比，仅统计本地 Token",
-                "Local tokens only; quota percentage unavailable"
+                "额度数据已过期，请在 Claude Code 中完成一次对话后刷新",
+                "Quota data expired. Complete a Claude Code conversation, then refresh."
+            )
+        }
+        if snapshot.provider != .miniMax, snapshot.availability.isReady {
+            return L10n.text(
+                "暂无额度数据，仅统计本地 Token",
+                "Quota unavailable; local tokens only"
             )
         }
         return snapshot.availability.message
@@ -125,54 +146,5 @@ struct ProviderLogo: View {
             .scaledToFit()
             .frame(width: size, height: size)
             .accessibilityHidden(true)
-    }
-}
-
-private struct RateWindowRow: View {
-    let window: RateLimitWindow
-    let accent: Color
-    let isStale: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 7) {
-            HStack {
-                Text(window.label)
-                    .font(.callout)
-                Spacer()
-                Text("\(isStale ? "~" : "")\(Int(window.usedPercentage.rounded()))%")
-                    .font(.callout.weight(.semibold))
-                    .foregroundStyle(usageColor)
-                    .monospacedDigit()
-            }
-
-            HStack(spacing: 10) {
-                ProgressView(value: window.usedPercentage, total: 100)
-                    .progressViewStyle(.linear)
-                    .tint(usageColor)
-                Text(resetDescription)
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-                    .frame(minWidth: 104, alignment: .trailing)
-            }
-        }
-        .accessibilityElement(children: .ignore)
-        .accessibilityLabel(L10n.text(
-            "\(window.label)额度已使用百分之\(Int(window.usedPercentage.rounded()))，\(resetDescription)",
-            "\(window.label), \(Int(window.usedPercentage.rounded())) percent used, \(resetDescription)"
-        ))
-    }
-
-    private var resetDescription: String {
-        UsageFormatting.resetDescription(
-            window.resetsAt,
-            precision: window.resetTimePrecision
-        )
-    }
-
-    private var usageColor: Color {
-        if isStale { return .secondary }
-        if window.usedPercentage >= 90 { return .red }
-        if window.usedPercentage >= 75 { return .orange }
-        return accent
     }
 }

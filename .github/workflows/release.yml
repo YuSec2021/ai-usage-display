@@ -1,0 +1,109 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]*.[0-9]*.[0-9]*"
+      - "[0-9]*.[0-9]*.[0-9]*"
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: "要构建和发布的已有版本 Tag，例如 v1.2.2"
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
+env:
+  RELEASE_TAG: ${{ inputs.tag || github.ref_name }}
+
+jobs:
+  build:
+    name: Build universal DMG
+    runs-on: macos-15
+    timeout-minutes: 30
+    steps:
+      - name: Validate requested tag
+        shell: bash
+        run: |
+          if [[ ! "$RELEASE_TAG" =~ ^v?[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "版本 Tag 必须采用 vX.Y.Z 或 X.Y.Z 格式。" >&2
+            exit 1
+          fi
+
+      - name: Checkout existing tag
+        uses: actions/checkout@v4
+        with:
+          ref: refs/tags/${{ env.RELEASE_TAG }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: '26'
+
+      - name: Verify tag and About version source
+        run: ./scripts/verify-release-version.sh "$RELEASE_TAG"
+
+      - name: Install XcodeGen
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: '1'
+        run: brew install xcodegen
+
+      - name: Generate project and run verification
+        run: |
+          make generate
+          make verify
+
+      - name: Build and verify universal release package
+        run: |
+          ./scripts/build-direct-release.sh "$RELEASE_TAG"
+          cd dist
+          shasum -a 256 -c ./*.sha256
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Usage-${{ env.RELEASE_TAG }}-universal
+          path: |
+            dist/*.dmg
+            dist/*.dmg.sha256
+          if-no-files-found: error
+
+  release:
+    name: Publish release assets
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: AI-Usage-${{ env.RELEASE_TAG }}-universal
+          path: dist
+
+      - name: Verify downloaded checksums
+        working-directory: dist
+        run: sha256sum -c ./*.sha256
+
+      - name: Publish DMG and SHA-256
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ env.RELEASE_TAG }}
+          name: AI Usage ${{ env.RELEASE_TAG }}
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+          body: |
+            适用于 Apple Silicon 与 Intel Mac 的通用版本。
+
+            此安装包使用临时代码签名，未经过 Apple 公证。
+            首次启动方法请参阅仓库 README；可使用随包 SHA-256 文件验证下载内容。
+          files: |
+            dist/*.dmg
+            dist/*.dmg.sha256

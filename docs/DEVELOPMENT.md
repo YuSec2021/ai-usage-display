@@ -1,6 +1,54 @@
 # 开发文档
 
+## 0. 标准化开发流程
+
+本项目采用 MacEverything 的项目更新约定：同步 About 说明、独立变更记录和索引，再通过统一命令验证。规则已写入根目录 [AGENTS.md](../AGENTS.md)，人工开发与编码代理均须遵循。
+
+移植来源为本机 `MacEverything` 仓库的 `46b2472`（本次读取的 HEAD）：`AGENTS.md`、`Makefile`、`.github/workflows/pr-build.yml`、`MacEverything/App/AboutView.swift`、`docs/changelog/README.md` 与记录 148。这里保留流程要求，构建和测试适配为 Swift/Xcode；运行本项目无需安装或访问 MacEverything。
+
+### 补充技能：standard-dev-flow
+
+项目内同时保存了从 `ai_novel_agent`（来源 HEAD：`1df7a8bf6ff942b3146fc04e9b08296e459f2886`）原样复制的 [standard-dev-flow](../.agents/skills/standard-dev-flow/SKILL.md)。用户提及的 `standard-dev-workflow` 在源仓库中的实际目录名是 `standard-dev-flow`；本地保留原名，可用 `$standard-dev-flow` 调用。
+
+完整目录包含四个文件：技能正文 `SKILL.md`、界面配置 `agents/openai.yaml`、[Issue 模板](../.agents/skills/standard-dev-flow/assets/issue.md) 和[模块设计模板](../.agents/skills/standard-dev-flow/assets/module-design.md)。功能/重构要求模块设计与真实复用调查，Bug 要求根因说明，维护/文档类型无需设计，调研类型以决策文档为产出；所有类型均包含模块拆解和验证计划。
+
+本次仅放入完整技能包，未复制小说项目的应用代码、Git Hook、其他技能或环境分支配置。源包保留原始的类型分支映射；当前项目的 Git、About、变更日志和 `make verify` 规则继续以根目录 `AGENTS.md` 为准，导入本身不切换 Git 流程。若后续要将源技能整套设为强制工作流，应先明确其类型分支映射与现有 `codex/` 约定的适配，不能静默混用。
+
+本次准备记录见 [导入技能的本地 Issue 草稿](issues/import-standard-dev-flow.md)。草稿未关联真实 Issue 号，未创建占位符分支，也未修改外部 Issue 系统。
+
+### 一次变更的步骤
+
+1. 查看 `git status`，阅读相关实现、调用方与测试，明确问题、修改范围和验收标准；保留已有工作区改动。需要新分支时使用 `codex/<description>`。
+2. 完成最小可用修改，给行为变更补充相关回归验证。Provider 使用临时 fixture，避免真实日志、会话内容或凭证进入测试和 Git。
+3. 同步 `SettingsView.swift` 的 About 版本说明，新增 `docs/changelog/NNN-description.md`，在其索引的“最新更新”和“变更索引”中添加链接，并更新根目录 `CHANGELOG.md` 的 `Unreleased` 摘要。
+4. 修改 `project.yml` 后执行 `make generate`，一并提交生成的 Xcode 工程与共享 scheme。测试 scheme 固定中文参数，仅作用于测试进程，避免本机语言偏好影响断言。
+5. 运行 `make verify`。它检查本次变更的 About/日志配套修改、运行流程检查器的自测与全部 Swift 测试，再核对构建出的 App 版本。不依赖手工修改 `.xctestrun` 或用户偏好。
+6. 查看最终 diff，确认 About、日志、文档和实际行为一致。交付说明列出已验证项与未验证范围；本地通过不等于 CI、UI、真实额度采集或发布验证已通过。
+
+单条变更记录须写明日期、问题与结果、实现范围、执行的验证及结果、未验证项、是否变更版本号。编号递增；发生分支编号冲突时，合并前分配新编号并修正索引链接。已有历史发布摘要保留在根目录 `CHANGELOG.md`，不批量重写成新的逐次记录。
+
+### 统一命令
+
+| 命令 | 用途 |
+| --- | --- |
+| `make generate` | 从 `project.yml` 重新生成工程（需要 XcodeGen） |
+| `make build` / `make app` | 构建当前机器架构的 Debug 应用 |
+| `make test` / `make test-all` | 运行全部 Swift 单元测试 |
+| `make check-process` | 检查未提交变更的 About/变更记录配套更新及索引链接 |
+| `make check-process BASE_REF=<ref>` | 按 `<ref>...HEAD` 检查 PR 变更；需能访问该 Git 基准 |
+| `make release-check` | 检查当前配置的版本与 About 版本来源 |
+| `make verify` | 流程检查、单元测试、构建后版本检查 |
+| `make dmg` | 调用原有 Release DMG 打包脚本，不发布或替换已安装应用 |
+
+可覆盖 `BUILD_DIR`、`CONFIGURATION` 和 `ARCH`，例如 `make build ARCH=x86_64` 做 Intel 交叉构建。只有匹配的宿主机器才能完成该架构的原生运行验证。
+
+`.github/workflows/pr-check.yml` 在 PR 中分别使用 Apple Silicon 和 Intel runner 执行 `make verify`，包括与 PR 基准的流程检查；任务限时 30 分钟，新提交会取消同一 PR 的旧任务。Tag 版本检查已整合到 `.github/workflows/release.yml`，保留构建前后门禁并自动打包。CI 工作流须推送到 GitHub 后才能验证运行结果。
+
+普通开发更新保留当前版本号。准备发布时才递增 `project.yml` 的 `MARKETING_VERSION` 和 `CURRENT_PROJECT_VERSION`，重新生成工程，更新 README、About 与发布日志，再执行下文发布步骤。此流程不自动提交、推送、打 Tag 或发布 Release。
+
 ## 1. 技术选择
+
+构建需要 Xcode 26+（包含 macOS 26 SDK）；最低运行版本仍为 macOS 13。原生 `glassEffect` 仅在 macOS 26+ 调用，旧系统使用材质回退。
 
 | 项目 | 选择 | 原因 |
 | --- | --- | --- |
@@ -241,6 +289,10 @@ sequenceDiagram
 
 ### UI 与无障碍检查
 
+- 菜单栏和卡片主圆环只使用明确的 300 分钟窗口，覆盖 0%、部分、100%、缺失、过期、仅周额度与窗口乱序。
+- 背景透明度 0–100%、偏好保存、浅/深/跟随系统，以及“减少透明度”和“减少动态效果”。
+- 模板圆环在浅深菜单栏均可辨认；悬停与 VoiceOver 保留准确百分比。
+- `PresentationTests` 在 `.build/ui-previews/` 输出原生组件的浅深色示例布局，便于检查图标、圆环与截断；该离屏预览不验证桌面背后的玻璃采样或真实滑块交互。
 - 浅色、深色和增加对比度。
 - 文字大小与中英文混排。
 - VoiceOver 顺序。
@@ -280,13 +332,27 @@ integration.claude
 ./scripts/verify-release-version.sh 1.2.1
 ```
 
-Tag 推送后，GitHub Actions 会再次检查 Tag、项目配置和“关于”页的版本来源，
-并构建 App 验证其 `CFBundleShortVersionString`。任一版本不一致时检查会失败，
-不得创建 GitHub Release。
+Tag 推送后，`.github/workflows/release.yml` 会再次检查 Tag、项目配置和“关于”页的版本来源，
+运行 `make verify`，再调用原有打包脚本构建 Release，检查 App 的 `CFBundleShortVersionString`、
+双架构及临时签名。原来的 `verify-release-tag.yml` 已合并到该流程，避免重复构建。
+任一版本不一致或测试失败时，依赖构建结果的发布任务不会执行。
+
+也可在 GitHub「Actions → Release → Run workflow」中填写已有的 `vX.Y.Z` 或 `X.Y.Z` Tag。
+输入先校验格式，再以 `refs/tags/<tag>` 检出，防止将同名分支或默认分支当作发布来源。
+该 Tag 的源码需包含当前 Makefile、版本检查和打包入口。工作流在 `macos-15` 上明确选择 Xcode 26，
+构建任务仅有仓库读取权限；只有成功构建后的发布任务获得 `contents: write`。
+
+构建产物上传为 Actions Artifact `AI-Usage-<tag>-universal`。发布任务下载并复核 SHA-256 后，
+为对应 Tag 创建或更新 GitHub Release，并附上 DMG 与 `.dmg.sha256`；相同 Tag 重跑会更新附件。
+流程使用内置 `GITHUB_TOKEN`，不需要额外 PAT。发布说明注明临时签名、未公证；远程运行结果需在实际推送 Tag 后确认。
 
 直接发布脚本也会执行同样的发布前与构建后检查，然后重新生成 Xcode 工程、
 构建 Release、添加临时代码签名、创建带“应用程序”快捷方式的 DMG，并生成
 SHA-256 校验文件。产物位于 `dist/`。
+
+脚本可接收可选版本参数，例如 `./scripts/build-direct-release.sh v1.2.2`；
+CI 显式传入触发 Tag，避免同一提交上多个 Tag 导致 `git describe` 选错版本。
+通用架构通过 `ARCHS="arm64 x86_64"` 和 `ONLY_ACTIVE_ARCH=NO` 固定，并在打包前用 `lipo` 校验。
 
 此方式不需要 Apple Team ID，但没有 Developer ID 签名和 Apple 公证。首次启动时，用户需要在 Finder 中右键应用并选择“打开”，或在“系统设置 → 隐私与安全性”中选择“仍要打开”。它适合当前直接分发、内部测试和早期版本，不应描述为“Apple 已验证”或“已公证”。
 
@@ -305,8 +371,9 @@ Developer ID 发布流程：
 
 ## 9. 开发完成检查表
 
-- [ ] Tag、`MARKETING_VERSION` 与“关于”页显示的版本完全一致。
-- [ ] `CURRENT_PROJECT_VERSION` 已递增。
+- [ ] About 说明、编号变更记录、日志索引和 `CHANGELOG.md` 摘要与实际改动一致。
+- [ ] `make verify` 通过，未验证项在变更记录和交付说明中明确列出。
+- [ ] 若为发布：Tag、`MARKETING_VERSION`、生成工程与“关于”页版本完全一致，`CURRENT_PROJECT_VERSION` 已递增。
 - [ ] 无真实用户日志进入 git。
 - [ ] fixture 已去除路径、会话 ID 和内容字段。
 - [ ] 所有 provider 均支持无数据和格式错误状态。
@@ -314,5 +381,5 @@ Developer ID 发布流程：
 - [ ] 三态主题切换、重启持久化和跟随系统行为通过测试。
 - [ ] Claude 原 status line 可恢复。
 - [ ] 重启和重复扫描不会重复计数。
-- [ ] 空闲 CPU、内存和文件句柄通过 24 小时检查。
-- [ ] 签名、公证和干净机器安装通过。
+- [ ] 若涉及资源使用：记录空闲 CPU、内存和文件句柄检查范围，24 小时检查未执行时明确说明。
+- [ ] 若为发布：完成适用的签名、公证和干净机器安装检查，未公证包如实标注。

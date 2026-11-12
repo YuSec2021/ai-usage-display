@@ -149,24 +149,4 @@ final class UsageStore: ObservableObject {
     func snapshot(for provider: ProviderID) -> UsageSnapshot {
         snapshots[provider] ?? .empty(provider, availability: .waitingForFirstSample)
     }
-
-    func highestUsage(for providers: Set<ProviderID>) -> Int? {
-        providers
-            .compactMap { snapshots[$0] }
-            .filter { $0.availability.hasUsableData }
-            .flatMap(\.windows)
-            .map { Int($0.usedPercentage.rounded()) }
-            .max()
-    }
-
-    func menuBarTitle(mode: MenuBarDisplayMode, selectedProviders: Set<ProviderID>) -> String? {
-        switch mode {
-        case .iconOnly:
-            return nil
-        case .highestUsage:
-            return highestUsage(for: selectedProviders).map { "\($0)%" }
-        case .bothProviders:
-            return nil
-        }
-    }
 }

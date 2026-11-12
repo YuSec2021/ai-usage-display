@@ -74,7 +74,7 @@ struct MenuBarView: View {
                                 )
                                 .overlay {
                                     if dropTargetProvider == provider {
-                                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        RoundedRectangle(cornerRadius: 20, style: .continuous)
                                             .stroke(provider.accent, lineWidth: 2)
                                             .allowsHitTesting(false)
                                     }
@@ -111,7 +111,7 @@ struct MenuBarView: View {
             Divider()
             footer
         }
-        .frame(width: 370, height: 610)
+        .frame(width: 390, height: 640)
         .appTheme(selectedTheme, systemColorScheme: systemColorScheme)
         .appLanguage(selectedLanguage)
     }
@@ -348,110 +348,55 @@ struct MenuBarView: View {
 
 struct MenuBarLabel: View {
     @EnvironmentObject private var store: UsageStore
-    @AppStorage("menubar.display") private var displayMode = MenuBarDisplayMode.highestUsage.rawValue
+    @AppStorage("menubar.display") private var displayMode = MenuBarDisplayMode.bothProviders.rawValue
     @AppStorage(ProviderID.selectionStorageKey) private var selectedProvidersRaw = ProviderID.defaultSelectionRawValue
     @AppStorage(ProviderID.orderStorageKey) private var providerOrderRaw = ProviderID.defaultOrderRawValue
     @AppStorage(AppLanguage.storageKey) private var languageRawValue = AppLanguage.simplifiedChinese.rawValue
 
-    private var selectedProviders: Set<ProviderID> {
-        ProviderID.selectedProviders(from: selectedProvidersRaw)
+    private var mode: MenuBarDisplayMode {
+        MenuBarDisplayMode(rawValue: displayMode) ?? .bothProviders
     }
 
-    private var menuBarProviders: [ProviderID] {
-        ProviderID.menuBarProviders(
+    private var displayedSnapshots: [UsageSnapshot] {
+        let providers = ProviderID.menuBarProviders(
             orderRawValue: providerOrderRaw,
-            selectedProviders: selectedProviders
+            selectedProviders: ProviderID.selectedProviders(from: selectedProvidersRaw)
         )
+        return mode.displayedSnapshots(from: providers.map { store.snapshot(for: $0) })
     }
 
-    private var menuBarProviderSet: Set<ProviderID> {
-        Set(menuBarProviders)
-    }
-
-    private var allModelsImage: NSImage? {
-        let font = NSFont.monospacedDigitSystemFont(ofSize: 11, weight: .regular)
-        let attributes: [NSAttributedString.Key: Any] = [
-            .font: font,
-            .foregroundColor: NSColor.black
-        ]
-        let items = menuBarProviders.compactMap { provider -> MenuBarImageItem? in
-            guard let logo = NSImage(named: NSImage.Name(provider.logoAssetName)) else { return nil }
-            let snapshot = store.snapshot(for: provider)
-            let usage = snapshot.windows.first?.usedPercentage
-            let stalePrefix = snapshot.availability.isStale ? "~" : ""
-            let text = usage.map { "\(stalePrefix)\(Int($0.rounded()))%" }
-                ?? snapshot.todayTokens.map { UsageFormatting.compactNumber($0.total) }
-                ?? "—"
-            return MenuBarImageItem(
-                logo: logo,
-                text: text,
-                textSize: (text as NSString).size(withAttributes: attributes)
-            )
-        }
-        guard !items.isEmpty else { return nil }
-
-        let iconSize: CGFloat = 13
-        let iconTextSpacing: CGFloat = 2
-        let modelSpacing: CGFloat = 7
-        let height: CGFloat = 14
-        let width = items.enumerated().reduce(CGFloat.zero) { total, item in
-            total + (item.offset == 0 ? 0 : modelSpacing)
-                + iconSize + iconTextSpacing + item.element.textSize.width
-        }
-
-        let image = NSImage(size: NSSize(width: ceil(width), height: height), flipped: false) { _ in
-            var x: CGFloat = 0
-            for (index, item) in items.enumerated() {
-                if index > 0 { x += modelSpacing }
-                item.logo.draw(
-                    in: NSRect(x: x, y: (height - iconSize) / 2, width: iconSize, height: iconSize),
-                    from: .zero,
-                    operation: .sourceOver,
-                    fraction: 1
-                )
-                x += iconSize + iconTextSpacing
-                (item.text as NSString).draw(
-                    at: NSPoint(x: x, y: (height - item.textSize.height) / 2),
-                    withAttributes: attributes
-                )
-                x += item.textSize.width
+    private var usageDescription: String {
+        guard !displayedSnapshots.isEmpty else { return L10n.text("未选择用量模型", "No usage models selected") }
+        return displayedSnapshots.map { snapshot in
+            guard let window = snapshot.fiveHourWindow() else {
+                return "\(snapshot.provider.displayName): " + L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable")
             }
-            return true
-        }
-        image.isTemplate = true
-        return image
+            return "\(snapshot.provider.displayName): " + L10n.text(
+                "5 小时已用百分之\(Int(window.usedPercentage.rounded()))，\(snapshot.availability.message)",
+                "\(Int(window.usedPercentage.rounded())) percent of 5-hour quota used. \(snapshot.availability.message)"
+            )
+        }.joined(separator: "\n")
     }
 
     var body: some View {
-        let mode = MenuBarDisplayMode(rawValue: displayMode) ?? .highestUsage
         Group {
-            if mode == .bothProviders, !menuBarProviders.isEmpty {
-                if let image = allModelsImage {
-                    Image(nsImage: image)
-                        .renderingMode(.template)
-                        .fixedSize()
-                } else {
-                    Image(systemName: "gauge.with.dots.needle.67percent")
-                }
+            if let image = MenuBarRingImage.make(snapshots: displayedSnapshots, showsProgress: mode != .iconOnly) {
+                Image(nsImage: image)
+                    .renderingMode(.template)
+                    .fixedSize()
             } else {
-                HStack(spacing: 4) {
-                    Image(systemName: "gauge.with.dots.needle.67percent")
-                    if let title = store.menuBarTitle(mode: mode, selectedProviders: menuBarProviderSet) {
-                        Text(title)
-                            .monospacedDigit()
-                    }
-                }
+                Image("ChatGPTLogo")
+                    .resizable()
+                    .renderingMode(.template)
+                    .scaledToFit()
+                    .frame(width: 18, height: 18)
             }
         }
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
         .accessibilityLabel(L10n.text("AI Usage 用量", "AI Usage"))
+        .accessibilityValue(usageDescription)
+        .help(usageDescription)
     }
-}
-
-private struct MenuBarImageItem {
-    let logo: NSImage
-    let text: String
-    let textSize: NSSize
 }
 
 private struct ProviderCardFramePreferenceKey: PreferenceKey {
