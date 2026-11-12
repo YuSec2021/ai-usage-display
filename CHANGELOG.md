@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.2 — 2026-11-12
+
 - Automatically prepare a patch version and build number on main updates, synchronize release records, push the version commit and tag atomically, and call the existing Release workflow without extra credentials.
 - Make GPU-dependent preview export opt-in so Intel hosted runners can complete all quota logic and menu-ring image tests without a Metal assertion crash.
 - Add automated universal DMG releases for version tags and manual rebuilds, preserving version/test gates and uploading DMG plus SHA-256 to Actions and GitHub Releases.
