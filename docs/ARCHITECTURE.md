@@ -208,7 +208,7 @@ MiniMax Desktop 会把订阅额度接口的响应写入 Chromium HTTP 缓存：
 ~/Library/Application Support/MiniMax/Cache/Cache_Data/*
 ```
 
-缓存文件名是 Chromium 生成的哈希值，不能依赖固定文件名。`MiniMaxUsageProvider` 扫描目录中的普通文件，根据修改时间优先处理新文件，在二进制缓存中定位完整的 JSON 对象，并且只解码以下字段：
+缓存文件名是 Chromium 生成的哈希值，不能依赖固定文件名。新版额度来自 `/backend/account/token_plan/remains_percent`：按 Chromium Simple Cache v5 头/EOF/stream size 分离响应体与头部，校验响应体 CRC32，仅对已知额度接口使用 macOS Compression 的 Brotli 解压，输出上限 1 MiB；未知编码和不完整文件不猜测解码。原有明文 JSON 继续兼容。`MiniMaxUsageProvider` 扫描目录中的普通文件，根据修改时间优先处理新文件，在二进制缓存中定位完整的 JSON 对象，并且只解码以下字段：
 
 ```text
 model_remains[].model_name
@@ -225,6 +225,8 @@ provider 选择 `model_name == "general"` 的记录作为编程/文本订阅额�
 ```text
 used = clamp(100 - remaining, 0, 100)
 ```
+
+新版 `current_interval_used_percent` / `current_weekly_used_percent` 可为 `"24%"` 或数字，直接映射为已用额度；旧 remaining 字段继续按 100 减去剩余百分比。当前 Desktop 响应的 status 3 对应截图中无限制，存入窗口的 `isUnlimited`，显示和无障碍均写明无限制，不展示虚假的有限百分比或重置时间。新字段优先于旧字段；缺失/无效字段不推算 0%。`base_resp.status_code` 非零不更新样本，同文件写入中保留原时间并标记过期；有效新响应会清除该标记。
 
 `end_time` 是 5 小时窗口重置时间，`weekly_end_time` 是本周窗口重置时间。该 Desktop 缓存是 MiniMax 的唯一事实源：不扫描 `~/.claude/projects` 或 `~/.claude-minimax`，不读取可能含凭证的 API 日志，也不通过本地 Token 或订阅计划反推额度。缓存不包含可靠的逐日 Token 历史，因此 MiniMax 不生成 `dailyUsage`，历史页也不展示 MiniMax Token 图表。
 

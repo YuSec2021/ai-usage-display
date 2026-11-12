@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Fix MiniMax Desktop quota refresh by decoding Brotli cache responses and percentage strings, showing unlimited weekly quotas explicitly, and retaining marked stale samples during incomplete writes.
+
 - Read current Codex quotas through the installed CLI’s official read-only app-server interface, retain local-log fallback with a bounded timeout, refresh when opening the panel, and explain expired windows instead of reporting missing data.
 
 ## 1.2.2 — 2026-11-12

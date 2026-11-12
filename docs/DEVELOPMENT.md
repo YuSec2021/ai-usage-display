@@ -302,6 +302,10 @@ sequenceDiagram
 - 三种主题即时切换、偏好持久化和系统外观动态变化。
 - 浅色与深色模式下的文字、进度轨道、分隔线和焦点环对比度。
 
+### MiniMax 缓存兼容回归
+
+MiniMax 只读取 Desktop 额度缓存。`MiniMaxCacheTests` 使用合成 Simple Cache v5 文件和独立编码器生成的 Brotli 样本，验证边界、CRC、解压上限、百分比字符串、无限制、旧字段兼容、同文件更新、写入中保留与错误响应。fixture 不含用户数据，测试不依赖 Homebrew 解压命令。协议参考 [Chromium 缓存格式](https://chromium.googlesource.com/chromium/src/+/refs/heads/main/net/disk_cache/simple/simple_entry_format.h) 与 [Apple COMPRESSION_BROTLI](https://developer.apple.com/documentation/compression/compression_brotli)。真实验证只输出额度白名单字段；手动刷新依赖 MiniMax Code 写入新缓存，不能使用过期窗口推算新值。
+
 ## 7. 诊断与日志
 
 使用 `Logger` 分类：

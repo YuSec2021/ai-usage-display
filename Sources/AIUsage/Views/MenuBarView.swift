@@ -372,6 +372,9 @@ struct MenuBarLabel: View {
             guard let window = snapshot.fiveHourWindow() else {
                 return "\(snapshot.provider.displayName): " + L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable")
             }
+            if window.isUnlimited {
+                return "\(snapshot.provider.displayName): " + L10n.text("5 小时无限制", "Unlimited 5-hour quota")
+            }
             return "\(snapshot.provider.displayName): " + L10n.text(
                 "5 小时已用百分之\(Int(window.usedPercentage.rounded()))，\(snapshot.availability.message)",
                 "\(Int(window.usedPercentage.rounded())) percent of 5-hour quota used. \(snapshot.availability.message)"

@@ -88,8 +88,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：Codex 通过本机 CLI 主动读取官方额度，重置后无需先发消息；离线回退本地日志，打开面板立即刷新。保留液态玻璃和自定义透明度。",
-                            "This build: Codex reads current official quotas through the installed CLI without a new conversation after reset; local logs remain the offline fallback, and opening the panel refreshes usage. Liquid Glass and custom transparency remain available."
+                            "本次构建：修复 MiniMax 压缩额度缓存与百分比字符串解析，周额度无限制单独显示；保留 Codex 官方额度主动刷新、液态玻璃和自定义透明度。",
+                            "This build: fixes MiniMax compressed quota caches and percentage strings, with explicit unlimited weekly quotas. Codex official quota refresh, Liquid Glass and custom transparency remain available."
                         ))
                     }
                     .font(.callout)

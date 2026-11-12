@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [010：修复 MiniMax 额度缓存刷新](010-minimax-cache-refresh.md)：解析新版 Brotli 与已用百分比字符串，明确周额度无限制，兼容旧明文响应并保留写入中的有效样本。
+
 - [009：修复 Codex 重置后的额度缺失](009-codex-quota-refresh.md)：主动读取官方当前额度，超时回退日志，打开面板刷新并区分已重置和无数据。
 
 - [008：发布 1.2.2](008-release-1.2.2.md)：自动补丁升版为 1.2.2（Build 6），发布结果以 Actions 为准。
@@ -28,3 +30,4 @@
 | [007](007-auto-main-release.md) | chore | main 自动升版并调用 Release | 2026-11-12 |
 | [008](008-release-1.2.2.md) | release | 发布 1.2.2 | 2026-11-12 |
 | [009](009-codex-quota-refresh.md) | bugfix | 修复 Codex 重置后的额度缺失 | 2026-11-12 |
+| [010](010-minimax-cache-refresh.md) | bugfix | 修复 MiniMax 额度缓存刷新 | 2026-11-13 |

@@ -54,7 +54,8 @@ struct ProviderCard: View {
                     Text(window.label)
                         .font(.callout)
                     Spacer()
-                    Text(UsageFormatting.resetDescription(window.resetsAt, precision: window.resetTimePrecision))
+                    Text(window.isUnlimited ? L10n.text("无限制", "Unlimited")
+                        : UsageFormatting.resetDescription(window.resetsAt, precision: window.resetTimePrecision))
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -106,6 +107,18 @@ struct ProviderCard: View {
     }
 
     private var emptyStateMessage: String {
+        if snapshot.provider == .miniMax {
+            switch snapshot.availability {
+            case .cliNotInstalled:
+                return L10n.text("未检测到 MiniMax Desktop 本地缓存", "MiniMax Desktop cache not detected")
+            case .waitingForFirstSample, .unsupportedFormat:
+                return L10n.text(
+                    "请打开 MiniMax Code 的额度面板，等待本地额度缓存更新",
+                    "Open the quota panel in MiniMax Code to update its local quota cache."
+                )
+            default: break
+            }
+        }
         if snapshot.provider == .claudeCode, snapshot.availability.isStale {
             return L10n.text(
                 "额度数据已过期，请在 Claude Code 中完成一次对话后刷新",
