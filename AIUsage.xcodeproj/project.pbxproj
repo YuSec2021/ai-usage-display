@@ -11,6 +11,7 @@
 		2224CFED8415A4E2FADF5808 /* KimiUsageAPI.swift in Sources */ = {isa = PBXBuildFile; fileRef = 28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */; };
 		238033A6545B5EFFDC48F050 /* MenuBarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AD051C307F7C3D1051C4C2C2 /* MenuBarView.swift */; };
 		2E7800353D144F77C5821D9E /* MiniMaxUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 92DE1279A39AAEF52526649C /* MiniMaxUsageProvider.swift */; };
+		3861C576A1504E6C0DC08E2A /* IncrementalLineReaderTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 15B0D8EF0AB45EC5A0B477AB /* IncrementalLineReaderTests.swift */; };
 		3AD82D3F8A9C9432A4421ECA /* UsageStoreTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F7C4F0AAABAFB505163CA91 /* UsageStoreTests.swift */; };
 		3FDEB42806A21425702FAF60 /* PresentationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 601A3EEA695F215C3FD7ADFE /* PresentationTests.swift */; };
 		40265C968D22781FD55F4B9B /* KimiUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = AAAF13F6D55521B10C52180B /* KimiUsageProvider.swift */; };
@@ -18,6 +19,7 @@
 		4DD6E709E7DF6B00D5CFBC3A /* UsageModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C6F0A9E1BF9FCB8EDB321A3 /* UsageModels.swift */; };
 		54EE7925AE44351A6CF16FEE /* CodexRateLimitClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = CCED67D9F06BDEA8FAD86DA5 /* CodexRateLimitClient.swift */; };
 		6020245016D1723565E8B981 /* KimiConnectionModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6EE29360F3DD9D9C19FC3741 /* KimiConnectionModel.swift */; };
+		66DC1AA68ADB3B651B862309 /* IncrementalLineReader.swift in Sources */ = {isa = PBXBuildFile; fileRef = DFC78E3A5C975EB78E0EAC6F /* IncrementalLineReader.swift */; };
 		70B35AD5D8A6B04E45E3FA86 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 80DE39695B9D5FB0C31751FE /* Assets.xcassets */; };
 		73B9198AEDC5BA1B751CBDF2 /* ClaudeUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0A19069E5E5624EABF7A0EB5 /* ClaudeUsageProvider.swift */; };
 		74B1365852410B5F23C9E100 /* UsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = F9170BAE8DAC8B812599F83D /* UsageProvider.swift */; };
@@ -50,6 +52,7 @@
 
 /* Begin PBXFileReference section */
 		0A19069E5E5624EABF7A0EB5 /* ClaudeUsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeUsageProvider.swift; sourceTree = "<group>"; };
+		15B0D8EF0AB45EC5A0B477AB /* IncrementalLineReaderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncrementalLineReaderTests.swift; sourceTree = "<group>"; };
 		2555313622A85A5E1B06B280 /* AIUsage.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIUsage.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiUsageAPI.swift; sourceTree = "<group>"; };
 		2A7BD1324141DE737DB83E57 /* GlassStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassStyle.swift; sourceTree = "<group>"; };
@@ -76,6 +79,7 @@
 		B660901612C9B73678D920A4 /* KimiCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiCredentialStore.swift; sourceTree = "<group>"; };
 		CCED67D9F06BDEA8FAD86DA5 /* CodexRateLimitClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexRateLimitClient.swift; sourceTree = "<group>"; };
 		CD3DF2A0D600E39C03692805 /* AIUsageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIUsageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DFC78E3A5C975EB78E0EAC6F /* IncrementalLineReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncrementalLineReader.swift; sourceTree = "<group>"; };
 		E761DB0B70E7FFD0A4E86A6E /* ProviderTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProviderTests.swift; sourceTree = "<group>"; };
 		ED0920E19EFB1829F7E82554 /* FormattingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormattingTests.swift; sourceTree = "<group>"; };
 		F9170BAE8DAC8B812599F83D /* UsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageProvider.swift; sourceTree = "<group>"; };
@@ -101,6 +105,7 @@
 			children = (
 				86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */,
 				30ADD10D6846046ADEBE111B /* Formatting.swift */,
+				DFC78E3A5C975EB78E0EAC6F /* IncrementalLineReader.swift */,
 				6EE29360F3DD9D9C19FC3741 /* KimiConnectionModel.swift */,
 				B660901612C9B73678D920A4 /* KimiCredentialStore.swift */,
 				28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */,
@@ -199,6 +204,7 @@
 			children = (
 				5C4E0E48EAF47540CD257E9C /* CodexRateLimitClientTests.swift */,
 				ED0920E19EFB1829F7E82554 /* FormattingTests.swift */,
+				15B0D8EF0AB45EC5A0B477AB /* IncrementalLineReaderTests.swift */,
 				502B75DF7AF8BAD1A0187280 /* KimiConnectionTests.swift */,
 				9199C130B382CD16346C36B7 /* MiniMaxCacheTests.swift */,
 				601A3EEA695F215C3FD7ADFE /* PresentationTests.swift */,
@@ -304,6 +310,7 @@
 			files = (
 				FB2F1D4AD21E2AB3183EF416 /* CodexRateLimitClientTests.swift in Sources */,
 				C922694AF7E4289C977CBF93 /* FormattingTests.swift in Sources */,
+				3861C576A1504E6C0DC08E2A /* IncrementalLineReaderTests.swift in Sources */,
 				AA8AB03DDCFE7F0CBDA903D8 /* KimiConnectionTests.swift in Sources */,
 				ACFD9E182BC157E7E16AB88D /* MiniMaxCacheTests.swift in Sources */,
 				3FDEB42806A21425702FAF60 /* PresentationTests.swift in Sources */,
@@ -324,6 +331,7 @@
 				CA2857314B4032CAD32128A0 /* Formatting.swift in Sources */,
 				43686134FB0DAF75F43DD554 /* GlassStyle.swift in Sources */,
 				2162F719728544AC6E0EA25E /* HistoryView.swift in Sources */,
+				66DC1AA68ADB3B651B862309 /* IncrementalLineReader.swift in Sources */,
 				6020245016D1723565E8B981 /* KimiConnectionModel.swift in Sources */,
 				BF044493D299E5128795AD0E /* KimiCredentialStore.swift in Sources */,
 				2224CFED8415A4E2FADF5808 /* KimiUsageAPI.swift in Sources */,
