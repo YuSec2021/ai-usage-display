@@ -63,6 +63,8 @@ xcodebuild -project AIUsage.xcodeproj \
 
 菜单栏和详情卡片的主圆环表示 **5 小时已用额度**，从顶部顺时针填充。没有可靠的 5 小时数据时显示虚线圆环，不将周额度或 Token 数量作为替代；详情中其他额度窗口单独标明。菜单栏原有“最高用量”偏好现在显示最高 5 小时用量的模型圆环，不再显示数字；也可选择各模型圆环或仅模型图标。准确百分比保留在悬停提示和 VoiceOver 中。
 
+Codex 的额度通过本机已登录的 `codex app-server` 官方只读接口主动读取，打开面板时也会立即刷新，重置后无需先发送消息。应用从 PATH、`/opt/homebrew/bin/codex`、`/usr/local/bin/codex` 、`~/.local/bin/codex` 和 `/Applications/ChatGPT.app` 的内置 CLI 查找可执行文件；若 CLI 缺失、未登录、接口不支持或请求超过 8 秒，则回退到本地会话日志。离线旧窗口会提示等待更新，不推算当前百分比。本地 Token 仍从会话日志统计。CLI 自行管理现有认证，AI Usage 不读取凭证文件，不创建对话或生成请求。协议见 [OpenAI 官方 App Server 文档](https://learn.chatgpt.com/docs/app-server#6-rate-limits-chatgpt)。
+
 Claude Code 的“刷新”会重新读取本地用量文件，不会主动向 Claude 请求订阅额度。完成一次 Claude Code 对话后，status line 才能写入新的额度样本。已超过重置时间的额度不会继续显示为当前值；未知重置时间的样本最多保留对应的 5 小时或 7 天窗口。缺少额度样本时，仍可显示本地 Token 统计。
 
 Kimi Code 的本地 Token 无需安装额外集成。应用会读取 `$KIMI_CODE_HOME/sessions`（默认 `~/.kimi-code/sessions`）中的 `usage.record` 用量事件，并兼容旧版 `~/.kimi/sessions` 的状态事件。安装 Kimi Desktop 后，还会从 `~/Library/Logs/kimi-desktop/main.log` 读取订阅总额度百分比和刷新日期。

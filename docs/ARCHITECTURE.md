@@ -7,6 +7,7 @@
 ```mermaid
 flowchart LR
     C["Codex JSONL"] --> CP["CodexUsageProvider"]
+    API["Codex App Server · rateLimits/read"] --> CLIENT["CodexRateLimitClient"] --> CP
     CC["Claude statusLine JSON"] --> H["本地收集器"]
     KC["Kimi wire.jsonl"] --> KP["KimiUsageProvider"]
     KD["Kimi Desktop main.log"] --> KP
@@ -120,6 +121,10 @@ enum AppTheme: String, CaseIterable, Codable, Sendable {
 通过 `@AppStorage("appearance.theme")` 保存选择。`.system` 映射为 `nil`，使 SwiftUI 继续继承 macOS 当前外观；浅色和深色分别映射为显式 `ColorScheme`。
 
 ## 3. Codex 数据流
+
+生产环境由 `UsageStore` 为 `CodexUsageProvider` 注入 `CodexRateLimitClient`。每次刷新启动一个短生命周期的 `codex app-server` stdio 子进程，完成 `initialize` / `initialized` 后仅调用 `account/rateLimits/read`。以 `rateLimitsByLimitId.codex` 为准，兼容旧单 bucket 响应，映射 usedPercent / windowDurationMins / resetsAt。请求最多 8 秒，退出、错误和格式不符返回 nil；关闭自有进程，不连接现有会话。成功时官方额度替代日志额度，失败时仍保留本地统计与额度回退。测试默认不注入真实客户端，以隔离 fixture 验证。
+
+AI Usage 不读取凭证或账户详情，不调用登录、登出、reset credit 或 thread/turn 接口。认证与官方网络请求由用户已安装的 CLI 自行管理；界面上次刷新时间使用额度实际采集时间。
 
 数据发现路径：
 

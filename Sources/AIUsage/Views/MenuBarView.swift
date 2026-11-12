@@ -114,6 +114,7 @@ struct MenuBarView: View {
         .frame(width: 390, height: 640)
         .appTheme(selectedTheme, systemColorScheme: systemColorScheme)
         .appLanguage(selectedLanguage)
+        .task { await store.refresh() }
     }
 
     private func providerDragGesture(for provider: ProviderID) -> some Gesture {

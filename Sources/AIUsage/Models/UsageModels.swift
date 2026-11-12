@@ -266,6 +266,20 @@ struct UsageSnapshot: Equatable, Sendable, Identifiable {
         }
     }
 
+    func fiveHourStatusDescription(at date: Date = Date()) -> String {
+        if let window = fiveHourWindow(at: date) {
+            return UsageFormatting.resetDescription(window.resetsAt)
+        }
+        if windows.contains(where: {
+            $0.kind == .short && $0.durationMinutes == 300 && ($0.resetsAt.map { $0 <= date } ?? false)
+        }) {
+            return provider == .codex
+                ? L10n.text("上个周期已结束，等待 Codex 更新额度", "Previous window ended; waiting for Codex quota update")
+                : L10n.text("上个周期已结束，等待更新额度", "Previous window ended; waiting for quota update")
+        }
+        return L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable")
+    }
+
     static func empty(_ provider: ProviderID, availability: ProviderAvailability) -> UsageSnapshot {
         UsageSnapshot(
             provider: provider,

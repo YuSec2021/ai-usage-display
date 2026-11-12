@@ -46,6 +46,75 @@ final class ProviderTests: XCTestCase {
         XCTAssertEqual(cachedResult.snapshot.todayTokens, result.snapshot.todayTokens)
     }
 
+    func testCodexLiveQuotaReplacesExpiredLogsAndKeepsTokenTotals() async throws {
+        let root = try makeTemporaryDirectory()
+        let sessions = root.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        let now = Date()
+        try codexLine(
+            timestamp: ISO8601DateFormatter().string(from: now.addingTimeInterval(-3_600)),
+            input: 160, cached: 30, output: 25, shortPercent: 83,
+            reset: now.addingTimeInterval(-60).timeIntervalSince1970
+        ).write(to: sessions.appendingPathComponent("old.jsonl"), atomically: true, encoding: .utf8)
+        let reset = now.addingTimeInterval(18_000).timeIntervalSince1970
+        let provider = CodexUsageProvider(rootDirectory: root, rateLimitReader: {
+            CodexRateLimits(
+                primary: CodexRateWindow(usedPercent: 0, resetsAt: reset, windowMinutes: 300),
+                secondary: CodexRateWindow(usedPercent: 29, resetsAt: reset + 86_400, windowMinutes: 10_080)
+            )
+        })
+        let result = await provider.load()
+        XCTAssertEqual(result.snapshot.fiveHourWindow()?.usedPercentage, 0)
+        XCTAssertEqual(result.snapshot.windows.last?.usedPercentage, 29)
+        XCTAssertEqual(result.snapshot.todayTokens?.total, 185)
+        XCTAssertGreaterThanOrEqual(result.snapshot.observedAt, now)
+    }
+
+    func testCodexLiveQuotaWorksWithoutAnySessionLogs() async throws {
+        let root = try makeTemporaryDirectory().appendingPathComponent("missing")
+        let provider = CodexUsageProvider(rootDirectory: root, rateLimitReader: {
+            CodexRateLimits(primary: CodexRateWindow(
+                usedPercent: 12, resetsAt: Date().addingTimeInterval(3_600).timeIntervalSince1970,
+                windowMinutes: 300
+            ), secondary: nil)
+        })
+        let result = await provider.load()
+        XCTAssertEqual(result.snapshot.fiveHourWindow()?.usedPercentage, 12)
+        XCTAssertTrue(result.snapshot.availability.isReady)
+        XCTAssertNil(result.snapshot.todayTokens)
+        XCTAssertTrue(result.dailyUsage.isEmpty)
+    }
+
+    func testCodexFailedLiveReadKeepsLogQuotaAfterTokenOnlyEvent() async throws {
+        let root = try makeTemporaryDirectory()
+        let sessions = root.appendingPathComponent("sessions")
+        try FileManager.default.createDirectory(at: sessions, withIntermediateDirectories: true)
+        let now = Date()
+        let quota = codexLine(
+            timestamp: ISO8601DateFormatter().string(from: now),
+            input: 100, cached: 20, output: 10, shortPercent: 42,
+            reset: now.addingTimeInterval(3_600).timeIntervalSince1970
+        )
+        let tokenOnly = #"{"timestamp":"\#(ISO8601DateFormatter().string(from: now.addingTimeInterval(1)))","type":"event_msg","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":160,"output_tokens":25}}}}"#
+        let file = sessions.appendingPathComponent("session.jsonl")
+        try quota.write(to: file, atomically: true, encoding: .utf8)
+        let provider = CodexUsageProvider(rootDirectory: root, rateLimitReader: { nil })
+        _ = await provider.load()
+        let handle = try FileHandle(forWritingTo: file)
+        try handle.seekToEnd()
+        try handle.write(contentsOf: Data(("\n" + tokenOnly + "\n").utf8))
+        try handle.close()
+        let result = await provider.load()
+        XCTAssertEqual(result.snapshot.fiveHourWindow()?.usedPercentage, 42)
+        XCTAssertEqual(result.snapshot.todayTokens?.total, 185)
+
+        // A newer token-only session must not erase another session's quota either.
+        try tokenOnly.write(to: sessions.appendingPathComponent("another.jsonl"), atomically: true, encoding: .utf8)
+        let anotherSession = await provider.load()
+        XCTAssertEqual(anotherSession.snapshot.fiveHourWindow()?.usedPercentage, 42)
+        XCTAssertEqual(anotherSession.snapshot.todayTokens?.total, 370)
+    }
+
     func testClaudeParsesStatusSnapshotAndTranscriptUsage() async throws {
         let claudeRoot = try makeTemporaryDirectory()
         let projects = claudeRoot.appendingPathComponent("projects/sample", isDirectory: true)
