@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [013：集中 Kimi 验证状态并拒绝旧响应](013-kimi-verification-state.md)：Kimi 授权使用明确的验证状态，更换或移除 Key 后旧响应不会恢复连接状态。
+
 - [012：按模型定向刷新](012-targeted-provider-refresh.md)：Claude 文件变化只刷新 Claude；全量刷新与定向刷新共用结果合并，并保留刷新期间的后续请求。
 
 - [011：移除 MiniMax API 授权入口](011-remove-minimax-authorization.md)：移除 MiniMax API Key 与区域验证入口，额度仍由 Desktop 本地缓存刷新；Kimi 授权保留。
@@ -37,3 +39,4 @@
 | [010](010-minimax-cache-refresh.md) | bugfix | 修复 MiniMax 额度缓存刷新 | 2026-11-13 |
 | [011](011-remove-minimax-authorization.md) | refactor | 移除 MiniMax API 授权入口 | 2026-11-13 |
 | [012](012-targeted-provider-refresh.md) | refactor | 按模型定向刷新 | 2026-11-13 |
+| [013](013-kimi-verification-state.md) | bugfix | 集中 Kimi 验证状态并拒绝旧响应 | 2026-11-13 |

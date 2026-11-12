@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Centralize Kimi verification state and reject stale responses after key changes, removal or a newer verification request. (#4)
+
 - Refresh only Claude on its file changes, share result merging, queue overlapping requests and reject results invalidated by selection changes or stopping. (#3)
 
 - Remove the unused MiniMax API-key and region authorization UI while retaining Desktop quota collection and Kimi authorization. (#9)

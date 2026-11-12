@@ -3,8 +3,8 @@ import Foundation
 enum KimiUsageAPI {
     static let endpoint = URL(string: "https://api.kimi.com/coding/v1/usages")!
 
-    static func load() async -> KimiRateLimitSample? {
-        guard let apiKey = KimiCredentialStore.apiKey else { return nil }
+    static func load(apiKey: String? = KimiCredentialStore.apiKey) async -> KimiRateLimitSample? {
+        guard let apiKey else { return nil }
         var request = URLRequest(url: endpoint)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")

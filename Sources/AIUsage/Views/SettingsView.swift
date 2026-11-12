@@ -14,9 +14,7 @@ struct SettingsView: View {
     @State private var integrationInstalled = ClaudeIntegrationManager.isInstalled
     @State private var operationMessage: String?
     @State private var kimiAPIKeyDraft = ""
-    @State private var kimiAPIKeyConfigured = false
-    @State private var kimiAPIKeyVerified = false
-    @State private var kimiOperationMessage: String?
+    @StateObject private var kimiConnection = KimiConnectionModel()
 
 
     private var selectedTheme: AppTheme {
@@ -80,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：Claude 文件变化只刷新 Claude；全量刷新与定向刷新共用结果合并，并保留刷新期间的后续请求。",
-                            "This build: Refresh only Claude on its file changes, share result merging, queue overlapping requests and reject results invalidated by selection changes or stopping."
+                            "本次构建：Kimi 授权使用明确的验证状态，更换或移除 Key 后旧响应不会恢复连接状态。",
+                            "This build: Centralize Kimi verification state and reject stale responses after key changes, removal or a newer verification request."
                         ))
                     }
                     .font(.callout)
@@ -113,9 +111,9 @@ struct SettingsView: View {
         .appTheme(selectedTheme, systemColorScheme: systemColorScheme)
         .appLanguage(selectedLanguage)
         .onAppear {
-            kimiAPIKeyConfigured = KimiCredentialStore.isConfigured
-            if kimiAPIKeyConfigured {
-                Task { await verifyKimiConnection(showSuccessMessage: false) }
+            kimiConnection.synchronize()
+            if kimiConnection.isConfigured {
+                Task { await kimiConnection.verify() }
             }
 
         }
@@ -317,7 +315,7 @@ struct SettingsView: View {
 
                         HStack(spacing: 8) {
                             SecureField(
-                                kimiAPIKeyConfigured
+                                kimiConnection.isConfigured
                                     ? L10n.text("API Key 已保存", "API Key saved")
                                     : "Kimi Code API Key",
                                 text: $kimiAPIKeyDraft
@@ -333,7 +331,7 @@ struct SettingsView: View {
                                     .isEmpty
                             )
 
-                            if kimiAPIKeyConfigured {
+                            if kimiConnection.isConfigured {
                                 Button(
                                     L10n.text("移除", "Remove"),
                                     role: .destructive
@@ -345,13 +343,13 @@ struct SettingsView: View {
 
                         HStack {
                             Label(
-                                kimiConnectionStatus,
-                                systemImage: kimiAPIKeyVerified
+                                kimiConnection.statusDescription,
+                                systemImage: kimiConnection.isVerified
                                     ? "checkmark.shield.fill"
-                                    : (kimiAPIKeyConfigured ? "clock.badge.questionmark" : "key")
+                                    : (kimiConnection.isConfigured ? "clock.badge.questionmark" : "key")
                             )
                             .foregroundStyle(
-                                kimiAPIKeyVerified ? Color.green : Color.secondary
+                                kimiConnection.isVerified ? Color.green : Color.secondary
                             )
                             Spacer()
                             Link(
@@ -369,8 +367,8 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                             .fixedSize(horizontal: false, vertical: true)
 
-                        if let kimiOperationMessage {
-                            Text(kimiOperationMessage)
+                        if let message = kimiConnection.message {
+                            Text(message)
                                 .font(.caption)
                                 .foregroundStyle(.secondary)
                         }
@@ -481,72 +479,18 @@ struct SettingsView: View {
     }
 
     private func saveKimiAPIKey() {
-        do {
-            try KimiCredentialStore.save(kimiAPIKeyDraft)
-            kimiAPIKeyDraft = ""
-            kimiAPIKeyConfigured = true
-            kimiAPIKeyVerified = false
-            kimiOperationMessage = L10n.text(
-                "API Key 已安全保存，正在验证。",
-                "API Key saved securely. Verifying."
-            )
-            Task {
-                await verifyKimiConnection(showSuccessMessage: true)
-                await store.refresh()
+        guard kimiConnection.save(kimiAPIKeyDraft) else { return }
+        kimiAPIKeyDraft = ""
+        Task {
+            if await kimiConnection.verify(showSuccessMessage: true) {
+                await store.refresh(providers: [.kimiCode])
             }
-        } catch {
-            kimiOperationMessage = error.localizedDescription
         }
     }
 
     private func removeKimiAPIKey() {
-        do {
-            try KimiCredentialStore.remove()
-            kimiAPIKeyDraft = ""
-            kimiAPIKeyConfigured = false
-            kimiAPIKeyVerified = false
-            kimiOperationMessage = L10n.text(
-                "API Key 已从 macOS 钥匙串移除。",
-                "API Key removed from macOS Keychain."
-            )
-            Task { await store.refresh() }
-        } catch {
-            kimiOperationMessage = error.localizedDescription
-        }
-    }
-
-    private var kimiConnectionStatus: String {
-        if kimiAPIKeyVerified {
-            return L10n.text(
-                "5 小时与每周额度已连接",
-                "5-hour and weekly limits connected"
-            )
-        }
-        if kimiAPIKeyConfigured {
-            return L10n.text("API Key 已配置，等待验证", "API Key configured; awaiting verification")
-        }
-        return L10n.text(
-            "配置 API Key 后显示 5 小时与每周额度",
-            "Add an API Key to show 5-hour and weekly limits"
-        )
-    }
-
-    @MainActor
-    private func verifyKimiConnection(showSuccessMessage: Bool) async {
-        let sample = await KimiUsageAPI.load()
-        kimiAPIKeyVerified = sample != nil
-        if sample != nil {
-            if showSuccessMessage {
-                kimiOperationMessage = L10n.text(
-                    "连接成功，Kimi 额度已更新。",
-                    "Connected. Kimi limits updated."
-                )
-            }
-        } else {
-            kimiOperationMessage = L10n.text(
-                "无法验证 API Key，请检查 Key 或网络后重试。",
-                "Unable to verify the API Key. Check the key or network and try again."
-            )
-        }
+        guard kimiConnection.remove() else { return }
+        kimiAPIKeyDraft = ""
+        Task { await store.refresh(providers: [.kimiCode]) }
     }
 }
