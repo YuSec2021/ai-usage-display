@@ -272,59 +272,21 @@ actor ClaudeUsageProvider: UsageProvider {
         previousState: ClaudeTranscriptFileState?
     ) -> ClaudeTranscriptFileState {
         var state = previousState ?? ClaudeTranscriptFileState()
-        let wasRewritten = metadata.size < state.offset
-            || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt)
-        if wasRewritten { state = ClaudeTranscriptFileState() }
-
-        let initialRead = state.offset == 0
-        guard let handle = try? FileHandle(forReadingFrom: url) else {
+        if metadata.size < state.cursor.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt) {
+            state = ClaudeTranscriptFileState()
+        }
+        do {
+            let cursor = try IncrementalLineReader.read(
+                from: url, size: metadata.size, cursor: state.cursor,
+                initialOffset: { try initialTranscriptOffset(handle: $0, size: metadata.size, cutoff: cutoff) }
+            ) { consumeTranscript($0, cutoff: cutoff, state: &state) }
+            state.cursor = cursor
             state.size = metadata.size
             state.modifiedAt = metadata.modifiedAt
             return state
-        }
-        defer { try? handle.close() }
-
-        do {
-            let startOffset = initialRead
-                ? try initialTranscriptOffset(
-                    handle: handle,
-                    size: metadata.size,
-                    cutoff: cutoff
-                )
-                : state.offset
-            guard metadata.size >= startOffset else { return state }
-            try handle.seek(toOffset: startOffset)
-            var incoming = try handle.readToEnd() ?? Data()
-            // A tail read normally begins halfway through a JSON line. Drop
-            // only that partial record; subsequent refreshes start at offset.
-            if initialRead, startOffset > 0, let newline = incoming.firstIndex(of: 0x0A) {
-                incoming.removeSubrange(incoming.startIndex...newline)
-            }
-
-            var combined = state.remainder
-            combined.append(incoming)
-            var lines = combined.split(separator: 0x0A, omittingEmptySubsequences: false)
-            var finalLine: Data?
-            if combined.last != 0x0A, let final = lines.popLast() {
-                finalLine = Data(final)
-            }
-            state.remainder = Data()
-
-            for line in lines where !line.isEmpty {
-                _ = consumeTranscript(Data(line), cutoff: cutoff, state: &state)
-            }
-            if let finalLine, !finalLine.isEmpty,
-               !consumeTranscript(finalLine, cutoff: cutoff, state: &state) {
-                state.remainder = finalLine
-            }
-            state.offset = metadata.size
         } catch {
-            // Retain the last valid state and retry the unread bytes later.
+            return previousState ?? state
         }
-
-        state.size = metadata.size
-        state.modifiedAt = metadata.modifiedAt
-        return state
     }
 
     /// Claude transcripts are chronological JSONL files. Scan backwards until
@@ -415,8 +377,7 @@ private struct ClaudeDatedUsage {
 private struct ClaudeTranscriptFileState {
     var size: UInt64 = 0
     var modifiedAt: Date = .distantPast
-    var offset: UInt64 = 0
-    var remainder = Data()
+    var cursor = IncrementalLineReader.Cursor()
     var messages: [String: ClaudeDatedUsage] = [:]
     var anonymousUsage: [Date: TokenUsage] = [:]
 }

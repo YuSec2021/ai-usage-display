@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：MiniMax 标准缓存响应直接解码 JSON，旧格式扫描独立回退，保留缓存和额度保护。",
-                            "This build: Decode complete MiniMax cache response bodies directly as JSON and isolate the legacy embedded-JSON fallback."
+                            "本次构建：复用日志增量行读取，保留各模型的初读与去重策略；失败会重试，尺寸快照外的追加留到下轮。",
+                            "This build: Share incremental line I/O across providers while preserving scan and aggregation policies, bounded file snapshots, partial-line retries and rewrite recovery."
                         ))
                     }
                     .font(.callout)

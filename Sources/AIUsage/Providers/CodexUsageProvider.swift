@@ -71,55 +71,22 @@ actor CodexUsageProvider: UsageProvider {
 
     private func parseChanges(in url: URL, metadata: FileMetadata, previousState: FileState?) -> FileState {
         var state = previousState ?? FileState()
-        let wasRewritten = metadata.size < state.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt)
-        if wasRewritten { state = FileState() }
-
-        let initialRead = state.offset == 0
-        let tailBytes = UInt64(initialTailBytes)
-        let startOffset = initialRead
-            ? (metadata.size > tailBytes ? metadata.size - tailBytes : 0)
-            : state.offset
-        guard metadata.size >= startOffset,
-              let handle = try? FileHandle(forReadingFrom: url) else {
+        if metadata.size < state.cursor.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt) {
+            state = FileState()
+        }
+        do {
+            let cursor = try IncrementalLineReader.read(
+                from: url, size: metadata.size, cursor: state.cursor,
+                initialOffset: { _ in metadata.size > UInt64(initialTailBytes) ? metadata.size - UInt64(initialTailBytes) : 0 }
+            ) { consume($0, metadata: metadata, state: &state) }
+            state.cursor = cursor
             state.size = metadata.size
             state.modifiedAt = metadata.modifiedAt
             return state
-        }
-        defer { try? handle.close() }
-
-        do {
-            try handle.seek(toOffset: startOffset)
-            var incoming = try handle.readToEnd() ?? Data()
-            if initialRead, startOffset > 0, let newline = incoming.firstIndex(of: 0x0A) {
-                incoming.removeSubrange(incoming.startIndex...newline)
-            }
-
-            var combined = state.remainder
-            combined.append(incoming)
-            var lines = combined.split(separator: 0x0A, omittingEmptySubsequences: false)
-            var finalLine: Data?
-            if combined.last != 0x0A, let final = lines.popLast() {
-                finalLine = Data(final)
-            }
-            state.remainder = Data()
-
-            for rawLine in lines where !rawLine.isEmpty {
-                _ = consume(Data(rawLine), metadata: metadata, state: &state)
-            }
-            if let finalLine, !finalLine.isEmpty,
-               !consume(finalLine, metadata: metadata, state: &state) {
-                // Claude/Codex can be writing while the refresh runs. Retry only an
-                // incomplete final JSON object, without rereading the whole file.
-                state.remainder = finalLine
-            }
-            state.offset = metadata.size
         } catch {
-            // Keep the last valid state and retry this file on the next refresh.
+            // Do not acknowledge failed reads; retry the same bytes next refresh.
+            return previousState ?? state
         }
-
-        state.size = metadata.size
-        state.modifiedAt = metadata.modifiedAt
-        return state
     }
 
     @discardableResult
@@ -229,8 +196,7 @@ private struct FileMetadata {
 private struct FileState {
     var size: UInt64 = 0
     var modifiedAt: Date = .distantPast
-    var offset: UInt64 = 0
-    var remainder = Data()
+    var cursor = IncrementalLineReader.Cursor()
     var previousTotal: TokenUsage?
     var dailyUsage: [Date: TokenUsage] = [:]
     var latest: LatestEvent?

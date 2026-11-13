@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Share incremental line I/O across providers while preserving scan and aggregation policies, bounded file snapshots, partial-line retries and rewrite recovery. (#6)
+
 - Decode complete MiniMax cache response bodies directly as JSON and isolate the legacy embedded-JSON fallback. (#5)
 
 - Centralize Kimi verification state and reject stale responses after key changes, removal or a newer verification request. (#4)

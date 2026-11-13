@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [015：复用增量行读取与残行处理](015-incremental-line-reader.md)：复用日志增量行读取，保留各模型的初读与去重策略；失败会重试，尺寸快照外的追加留到下轮。
+
 - [014：MiniMax 标准缓存直接解码 JSON](014-minimax-direct-json.md)：MiniMax 标准缓存响应直接解码 JSON，旧格式扫描独立回退，保留缓存和额度保护。
 
 - [013：集中 Kimi 验证状态并拒绝旧响应](013-kimi-verification-state.md)：Kimi 授权使用明确的验证状态，更换或移除 Key 后旧响应不会恢复连接状态。
@@ -43,3 +45,4 @@
 | [012](012-targeted-provider-refresh.md) | refactor | 按模型定向刷新 | 2026-11-13 |
 | [013](013-kimi-verification-state.md) | bugfix | 集中 Kimi 验证状态并拒绝旧响应 | 2026-11-13 |
 | [014](014-minimax-direct-json.md) | refactor | MiniMax 标准缓存直接解码 JSON | 2026-11-13 |
+| [015](015-incremental-line-reader.md) | refactor | 复用增量行读取与残行处理 | 2026-11-13 |
