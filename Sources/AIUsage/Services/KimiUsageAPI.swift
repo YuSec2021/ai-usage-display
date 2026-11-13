@@ -3,8 +3,8 @@ import Foundation
 enum KimiUsageAPI {
     static let endpoint = URL(string: "https://api.kimi.com/coding/v1/usages")!
 
-    static func load() async -> KimiRateLimitSample? {
-        guard let apiKey = KimiCredentialStore.apiKey else { return nil }
+    static func load(apiKey: String? = KimiCredentialStore.apiKey) async -> KimiRateLimitSample? {
+        guard let apiKey else { return nil }
         var request = URLRequest(url: endpoint)
         request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
         request.setValue("application/json", forHTTPHeaderField: "Accept")
@@ -54,15 +54,11 @@ enum KimiUsageAPI {
 
         return KimiRemoteWindow(
             usedPercentage: used / limit * 100,
-            resetsAt: detail.resetTime.flatMap(parseDate)
+            resetsAt: ISODateParser.parse(detail.resetTime)
         )
     }
 
-    private static func parseDate(_ value: String) -> Date? {
-        let fractional = ISO8601DateFormatter()
-        fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return fractional.date(from: value) ?? ISO8601DateFormatter().date(from: value)
-    }
+
 }
 
 struct KimiRateLimitSample: Sendable {

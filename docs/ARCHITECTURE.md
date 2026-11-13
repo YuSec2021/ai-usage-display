@@ -7,6 +7,7 @@
 ```mermaid
 flowchart LR
     C["Codex JSONL"] --> CP["CodexUsageProvider"]
+    API["Codex App Server · rateLimits/read"] --> CLIENT["CodexRateLimitClient"] --> CP
     CC["Claude statusLine JSON"] --> H["本地收集器"]
     KC["Kimi wire.jsonl"] --> KP["KimiUsageProvider"]
     KD["Kimi Desktop main.log"] --> KP
@@ -121,6 +122,12 @@ enum AppTheme: String, CaseIterable, Codable, Sendable {
 
 ## 3. Codex 数据流
 
+Codex、Claude 与 Kimi 的 ISO 时间通过 `Services/ISODateParser` 统一解析，具体 Provider 不再相互依赖日期工具。带小数秒与时区偏移继续兼容，Kimi 的数字时间分支保持独立。
+
+生产环境由 `UsageStore` 为 `CodexUsageProvider` 注入 `CodexRateLimitClient`。每次刷新启动一个短生命周期的 `codex app-server` stdio 子进程，完成 `initialize` / `initialized` 后仅调用 `account/rateLimits/read`。以 `rateLimitsByLimitId.codex` 为准，兼容旧单 bucket 响应，映射 usedPercent / windowDurationMins / resetsAt。请求最多 8 秒，退出、错误和格式不符返回 nil；关闭自有进程，不连接现有会话。成功时官方额度替代日志额度，失败时仍保留本地统计与额度回退。测试默认不注入真实客户端，以隔离 fixture 验证。
+
+AI Usage 不读取凭证或账户详情，不调用登录、登出、reset credit 或 thread/turn 接口。认证与官方网络请求由用户已安装的 CLI 自行管理；界面上次刷新时间使用额度实际采集时间。
+
 数据发现路径：
 
 ```text
@@ -203,7 +210,7 @@ MiniMax Desktop 会把订阅额度接口的响应写入 Chromium HTTP 缓存：
 ~/Library/Application Support/MiniMax/Cache/Cache_Data/*
 ```
 
-缓存文件名是 Chromium 生成的哈希值，不能依赖固定文件名。`MiniMaxUsageProvider` 扫描目录中的普通文件，根据修改时间优先处理新文件，在二进制缓存中定位完整的 JSON 对象，并且只解码以下字段：
+缓存文件名是 Chromium 生成的哈希值，不能依赖固定文件名。新版额度来自 `/backend/account/token_plan/remains_percent`：按 Chromium Simple Cache v5 头/EOF/stream size 分离响应体与头部，校验响应体 CRC32，仅对已知额度接口使用 macOS Compression 的 Brotli 解压，输出上限 1 MiB；未知编码和不完整文件不猜测解码。原有明文 JSON 继续兼容。`MiniMaxUsageProvider` 扫描目录中的普通文件，根据修改时间优先处理新文件，在二进制缓存中定位完整的 JSON 对象，并且只解码以下字段：
 
 ```text
 model_remains[].model_name
@@ -221,9 +228,11 @@ provider 选择 `model_name == "general"` 的记录作为编程/文本订阅额�
 used = clamp(100 - remaining, 0, 100)
 ```
 
+新版 `current_interval_used_percent` / `current_weekly_used_percent` 可为 `"24%"` 或数字，直接映射为已用额度；旧 remaining 字段继续按 100 减去剩余百分比。当前 Desktop 响应的 status 3 对应截图中无限制，存入窗口的 `isUnlimited`，显示和无障碍均写明无限制，不展示虚假的有限百分比或重置时间。新字段优先于旧字段；缺失/无效字段不推算 0%。`base_resp.status_code` 非零不更新样本，同文件写入中保留原时间并标记过期；有效新响应会清除该标记。
+
 `end_time` 是 5 小时窗口重置时间，`weekly_end_time` 是本周窗口重置时间。该 Desktop 缓存是 MiniMax 的唯一事实源：不扫描 `~/.claude/projects` 或 `~/.claude-minimax`，不读取可能含凭证的 API 日志，也不通过本地 Token 或订阅计划反推额度。缓存不包含可靠的逐日 Token 历史，因此 MiniMax 不生成 `dailyUsage`，历史页也不展示 MiniMax Token 图表。
 
-MiniMax API 授权与上述用量采集相互独立。用户选择中国大陆或海外区域后，API Key 写入 macOS 钥匙串；应用分别请求官方 `https://api.minimaxi.com/v1/models` 或 `https://api.minimax.io/v1/models`，以 Bearer 授权验证 Key 并解码返回的模型数量。验证请求不生成内容，Key 不写入 `UserDefaults` 或日志。当前没有公开的历史 Token 聚合接口，因此授权成功不会改变 MiniMax 的 `dailyUsage`。
+MiniMax 不再提供 API Key/区域授权入口，不请求模型列表，额度仍完全来自 Desktop 缓存。旧钥匙串和偏好不自动清理，Kimi 的用户主动授权机制保留。
 
 模型显示优先级保存在 `UserDefaults` 的 `providers.order` 中。详情卡片通过应用内 `DragGesture` 跟踪指针与卡片坐标，绕开 `MenuBarExtra(.window)` 中不稳定的系统文件拖放会话；菜单栏多模型视图、历史页和设置页读取同一顺序。恢复设置时会去除无效项和重复项，并把新版本新增的 provider 自动追加到末尾。
 

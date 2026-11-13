@@ -57,6 +57,17 @@ final class PresentationTests: XCTestCase {
         XCTAssertTrue(MenuBarDisplayMode.highestUsage.displayedSnapshots(from: []).isEmpty)
     }
 
+    func testExpiredFiveHourStatusExplainsResetWithoutInventingCurrentUsage() {
+        let value = snapshot()
+        let reset = value.fiveHourWindow()!.resetsAt!
+        XCTAssertNil(value.fiveHourWindow(at: reset))
+        XCTAssertEqual(value.fiveHourStatusDescription(at: reset), "上个周期已结束，等待 Codex 更新额度")
+        XCTAssertEqual(snapshot(fiveHour: nil).fiveHourStatusDescription(), "暂无 5 小时额度数据")
+        let newWindow = snapshot(fiveHour: 0)
+        XCTAssertEqual(newWindow.fiveHourWindow()?.usedPercentage, 0)
+        XCTAssertNotEqual(newWindow.fiveHourStatusDescription(), value.fiveHourStatusDescription(at: reset))
+    }
+
     func testTransparencyBoundsAndAccessibilityOverride() {
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 0, reduceTransparency: false), 1)
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 1, reduceTransparency: false), 0)
@@ -65,6 +76,22 @@ final class PresentationTests: XCTestCase {
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 2, reduceTransparency: false), 0)
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: .nan, reduceTransparency: false), 0.45, accuracy: 0.001)
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 1, reduceTransparency: true), 1)
+    }
+
+    func testUnlimitedQuotaSurvivesCodingAndLegacyWindowsDefaultToLimited() throws {
+        let unlimited = RateLimitWindow(
+            kind: .short, label: "5 小时", usedPercentage: 0, resetsAt: nil,
+            durationMinutes: 300, isUnlimited: true
+        )
+        let decoded = try JSONDecoder().decode(RateLimitWindow.self, from: JSONEncoder().encode(unlimited))
+        XCTAssertTrue(decoded.isUnlimited)
+        var value = snapshot(.miniMax)
+        value.windows = [decoded]
+        XCTAssertEqual(value.fiveHourStatusDescription(), "无限制")
+        let legacy = Data(#"{"kind":"long","label":"Weekly","usedPercentage":37}"#.utf8)
+        let oldWindow = try JSONDecoder().decode(RateLimitWindow.self, from: legacy)
+        XCTAssertFalse(oldWindow.isUnlimited)
+        XCTAssertEqual(oldWindow.usedPercentage, 37)
     }
 
     @MainActor
@@ -92,6 +119,12 @@ final class PresentationTests: XCTestCase {
             .deletingLastPathComponent().deletingLastPathComponent().deletingLastPathComponent()
             .appendingPathComponent(".build/ui-previews", isDirectory: true)
         try FileManager.default.createDirectory(at: output, withIntermediateDirectories: true)
+        var miniMax = snapshot(.miniMax, fiveHour: 24)
+        miniMax.windows.removeAll { $0.kind == .long }
+        miniMax.windows.append(RateLimitWindow(
+            kind: .long, label: "本周", usedPercentage: 0, resetsAt: nil,
+            durationMinutes: 10_080, isUnlimited: true
+        ))
         for (name, scheme) in [("light", ColorScheme.light), ("dark", ColorScheme.dark)] {
             let content = VStack(spacing: 14) {
                 HStack {
@@ -101,6 +134,7 @@ final class PresentationTests: XCTestCase {
                 }
                 ProviderCard(snapshot: snapshot(), showsDragHandle: true)
                 ProviderCard(snapshot: snapshot(.claudeCode, fiveHour: 82, weekly: 45), showsDragHandle: true)
+                ProviderCard(snapshot: miniMax, showsDragHandle: true)
                 HStack(spacing: 20) {
                     ForEach([0.0, 50.0, 100.0], id: \.self) { usage in
                         UsageRing(provider: .codex, window: self.snapshot(fiveHour: usage).fiveHourWindow(), size: 38)

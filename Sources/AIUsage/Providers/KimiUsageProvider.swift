@@ -179,72 +179,21 @@ actor KimiUsageProvider: UsageProvider {
         previousState: KimiDesktopLogState?
     ) -> KimiDesktopLogState {
         var state = previousState ?? KimiDesktopLogState()
-        let wasRewritten = metadata.size < state.offset
-            || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt)
-        if wasRewritten {
+        if metadata.size < state.cursor.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt) {
             state = KimiDesktopLogState()
         }
-
-        let initialRead = state.offset == 0
-        let startOffset = initialRead && metadata.size > initialDesktopLogTailBytes
-            ? metadata.size - initialDesktopLogTailBytes
-            : state.offset
-        guard metadata.size >= startOffset,
-              let handle = try? FileHandle(forReadingFrom: url) else {
+        do {
+            let cursor = try IncrementalLineReader.read(
+                from: url, size: metadata.size, cursor: state.cursor,
+                initialOffset: { _ in metadata.size > initialDesktopLogTailBytes ? metadata.size - initialDesktopLogTailBytes : 0 }
+            ) { consumeDesktopLogLine($0, fallbackDate: metadata.modifiedAt, state: &state) }
+            state.cursor = cursor
             state.size = metadata.size
             state.modifiedAt = metadata.modifiedAt
             return state
-        }
-        defer { try? handle.close() }
-
-        do {
-            try handle.seek(toOffset: startOffset)
-            var incoming = try handle.readToEnd() ?? Data()
-            if initialRead,
-               startOffset > 0,
-               let newline = incoming.firstIndex(of: 0x0A) {
-                incoming.removeSubrange(incoming.startIndex...newline)
-            }
-
-            var combined = state.remainder
-            combined.append(incoming)
-            var lines = combined.split(
-                separator: 0x0A,
-                omittingEmptySubsequences: false
-            )
-            var finalLine: Data?
-            if combined.last != 0x0A, let final = lines.popLast() {
-                finalLine = Data(final)
-            }
-            state.remainder = Data()
-
-            for rawLine in lines where !rawLine.isEmpty {
-                _ = consumeDesktopLogLine(
-                    Data(rawLine),
-                    fallbackDate: metadata.modifiedAt,
-                    state: &state
-                )
-            }
-            if let finalLine, !finalLine.isEmpty {
-                let consumed = consumeDesktopLogLine(
-                    finalLine,
-                    fallbackDate: metadata.modifiedAt,
-                    state: &state
-                )
-                if !consumed {
-                    // Keep a possibly partial last line until the writer adds
-                    // its newline or remaining bytes.
-                    state.remainder = finalLine
-                }
-            }
-            state.offset = metadata.size
         } catch {
-            // Preserve the last valid sample and retry when the log changes.
+            return previousState ?? state
         }
-
-        state.size = metadata.size
-        state.modifiedAt = metadata.modifiedAt
-        return state
     }
 
     private func consumeDesktopLogLine(
@@ -308,51 +257,20 @@ actor KimiUsageProvider: UsageProvider {
         previousState: KimiFileState?
     ) -> KimiFileState {
         var state = previousState ?? KimiFileState()
-        let wasRewritten = metadata.size < state.offset
-            || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt)
-        if wasRewritten {
+        if metadata.size < state.cursor.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt) {
             state = KimiFileState()
         }
-
-        guard metadata.size >= state.offset,
-              let handle = try? FileHandle(forReadingFrom: url) else {
+        do {
+            let cursor = try IncrementalLineReader.read(from: url, size: metadata.size, cursor: state.cursor) {
+                consume($0, fallbackDate: metadata.modifiedAt, state: &state)
+            }
+            state.cursor = cursor
             state.size = metadata.size
             state.modifiedAt = metadata.modifiedAt
             return state
-        }
-        defer { try? handle.close() }
-
-        do {
-            try handle.seek(toOffset: state.offset)
-            let incoming = try handle.readToEnd() ?? Data()
-            var combined = state.remainder
-            combined.append(incoming)
-            var lines = combined.split(
-                separator: 0x0A,
-                omittingEmptySubsequences: false
-            )
-            var finalLine: Data?
-            if combined.last != 0x0A, let final = lines.popLast() {
-                finalLine = Data(final)
-            }
-            state.remainder = Data()
-
-            for rawLine in lines where !rawLine.isEmpty {
-                _ = consume(Data(rawLine), fallbackDate: metadata.modifiedAt, state: &state)
-            }
-            if let finalLine,
-               !finalLine.isEmpty,
-               !consume(finalLine, fallbackDate: metadata.modifiedAt, state: &state) {
-                state.remainder = finalLine
-            }
-            state.offset = metadata.size
         } catch {
-            // Preserve the last valid state and retry the changed file later.
+            return previousState ?? state
         }
-
-        state.size = metadata.size
-        state.modifiedAt = metadata.modifiedAt
-        return state
     }
 
     @discardableResult
@@ -501,9 +419,7 @@ actor KimiUsageProvider: UsageProvider {
             if let raw = Double(string) {
                 return Date(timeIntervalSince1970: raw > 100_000_000_000 ? raw / 1_000 : raw)
             }
-            let fractional = ISO8601DateFormatter()
-            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return fractional.date(from: string) ?? ISO8601DateFormatter().date(from: string)
+            return ISODateParser.parse(string)
         }
         return nil
     }
@@ -517,8 +433,7 @@ private struct KimiFileMetadata {
 private struct KimiFileState {
     var size: UInt64 = 0
     var modifiedAt: Date = .distantPast
-    var offset: UInt64 = 0
-    var remainder = Data()
+    var cursor = IncrementalLineReader.Cursor()
     var records: [KimiUsageSample] = []
     var legacyRecords: [String: KimiUsageSample] = [:]
     var anonymousLegacySequence = 0
@@ -532,8 +447,7 @@ private struct KimiUsageSample {
 private struct KimiDesktopLogState {
     var size: UInt64 = 0
     var modifiedAt: Date = .distantPast
-    var offset: UInt64 = 0
-    var remainder = Data()
+    var cursor = IncrementalLineReader.Cursor()
     var latest: KimiDesktopUsageSample?
 }
 

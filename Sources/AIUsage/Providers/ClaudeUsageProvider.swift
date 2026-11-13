@@ -120,58 +120,32 @@ actor ClaudeUsageProvider: UsageProvider {
             .compactMap(\.normalized)
             .sorted { $0.observedAt < $1.observedAt }
         guard var latest = samples.last else { return nil }
-        latest.fiveHourResetsAt = inferredFiveHourReset(from: samples)
-        latest.sevenDayResetsAt = inferredSevenDayReset(from: samples)
+        latest.fiveHourResetsAt = inferredReset(from: samples, usage: \.fiveHour, duration: 5 * 60 * 60, startsAfter: { $0 == 0 })
+        latest.sevenDayResetsAt = inferredReset(from: samples, usage: \.sevenDay, duration: 7 * 24 * 60 * 60, startsAfter: { $0 <= 0 })
         return latest
     }
 
-    private func inferredFiveHourReset(from samples: [ClaudeDesktopUsageSample]) -> Date? {
+    // Each window keeps its existing zero/negative boundary policy.
+    private func inferredReset(
+        from samples: [ClaudeDesktopUsageSample],
+        usage field: KeyPath<ClaudeDesktopUsageSample, Double?>,
+        duration: TimeInterval,
+        startsAfter: (Double) -> Bool
+    ) -> Date? {
         var windowStartedAt: Date?
         var previousUsage: Double?
-
         for sample in samples {
-            guard let usage = sample.fiveHour else { continue }
+            guard let usage = sample[keyPath: field] else { continue }
             defer { previousUsage = usage }
-
             if usage <= 0 {
                 windowStartedAt = nil
                 continue
             }
-
-            if let previousUsage, previousUsage == 0 || usage < previousUsage {
+            if let previousUsage, startsAfter(previousUsage) || usage < previousUsage {
                 windowStartedAt = sample.observedAt
             }
         }
-
-        guard let windowStartedAt else { return nil }
-        return windowStartedAt.addingTimeInterval(5 * 60 * 60)
-    }
-
-    /// Claude Desktop stores weekly usage samples but not the corresponding
-    /// reset timestamp. A weekly window begins when usage changes from zero to
-    /// a positive value. A non-zero drop also represents a reset followed by
-    /// immediate use. Preserve the most recent detected start and derive the
-    /// seven-day boundary from it.
-    private func inferredSevenDayReset(from samples: [ClaudeDesktopUsageSample]) -> Date? {
-        var windowStartedAt: Date?
-        var previousUsage: Double?
-
-        for sample in samples {
-            guard let usage = sample.sevenDay else { continue }
-            defer { previousUsage = usage }
-
-            if usage <= 0 {
-                windowStartedAt = nil
-                continue
-            }
-
-            if let previousUsage, previousUsage <= 0 || usage < previousUsage {
-                windowStartedAt = sample.observedAt
-            }
-        }
-
-        guard let windowStartedAt else { return nil }
-        return windowStartedAt.addingTimeInterval(7 * 24 * 60 * 60)
+        return windowStartedAt?.addingTimeInterval(duration)
     }
 
     private func loadDailyUsage() -> [DailyUsage] {
@@ -210,7 +184,7 @@ actor ClaudeUsageProvider: UsageProvider {
         for line in text.split(whereSeparator: \.isNewline) {
             guard let lineData = line.data(using: .utf8),
                   let entry = try? JSONDecoder().decode(ClaudeMetricEntry.self, from: lineData),
-                  let date = CodexUsageProvider.parseDate(entry.timestamp),
+                  let date = ISODateParser.parse(entry.timestamp),
                   date >= cutoff else { continue }
             let day = calendar.startOfDay(for: date)
             buckets[day, default: .zero] = buckets[day, default: .zero] + entry.asUsage
@@ -272,59 +246,21 @@ actor ClaudeUsageProvider: UsageProvider {
         previousState: ClaudeTranscriptFileState?
     ) -> ClaudeTranscriptFileState {
         var state = previousState ?? ClaudeTranscriptFileState()
-        let wasRewritten = metadata.size < state.offset
-            || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt)
-        if wasRewritten { state = ClaudeTranscriptFileState() }
-
-        let initialRead = state.offset == 0
-        guard let handle = try? FileHandle(forReadingFrom: url) else {
+        if metadata.size < state.cursor.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt) {
+            state = ClaudeTranscriptFileState()
+        }
+        do {
+            let cursor = try IncrementalLineReader.read(
+                from: url, size: metadata.size, cursor: state.cursor,
+                initialOffset: { try initialTranscriptOffset(handle: $0, size: metadata.size, cutoff: cutoff) }
+            ) { consumeTranscript($0, cutoff: cutoff, state: &state) }
+            state.cursor = cursor
             state.size = metadata.size
             state.modifiedAt = metadata.modifiedAt
             return state
-        }
-        defer { try? handle.close() }
-
-        do {
-            let startOffset = initialRead
-                ? try initialTranscriptOffset(
-                    handle: handle,
-                    size: metadata.size,
-                    cutoff: cutoff
-                )
-                : state.offset
-            guard metadata.size >= startOffset else { return state }
-            try handle.seek(toOffset: startOffset)
-            var incoming = try handle.readToEnd() ?? Data()
-            // A tail read normally begins halfway through a JSON line. Drop
-            // only that partial record; subsequent refreshes start at offset.
-            if initialRead, startOffset > 0, let newline = incoming.firstIndex(of: 0x0A) {
-                incoming.removeSubrange(incoming.startIndex...newline)
-            }
-
-            var combined = state.remainder
-            combined.append(incoming)
-            var lines = combined.split(separator: 0x0A, omittingEmptySubsequences: false)
-            var finalLine: Data?
-            if combined.last != 0x0A, let final = lines.popLast() {
-                finalLine = Data(final)
-            }
-            state.remainder = Data()
-
-            for line in lines where !line.isEmpty {
-                _ = consumeTranscript(Data(line), cutoff: cutoff, state: &state)
-            }
-            if let finalLine, !finalLine.isEmpty,
-               !consumeTranscript(finalLine, cutoff: cutoff, state: &state) {
-                state.remainder = finalLine
-            }
-            state.offset = metadata.size
         } catch {
-            // Retain the last valid state and retry the unread bytes later.
+            return previousState ?? state
         }
-
-        state.size = metadata.size
-        state.modifiedAt = metadata.modifiedAt
-        return state
     }
 
     /// Claude transcripts are chronological JSONL files. Scan backwards until
@@ -353,7 +289,7 @@ actor ClaudeUsageProvider: UsageProvider {
                         ClaudeTimestampEntry.self,
                         from: Data(line)
                     ),
-                    let date = CodexUsageProvider.parseDate(entry.timestamp) else {
+                    let date = ISODateParser.parse(entry.timestamp) else {
                         return false
                     }
                     return date < cutoff
@@ -375,7 +311,7 @@ actor ClaudeUsageProvider: UsageProvider {
         // Valid non-usage records are complete and must not be kept as a
         // partial final line.
         guard let usage = entry.message?.usage ?? entry.usage,
-              let date = CodexUsageProvider.parseDate(entry.timestamp),
+              let date = ISODateParser.parse(entry.timestamp),
               date >= cutoff else { return true }
 
         let day = calendar.startOfDay(for: date)
@@ -415,8 +351,7 @@ private struct ClaudeDatedUsage {
 private struct ClaudeTranscriptFileState {
     var size: UInt64 = 0
     var modifiedAt: Date = .distantPast
-    var offset: UInt64 = 0
-    var remainder = Data()
+    var cursor = IncrementalLineReader.Cursor()
     var messages: [String: ClaudeDatedUsage] = [:]
     var anonymousUsage: [Date: TokenUsage] = [:]
 }

@@ -114,6 +114,7 @@ struct MenuBarView: View {
         .frame(width: 390, height: 640)
         .appTheme(selectedTheme, systemColorScheme: systemColorScheme)
         .appLanguage(selectedLanguage)
+        .task { await store.refresh() }
     }
 
     private func providerDragGesture(for provider: ProviderID) -> some Gesture {
@@ -370,6 +371,9 @@ struct MenuBarLabel: View {
         return displayedSnapshots.map { snapshot in
             guard let window = snapshot.fiveHourWindow() else {
                 return "\(snapshot.provider.displayName): " + L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable")
+            }
+            if window.isUnlimited {
+                return "\(snapshot.provider.displayName): " + L10n.text("5 小时无限制", "Unlimited 5-hour quota")
             }
             return "\(snapshot.provider.displayName): " + L10n.text(
                 "5 小时已用百分之\(Int(window.usedPercentage.rounded()))，\(snapshot.availability.message)",

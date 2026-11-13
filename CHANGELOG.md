@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+- Share ISO date parsing across Codex, Claude and Kimi without cross-provider utility dependencies, preserving offsets, fractional seconds and failure fallbacks. (#8)
+
+- Share Claude quota reset inference while preserving each window’s zero and negative-boundary policy and expiry protection. (#7)
+
+- Share incremental line I/O across providers while preserving scan and aggregation policies, bounded file snapshots, partial-line retries and rewrite recovery. (#6)
+
+- Decode complete MiniMax cache response bodies directly as JSON and isolate the legacy embedded-JSON fallback. (#5)
+
+- Centralize Kimi verification state and reject stale responses after key changes, removal or a newer verification request. (#4)
+
+- Refresh only Claude on its file changes, share result merging, queue overlapping requests and reject results invalidated by selection changes or stopping. (#3)
+
+- Remove the unused MiniMax API-key and region authorization UI while retaining Desktop quota collection and Kimi authorization. (#9)
+
+- Fix MiniMax Desktop quota refresh by decoding Brotli cache responses and percentage strings, showing unlimited weekly quotas explicitly, and retaining marked stale samples during incomplete writes.
+
+- Read current Codex quotas through the installed CLI’s official read-only app-server interface, retain local-log fallback with a bounded timeout, refresh when opening the panel, and explain expired windows instead of reporting missing data.
+
 ## 1.2.2 — 2026-11-12
 
 - Automatically prepare a patch version and build number on main updates, synchronize release records, push the version commit and tag atomically, and call the existing Release workflow without extra credentials.

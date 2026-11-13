@@ -23,7 +23,7 @@ struct UsageRing: View {
                     lineWidth: lineWidth,
                     dash: window == nil ? [3, 4] : []
                 ))
-            if let window {
+            if let window, !window.isUnlimited {
                 Circle()
                     .inset(by: lineWidth / 2)
                     .trim(from: 0, to: window.usedPercentage / 100)
@@ -43,6 +43,7 @@ struct UsageRing: View {
     private var usageDescription: String {
         guard let window else { return L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable") }
         let prefix = isStale ? L10n.text("数据可能过期。", "Data may be outdated. ") : ""
+        if window.isUnlimited { return prefix + L10n.text("无限制", "Unlimited") }
         return prefix + L10n.text(
             "已使用百分之\(Int(window.usedPercentage.rounded()))，\(UsageFormatting.resetDescription(window.resetsAt, precision: window.resetTimePrecision))",
             "\(Int(window.usedPercentage.rounded())) percent used. \(UsageFormatting.resetDescription(window.resetsAt, precision: window.resetTimePrecision))"

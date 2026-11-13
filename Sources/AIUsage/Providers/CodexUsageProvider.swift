@@ -5,24 +5,23 @@ actor CodexUsageProvider: UsageProvider {
 
     private let rootDirectory: URL
     private let calendar: Calendar
+    private let rateLimitReader: @Sendable () async -> CodexRateLimits?
     private var fileStates: [URL: FileState] = [:]
     private let initialTailBytes = 1_048_576
 
-    init(rootDirectory: URL = ProviderPaths.codexDirectory, calendar: Calendar = .current) {
+    init(
+        rootDirectory: URL = ProviderPaths.codexDirectory,
+        calendar: Calendar = .current,
+        rateLimitReader: @escaping @Sendable () async -> CodexRateLimits? = { nil }
+    ) {
         self.rootDirectory = rootDirectory
         self.calendar = calendar
+        self.rateLimitReader = rateLimitReader
     }
 
     func load() async -> ProviderResult {
         let fileManager = FileManager.default
-        guard fileManager.fileExists(atPath: rootDirectory.path) else {
-            return ProviderResult(snapshot: .empty(id, availability: .cliNotInstalled), dailyUsage: [])
-        }
-
         let files = jsonlFiles(fileManager: fileManager)
-        guard !files.isEmpty else {
-            return ProviderResult(snapshot: .empty(id, availability: .waitingForFirstSample), dailyUsage: [])
-        }
 
         let cutoff = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: Date())) ?? .distantPast
         let fileSet = Set(files)
@@ -40,28 +39,31 @@ actor CodexUsageProvider: UsageProvider {
             fileStates[file] = parseChanges(in: file, metadata: metadata, previousState: existing)
         }
 
-        var latest: LatestEvent?
         var buckets: [Date: TokenUsage] = [:]
         for state in fileStates.values {
-            if let candidate = state.latest, latest == nil || candidate.date >= latest!.date {
-                latest = candidate
-            }
             for (day, usage) in state.dailyUsage where day >= cutoff {
                 buckets[day, default: .zero] = buckets[day, default: .zero] + usage
             }
         }
+        let events = fileStates.values.compactMap(\.latest)
+        let latest = events.filter { $0.event.rateLimits?.hasUsage == true }.max { $0.date < $1.date }
+            ?? events.max { $0.date < $1.date }
 
-        guard let latest else {
-            return ProviderResult(snapshot: .empty(id, availability: .unsupportedFormat), dailyUsage: [])
+        let liveWindows = Self.makeWindows(await rateLimitReader())
+        guard latest != nil || !liveWindows.isEmpty else {
+            let availability: ProviderAvailability = !fileManager.fileExists(atPath: rootDirectory.path)
+                ? .cliNotInstalled : files.isEmpty ? .waitingForFirstSample : .unsupportedFormat
+            return ProviderResult(snapshot: .empty(id, availability: availability), dailyUsage: [])
         }
+        let observedAt = liveWindows.isEmpty ? (latest?.date ?? Date()) : Date()
 
         let snapshot = UsageSnapshot(
             provider: id,
-            windows: Self.makeWindows(latest.event.rateLimits),
+            windows: liveWindows.isEmpty ? Self.makeWindows(latest?.event.rateLimits) : liveWindows,
             todayTokens: buckets[calendar.startOfDay(for: Date())],
             estimatedCostUSD: nil,
-            observedAt: latest.date,
-            availability: .ready(lastUpdated: latest.date)
+            observedAt: observedAt,
+            availability: .ready(lastUpdated: observedAt)
         )
         let daily = buckets.map { DailyUsage(date: $0.key, provider: id, tokens: $0.value) }.sorted { $0.date < $1.date }
         return ProviderResult(snapshot: snapshot, dailyUsage: daily)
@@ -69,55 +71,22 @@ actor CodexUsageProvider: UsageProvider {
 
     private func parseChanges(in url: URL, metadata: FileMetadata, previousState: FileState?) -> FileState {
         var state = previousState ?? FileState()
-        let wasRewritten = metadata.size < state.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt)
-        if wasRewritten { state = FileState() }
-
-        let initialRead = state.offset == 0
-        let tailBytes = UInt64(initialTailBytes)
-        let startOffset = initialRead
-            ? (metadata.size > tailBytes ? metadata.size - tailBytes : 0)
-            : state.offset
-        guard metadata.size >= startOffset,
-              let handle = try? FileHandle(forReadingFrom: url) else {
+        if metadata.size < state.cursor.offset || (metadata.size == state.size && metadata.modifiedAt != state.modifiedAt) {
+            state = FileState()
+        }
+        do {
+            let cursor = try IncrementalLineReader.read(
+                from: url, size: metadata.size, cursor: state.cursor,
+                initialOffset: { _ in metadata.size > UInt64(initialTailBytes) ? metadata.size - UInt64(initialTailBytes) : 0 }
+            ) { consume($0, metadata: metadata, state: &state) }
+            state.cursor = cursor
             state.size = metadata.size
             state.modifiedAt = metadata.modifiedAt
             return state
-        }
-        defer { try? handle.close() }
-
-        do {
-            try handle.seek(toOffset: startOffset)
-            var incoming = try handle.readToEnd() ?? Data()
-            if initialRead, startOffset > 0, let newline = incoming.firstIndex(of: 0x0A) {
-                incoming.removeSubrange(incoming.startIndex...newline)
-            }
-
-            var combined = state.remainder
-            combined.append(incoming)
-            var lines = combined.split(separator: 0x0A, omittingEmptySubsequences: false)
-            var finalLine: Data?
-            if combined.last != 0x0A, let final = lines.popLast() {
-                finalLine = Data(final)
-            }
-            state.remainder = Data()
-
-            for rawLine in lines where !rawLine.isEmpty {
-                _ = consume(Data(rawLine), metadata: metadata, state: &state)
-            }
-            if let finalLine, !finalLine.isEmpty,
-               !consume(finalLine, metadata: metadata, state: &state) {
-                // Claude/Codex can be writing while the refresh runs. Retry only an
-                // incomplete final JSON object, without rereading the whole file.
-                state.remainder = finalLine
-            }
-            state.offset = metadata.size
         } catch {
-            // Keep the last valid state and retry this file on the next refresh.
+            // Do not acknowledge failed reads; retry the same bytes next refresh.
+            return previousState ?? state
         }
-
-        state.size = metadata.size
-        state.modifiedAt = metadata.modifiedAt
-        return state
     }
 
     @discardableResult
@@ -129,7 +98,7 @@ actor CodexUsageProvider: UsageProvider {
         guard envelope.type == "event_msg",
               envelope.payload?.type == "token_count",
               let event = envelope.payload else { return true }
-        let timestamp = Self.parseDate(envelope.timestamp) ?? metadata.modifiedAt
+        let timestamp = ISODateParser.parse(envelope.timestamp) ?? metadata.modifiedAt
 
         if let total = event.info?.totalTokenUsage {
             let current = total.asUsage
@@ -149,7 +118,8 @@ actor CodexUsageProvider: UsageProvider {
             state.dailyUsage[day, default: .zero] = state.dailyUsage[day, default: .zero] + delta
         }
 
-        if state.latest == nil || timestamp >= state.latest!.date {
+        if state.latest == nil || (timestamp >= state.latest!.date
+            && (event.rateLimits?.hasUsage == true || state.latest!.event.rateLimits?.hasUsage != true)) {
             state.latest = LatestEvent(date: timestamp, event: event)
         }
         return true
@@ -180,10 +150,10 @@ actor CodexUsageProvider: UsageProvider {
     private static func makeWindows(_ limits: CodexRateLimits?) -> [RateLimitWindow] {
         guard let limits else { return [] }
         var result: [RateLimitWindow] = []
-        if let primary = limits.primary {
+        if let primary = limits.primary, primary.usedPercent?.isFinite == true {
             result.append(window(primary, kind: .short, fallbackLabel: L10n.text("短周期", "Short window")))
         }
-        if let secondary = limits.secondary {
+        if let secondary = limits.secondary, secondary.usedPercent?.isFinite == true {
             result.append(window(secondary, kind: .long, fallbackLabel: L10n.text("长周期", "Long window")))
         }
         return result
@@ -210,12 +180,7 @@ actor CodexUsageProvider: UsageProvider {
         )
     }
 
-    nonisolated static func parseDate(_ value: String?) -> Date? {
-        guard let value else { return nil }
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return withFraction.date(from: value) ?? ISO8601DateFormatter().date(from: value)
-    }
+
 }
 
 private struct FileMetadata {
@@ -226,8 +191,7 @@ private struct FileMetadata {
 private struct FileState {
     var size: UInt64 = 0
     var modifiedAt: Date = .distantPast
-    var offset: UInt64 = 0
-    var remainder = Data()
+    var cursor = IncrementalLineReader.Cursor()
     var previousTotal: TokenUsage?
     var dailyUsage: [Date: TokenUsage] = [:]
     var latest: LatestEvent?
@@ -290,12 +254,16 @@ struct CodexTokenValues: Decodable {
     }
 }
 
-struct CodexRateLimits: Decodable {
+struct CodexRateLimits: Decodable, Sendable {
     let primary: CodexRateWindow?
     let secondary: CodexRateWindow?
+
+    var hasUsage: Bool {
+        primary?.usedPercent?.isFinite == true || secondary?.usedPercent?.isFinite == true
+    }
 }
 
-struct CodexRateWindow: Decodable {
+struct CodexRateWindow: Decodable, Sendable {
     let usedPercent: Double?
     let resetsAt: Double?
     let windowMinutes: Int?

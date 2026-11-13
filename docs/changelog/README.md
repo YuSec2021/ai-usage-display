@@ -4,6 +4,24 @@
 
 ## 最新更新
 
+- [017：独立共用 ISO 日期解析](017-shared-iso-date-parser.md)：Codex、Claude、Kimi 共用独立 ISO 日期解析，保留时区与小数秒兼容及原有解析失败回退。
+
+- [016：合并 Claude 重置推断遍历](016-claude-reset-inference.md)：复用 Claude 短周期与周额度的重置推断遍历，保留原有零值、负值和过期规则。
+
+- [015：复用增量行读取与残行处理](015-incremental-line-reader.md)：复用日志增量行读取，保留各模型的初读与去重策略；失败会重试，尺寸快照外的追加留到下轮。
+
+- [014：MiniMax 标准缓存直接解码 JSON](014-minimax-direct-json.md)：MiniMax 标准缓存响应直接解码 JSON，旧格式扫描独立回退，保留缓存和额度保护。
+
+- [013：集中 Kimi 验证状态并拒绝旧响应](013-kimi-verification-state.md)：Kimi 授权使用明确的验证状态，更换或移除 Key 后旧响应不会恢复连接状态。
+
+- [012：按模型定向刷新](012-targeted-provider-refresh.md)：Claude 文件变化只刷新 Claude；全量刷新与定向刷新共用结果合并，并保留刷新期间的后续请求。
+
+- [011：移除 MiniMax API 授权入口](011-remove-minimax-authorization.md)：移除 MiniMax API Key 与区域验证入口，额度仍由 Desktop 本地缓存刷新；Kimi 授权保留。
+
+- [010：修复 MiniMax 额度缓存刷新](010-minimax-cache-refresh.md)：解析新版 Brotli 与已用百分比字符串，明确周额度无限制，兼容旧明文响应并保留写入中的有效样本。
+
+- [009：修复 Codex 重置后的额度缺失](009-codex-quota-refresh.md)：主动读取官方当前额度，超时回退日志，打开面板刷新并区分已重置和无数据。
+
 - [008：发布 1.2.2](008-release-1.2.2.md)：自动补丁升版为 1.2.2（Build 6），发布结果以 Actions 为准。
 - [007：main 自动升版并调用 Release](007-auto-main-release.md)：main 更新后自动增加补丁号与构建号，同步版本记录并原子推送 Tag，再复用 Release 构建和发布；无需额外 Token。
 - [006：原生预览导出改为本机显式启用](006-local-preview-export.md)：避免 Intel 托管 runner 的虚拟 GPU 触发 Metal 崩溃，CI 继续执行全部逻辑与菜单圆环图像测试。
@@ -25,3 +43,12 @@
 | [006](006-local-preview-export.md) | test | 原生预览导出改为本机显式启用 | 2026-11-12 |
 | [007](007-auto-main-release.md) | chore | main 自动升版并调用 Release | 2026-11-12 |
 | [008](008-release-1.2.2.md) | release | 发布 1.2.2 | 2026-11-12 |
+| [009](009-codex-quota-refresh.md) | bugfix | 修复 Codex 重置后的额度缺失 | 2026-11-12 |
+| [010](010-minimax-cache-refresh.md) | bugfix | 修复 MiniMax 额度缓存刷新 | 2026-11-13 |
+| [011](011-remove-minimax-authorization.md) | refactor | 移除 MiniMax API 授权入口 | 2026-11-13 |
+| [012](012-targeted-provider-refresh.md) | refactor | 按模型定向刷新 | 2026-11-13 |
+| [013](013-kimi-verification-state.md) | bugfix | 集中 Kimi 验证状态并拒绝旧响应 | 2026-11-13 |
+| [014](014-minimax-direct-json.md) | refactor | MiniMax 标准缓存直接解码 JSON | 2026-11-13 |
+| [015](015-incremental-line-reader.md) | refactor | 复用增量行读取与残行处理 | 2026-11-13 |
+| [016](016-claude-reset-inference.md) | refactor | 合并 Claude 重置推断遍历 | 2026-11-13 |
+| [017](017-shared-iso-date-parser.md) | refactor | 独立共用 ISO 日期解析 | 2026-11-13 |
