@@ -93,13 +93,6 @@ actor MiniMaxUsageProvider: UsageProvider {
             ))
         }
 
-        guard !windows.isEmpty else {
-            return ProviderResult(
-                snapshot: .empty(id, availability: .unsupportedFormat),
-                dailyUsage: []
-            )
-        }
-
         let snapshot = UsageSnapshot(
             provider: id,
             windows: windows,
@@ -146,9 +139,9 @@ actor MiniMaxUsageProvider: UsageProvider {
         let initialMagic = Data([0x30, 0x5C, 0x72, 0xA7, 0x1B, 0x6D, 0xFB, 0xFC])
         if data.starts(with: initialMagic) {
             guard let body = cachedResponseBody(from: data) else { return nil }
-            return jsonQuotaResponse(from: body)
+            return decodeResponse(body)
         }
-        return jsonQuotaResponse(from: data)
+        return legacyQuotaResponse(from: data)
     }
 
     /// Chromium Simple Cache v5 stores body, EOF, headers, optional key hash,
@@ -199,7 +192,13 @@ actor MiniMaxUsageProvider: UsageProvider {
         return Data(decoded.prefix(count))
     }
 
-    private nonisolated static func jsonQuotaResponse(from data: Data) -> MiniMaxQuotaResponse? {
+    private nonisolated static func decodeResponse(_ data: Data) -> MiniMaxQuotaResponse? {
+        guard let response = try? JSONDecoder().decode(MiniMaxQuotaResponse.self, from: data),
+              !response.modelRemains.isEmpty, (response.baseResponse?.statusCode ?? 0) == 0 else { return nil }
+        return response
+    }
+
+    private nonisolated static func legacyQuotaResponse(from data: Data) -> MiniMaxQuotaResponse? {
         let marker = Data(#""model_remains""#.utf8)
         var searchStart = data.startIndex
 
@@ -214,13 +213,7 @@ actor MiniMaxUsageProvider: UsageProvider {
                 before: markerRange.lowerBound
             ) {
                 guard let json = completeJSONObject(in: data, startingAt: objectStart),
-                      json.range(of: marker) != nil,
-                      let response = try? JSONDecoder().decode(
-                        MiniMaxQuotaResponse.self,
-                        from: json
-                      ),
-                      !response.modelRemains.isEmpty,
-                      response.baseResponse?.statusCode == nil || response.baseResponse?.statusCode == 0 else {
+                      let response = decodeResponse(json) else {
                     continue
                 }
                 return response

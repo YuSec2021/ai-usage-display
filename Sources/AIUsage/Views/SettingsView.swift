@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：Kimi 授权使用明确的验证状态，更换或移除 Key 后旧响应不会恢复连接状态。",
-                            "This build: Centralize Kimi verification state and reject stale responses after key changes, removal or a newer verification request."
+                            "本次构建：MiniMax 标准缓存响应直接解码 JSON，旧格式扫描独立回退，保留缓存和额度保护。",
+                            "This build: Decode complete MiniMax cache response bodies directly as JSON and isolate the legacy embedded-JSON fallback."
                         ))
                     }
                     .font(.callout)

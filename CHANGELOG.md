@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Decode complete MiniMax cache response bodies directly as JSON and isolate the legacy embedded-JSON fallback. (#5)
+
 - Centralize Kimi verification state and reject stale responses after key changes, removal or a newer verification request. (#4)
 
 - Refresh only Claude on its file changes, share result merging, queue overlapping requests and reject results invalidated by selection changes or stopping. (#3)

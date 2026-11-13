@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [014：MiniMax 标准缓存直接解码 JSON](014-minimax-direct-json.md)：MiniMax 标准缓存响应直接解码 JSON，旧格式扫描独立回退，保留缓存和额度保护。
+
 - [013：集中 Kimi 验证状态并拒绝旧响应](013-kimi-verification-state.md)：Kimi 授权使用明确的验证状态，更换或移除 Key 后旧响应不会恢复连接状态。
 
 - [012：按模型定向刷新](012-targeted-provider-refresh.md)：Claude 文件变化只刷新 Claude；全量刷新与定向刷新共用结果合并，并保留刷新期间的后续请求。
@@ -40,3 +42,4 @@
 | [011](011-remove-minimax-authorization.md) | refactor | 移除 MiniMax API 授权入口 | 2026-11-13 |
 | [012](012-targeted-provider-refresh.md) | refactor | 按模型定向刷新 | 2026-11-13 |
 | [013](013-kimi-verification-state.md) | bugfix | 集中 Kimi 验证状态并拒绝旧响应 | 2026-11-13 |
+| [014](014-minimax-direct-json.md) | refactor | MiniMax 标准缓存直接解码 JSON | 2026-11-13 |
