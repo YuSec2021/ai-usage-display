@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Share Claude quota reset inference while preserving each window’s zero and negative-boundary policy and expiry protection. (#7)
+
 - Share incremental line I/O across providers while preserving scan and aggregation policies, bounded file snapshots, partial-line retries and rewrite recovery. (#6)
 
 - Decode complete MiniMax cache response bodies directly as JSON and isolate the legacy embedded-JSON fallback. (#5)

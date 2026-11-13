@@ -120,58 +120,32 @@ actor ClaudeUsageProvider: UsageProvider {
             .compactMap(\.normalized)
             .sorted { $0.observedAt < $1.observedAt }
         guard var latest = samples.last else { return nil }
-        latest.fiveHourResetsAt = inferredFiveHourReset(from: samples)
-        latest.sevenDayResetsAt = inferredSevenDayReset(from: samples)
+        latest.fiveHourResetsAt = inferredReset(from: samples, usage: \.fiveHour, duration: 5 * 60 * 60, startsAfter: { $0 == 0 })
+        latest.sevenDayResetsAt = inferredReset(from: samples, usage: \.sevenDay, duration: 7 * 24 * 60 * 60, startsAfter: { $0 <= 0 })
         return latest
     }
 
-    private func inferredFiveHourReset(from samples: [ClaudeDesktopUsageSample]) -> Date? {
+    // Each window keeps its existing zero/negative boundary policy.
+    private func inferredReset(
+        from samples: [ClaudeDesktopUsageSample],
+        usage field: KeyPath<ClaudeDesktopUsageSample, Double?>,
+        duration: TimeInterval,
+        startsAfter: (Double) -> Bool
+    ) -> Date? {
         var windowStartedAt: Date?
         var previousUsage: Double?
-
         for sample in samples {
-            guard let usage = sample.fiveHour else { continue }
+            guard let usage = sample[keyPath: field] else { continue }
             defer { previousUsage = usage }
-
             if usage <= 0 {
                 windowStartedAt = nil
                 continue
             }
-
-            if let previousUsage, previousUsage == 0 || usage < previousUsage {
+            if let previousUsage, startsAfter(previousUsage) || usage < previousUsage {
                 windowStartedAt = sample.observedAt
             }
         }
-
-        guard let windowStartedAt else { return nil }
-        return windowStartedAt.addingTimeInterval(5 * 60 * 60)
-    }
-
-    /// Claude Desktop stores weekly usage samples but not the corresponding
-    /// reset timestamp. A weekly window begins when usage changes from zero to
-    /// a positive value. A non-zero drop also represents a reset followed by
-    /// immediate use. Preserve the most recent detected start and derive the
-    /// seven-day boundary from it.
-    private func inferredSevenDayReset(from samples: [ClaudeDesktopUsageSample]) -> Date? {
-        var windowStartedAt: Date?
-        var previousUsage: Double?
-
-        for sample in samples {
-            guard let usage = sample.sevenDay else { continue }
-            defer { previousUsage = usage }
-
-            if usage <= 0 {
-                windowStartedAt = nil
-                continue
-            }
-
-            if let previousUsage, previousUsage <= 0 || usage < previousUsage {
-                windowStartedAt = sample.observedAt
-            }
-        }
-
-        guard let windowStartedAt else { return nil }
-        return windowStartedAt.addingTimeInterval(7 * 24 * 60 * 60)
+        return windowStartedAt?.addingTimeInterval(duration)
     }
 
     private func loadDailyUsage() -> [DailyUsage] {
