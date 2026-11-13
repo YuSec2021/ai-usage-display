@@ -98,7 +98,7 @@ actor CodexUsageProvider: UsageProvider {
         guard envelope.type == "event_msg",
               envelope.payload?.type == "token_count",
               let event = envelope.payload else { return true }
-        let timestamp = Self.parseDate(envelope.timestamp) ?? metadata.modifiedAt
+        let timestamp = ISODateParser.parse(envelope.timestamp) ?? metadata.modifiedAt
 
         if let total = event.info?.totalTokenUsage {
             let current = total.asUsage
@@ -180,12 +180,7 @@ actor CodexUsageProvider: UsageProvider {
         )
     }
 
-    nonisolated static func parseDate(_ value: String?) -> Date? {
-        guard let value else { return nil }
-        let withFraction = ISO8601DateFormatter()
-        withFraction.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        return withFraction.date(from: value) ?? ISO8601DateFormatter().date(from: value)
-    }
+
 }
 
 private struct FileMetadata {

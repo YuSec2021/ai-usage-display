@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [017：独立共用 ISO 日期解析](017-shared-iso-date-parser.md)：Codex、Claude、Kimi 共用独立 ISO 日期解析，保留时区与小数秒兼容及原有解析失败回退。
+
 - [016：合并 Claude 重置推断遍历](016-claude-reset-inference.md)：复用 Claude 短周期与周额度的重置推断遍历，保留原有零值、负值和过期规则。
 
 - [015：复用增量行读取与残行处理](015-incremental-line-reader.md)：复用日志增量行读取，保留各模型的初读与去重策略；失败会重试，尺寸快照外的追加留到下轮。
@@ -49,3 +51,4 @@
 | [014](014-minimax-direct-json.md) | refactor | MiniMax 标准缓存直接解码 JSON | 2026-11-13 |
 | [015](015-incremental-line-reader.md) | refactor | 复用增量行读取与残行处理 | 2026-11-13 |
 | [016](016-claude-reset-inference.md) | refactor | 合并 Claude 重置推断遍历 | 2026-11-13 |
+| [017](017-shared-iso-date-parser.md) | refactor | 独立共用 ISO 日期解析 | 2026-11-13 |

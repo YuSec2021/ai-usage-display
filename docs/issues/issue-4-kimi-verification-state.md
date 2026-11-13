@@ -1,7 +1,7 @@
 # #4：Kimi 验证状态与旧响应回写
 
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/4
-- 类型：type/bug；状态：准备完成，实施中；负责人：当前项目维护者
+- 类型：type/bug；状态：本地实现及隔离验证完成，待 PR 交付；负责人：当前项目维护者
 - 唯一工作分支：codex/issue-4-kimi-verification-state（已创建）
 - 设计：N/A — bug 不要求模块设计。
 
@@ -24,11 +24,14 @@ MiniMax 授权已按 #9 移除，范围缩小为 Kimi。原 Kimi 验证在 await
 | Services/KimiUsageAPI.swift | 允许显式传入本次请求 Key，原 load() 调用兼容 | 假 loader 与原解码测试 |
 
 ## 验收与非目标
-- [ ] 旧响应不恢复移除后的连接状态，不覆盖新 Key 或新验证结果。
-- [ ] configured=false/verified=true 不再能由独立布尔值拼出。
-- [ ] 保存/移除失败保留原配置；成功重试清掉旧错误。
-- [ ] make verify、About 与日志同步通过。
+- [x] 旧响应不恢复移除后的连接状态，不覆盖新 Key 或新验证结果。
+- [x] configured=false/verified=true 不再能由独立布尔值拼出。
+- [x] 保存/移除失败保留原配置；成功重试清掉旧错误。
+- [x] make verify、About 与日志同步通过。
 不创建通用凭证框架、不重写整个设置页、不读取测试机钥匙串或网络。无新增依赖与权限。
 
 ## 风险、验证与发布
 异步请求不能只比较 Key（同一 Key 的逆序请求仍可能过期），同时检查代次；删除 Key 先使旧代次失效。使用隔离 fixture 复现与验证。未完成的 GUI 核对如实记录，实际安装在最终构建统一处理。后续 PR/main 发布，可回退本提交，无凭证格式迁移。
+
+## 本地结果
+延迟 fixture 已验证删除/更换/同 Key 逆序响应不可回写，错误重试和存储失败保持一致状态。make verify 通过。无真实 Keychain 或网络被测试调用，未声称实机网络竞态复现，尚未发布。

@@ -419,9 +419,7 @@ actor KimiUsageProvider: UsageProvider {
             if let raw = Double(string) {
                 return Date(timeIntervalSince1970: raw > 100_000_000_000 ? raw / 1_000 : raw)
             }
-            let fractional = ISO8601DateFormatter()
-            fractional.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-            return fractional.date(from: string) ?? ISO8601DateFormatter().date(from: string)
+            return ISODateParser.parse(string)
         }
         return nil
     }

@@ -184,7 +184,7 @@ actor ClaudeUsageProvider: UsageProvider {
         for line in text.split(whereSeparator: \.isNewline) {
             guard let lineData = line.data(using: .utf8),
                   let entry = try? JSONDecoder().decode(ClaudeMetricEntry.self, from: lineData),
-                  let date = CodexUsageProvider.parseDate(entry.timestamp),
+                  let date = ISODateParser.parse(entry.timestamp),
                   date >= cutoff else { continue }
             let day = calendar.startOfDay(for: date)
             buckets[day, default: .zero] = buckets[day, default: .zero] + entry.asUsage
@@ -289,7 +289,7 @@ actor ClaudeUsageProvider: UsageProvider {
                         ClaudeTimestampEntry.self,
                         from: Data(line)
                     ),
-                    let date = CodexUsageProvider.parseDate(entry.timestamp) else {
+                    let date = ISODateParser.parse(entry.timestamp) else {
                         return false
                     }
                     return date < cutoff
@@ -311,7 +311,7 @@ actor ClaudeUsageProvider: UsageProvider {
         // Valid non-usage records are complete and must not be kept as a
         // partial final line.
         guard let usage = entry.message?.usage ?? entry.usage,
-              let date = CodexUsageProvider.parseDate(entry.timestamp),
+              let date = ISODateParser.parse(entry.timestamp),
               date >= cutoff else { return true }
 
         let day = calendar.startOfDay(for: date)

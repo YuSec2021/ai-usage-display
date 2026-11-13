@@ -36,7 +36,9 @@
 		C922694AF7E4289C977CBF93 /* FormattingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = ED0920E19EFB1829F7E82554 /* FormattingTests.swift */; };
 		CA2857314B4032CAD32128A0 /* Formatting.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30ADD10D6846046ADEBE111B /* Formatting.swift */; };
 		DA8FCEA9A3E390F4374A6668 /* ClaudeIntegrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */; };
+		E5E84A08C5BC3EA306B5FEEA /* ISODateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66EEEB42DB80DF67FA285913 /* ISODateParser.swift */; };
 		F8084AC996C8C3670E636651 /* CodexUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFF3BC3667F1686DE8843B9 /* CodexUsageProvider.swift */; };
+		F8A72D9FB9AD86F8FEAAD548 /* ISODateParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9A54B12114D6D731B8A11F /* ISODateParserTests.swift */; };
 		FABB369E075B25D6AB8C77A9 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2C4B7757DDBC2CE43F38B097 /* SettingsView.swift */; };
 		FB2F1D4AD21E2AB3183EF416 /* CodexRateLimitClientTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5C4E0E48EAF47540CD257E9C /* CodexRateLimitClientTests.swift */; };
 /* End PBXBuildFile section */
@@ -65,9 +67,11 @@
 		5C6F0A9E1BF9FCB8EDB321A3 /* UsageModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageModels.swift; sourceTree = "<group>"; };
 		601A3EEA695F215C3FD7ADFE /* PresentationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresentationTests.swift; sourceTree = "<group>"; };
 		64797EB5342B2B52B3268ADF /* UsageRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageRing.swift; sourceTree = "<group>"; };
+		66EEEB42DB80DF67FA285913 /* ISODateParser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISODateParser.swift; sourceTree = "<group>"; };
 		6DFC405C34A5BF659412A482 /* ClaudeResetInferenceTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClaudeResetInferenceTests.swift; sourceTree = "<group>"; };
 		6EE29360F3DD9D9C19FC3741 /* KimiConnectionModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiConnectionModel.swift; sourceTree = "<group>"; };
 		6F7C4F0AAABAFB505163CA91 /* UsageStoreTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStoreTests.swift; sourceTree = "<group>"; };
+		6F9A54B12114D6D731B8A11F /* ISODateParserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ISODateParserTests.swift; sourceTree = "<group>"; };
 		71B1B3A4E9171B5AF82C6C6D /* UsageStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UsageStore.swift; sourceTree = "<group>"; };
 		729E18F5403A29B34DD2FCAF /* LaunchAtLoginManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLoginManager.swift; sourceTree = "<group>"; };
 		80DE39695B9D5FB0C31751FE /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
@@ -108,6 +112,7 @@
 				86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */,
 				30ADD10D6846046ADEBE111B /* Formatting.swift */,
 				DFC78E3A5C975EB78E0EAC6F /* IncrementalLineReader.swift */,
+				66EEEB42DB80DF67FA285913 /* ISODateParser.swift */,
 				6EE29360F3DD9D9C19FC3741 /* KimiConnectionModel.swift */,
 				B660901612C9B73678D920A4 /* KimiCredentialStore.swift */,
 				28086EFB0AF60E281DFEC689 /* KimiUsageAPI.swift */,
@@ -208,6 +213,7 @@
 				5C4E0E48EAF47540CD257E9C /* CodexRateLimitClientTests.swift */,
 				ED0920E19EFB1829F7E82554 /* FormattingTests.swift */,
 				15B0D8EF0AB45EC5A0B477AB /* IncrementalLineReaderTests.swift */,
+				6F9A54B12114D6D731B8A11F /* ISODateParserTests.swift */,
 				502B75DF7AF8BAD1A0187280 /* KimiConnectionTests.swift */,
 				9199C130B382CD16346C36B7 /* MiniMaxCacheTests.swift */,
 				601A3EEA695F215C3FD7ADFE /* PresentationTests.swift */,
@@ -314,6 +320,7 @@
 				BBBEBC3E46B0C23D0AD6739E /* ClaudeResetInferenceTests.swift in Sources */,
 				FB2F1D4AD21E2AB3183EF416 /* CodexRateLimitClientTests.swift in Sources */,
 				C922694AF7E4289C977CBF93 /* FormattingTests.swift in Sources */,
+				F8A72D9FB9AD86F8FEAAD548 /* ISODateParserTests.swift in Sources */,
 				3861C576A1504E6C0DC08E2A /* IncrementalLineReaderTests.swift in Sources */,
 				AA8AB03DDCFE7F0CBDA903D8 /* KimiConnectionTests.swift in Sources */,
 				ACFD9E182BC157E7E16AB88D /* MiniMaxCacheTests.swift in Sources */,
@@ -335,6 +342,7 @@
 				CA2857314B4032CAD32128A0 /* Formatting.swift in Sources */,
 				43686134FB0DAF75F43DD554 /* GlassStyle.swift in Sources */,
 				2162F719728544AC6E0EA25E /* HistoryView.swift in Sources */,
+				E5E84A08C5BC3EA306B5FEEA /* ISODateParser.swift in Sources */,
 				66DC1AA68ADB3B651B862309 /* IncrementalLineReader.swift in Sources */,
 				6020245016D1723565E8B981 /* KimiConnectionModel.swift in Sources */,
 				BF044493D299E5128795AD0E /* KimiCredentialStore.swift in Sources */,
