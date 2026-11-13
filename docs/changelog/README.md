@@ -4,6 +4,7 @@
 
 ## 最新更新
 
+- [018：发布 1.2.3](018-release-1.2.3.md)：自动补丁升版为 1.2.3（Build 7），发布结果以 Actions 为准。
 - [017：独立共用 ISO 日期解析](017-shared-iso-date-parser.md)：Codex、Claude、Kimi 共用独立 ISO 日期解析，保留时区与小数秒兼容及原有解析失败回退。
 
 - [016：合并 Claude 重置推断遍历](016-claude-reset-inference.md)：复用 Claude 短周期与周额度的重置推断遍历，保留原有零值、负值和过期规则。
@@ -52,3 +53,4 @@
 | [015](015-incremental-line-reader.md) | refactor | 复用增量行读取与残行处理 | 2026-11-13 |
 | [016](016-claude-reset-inference.md) | refactor | 合并 Claude 重置推断遍历 | 2026-11-13 |
 | [017](017-shared-iso-date-parser.md) | refactor | 独立共用 ISO 日期解析 | 2026-11-13 |
+| [018](018-release-1.2.3.md) | release | 发布 1.2.3 | 2026-11-12 |

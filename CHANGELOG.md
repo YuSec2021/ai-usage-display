@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.3 — 2026-11-12
+
 - Share ISO date parsing across Codex, Claude and Kimi without cross-provider utility dependencies, preserving offsets, fractional seconds and failure fallbacks. (#8)
 
 - Share Claude quota reset inference while preserving each window’s zero and negative-boundary policy and expiry protection. (#7)
