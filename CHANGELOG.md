@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Simplify the README with technology badges, concise setup instructions, a detailed usage guide, and a theme-aware GitHub star history chart.
+
 ## 1.2.4 — 2026-11-14
 
 - 常规维护更新。
