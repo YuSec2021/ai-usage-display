@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Simplify the README with technology badges, concise setup instructions, a detailed usage guide, and a theme-aware GitHub star history chart.
+
 ## 1.2.3 — 2026-11-12
 
 - Share ISO date parsing across Codex, Claude and Kimi without cross-provider utility dependencies, preserving offsets, fractional seconds and failure fallbacks. (#8)

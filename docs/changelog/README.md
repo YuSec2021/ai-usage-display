@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [019：精简 README 与技术栈展示](019-simplify-readme.md)：聚焦功能、安装和接入，迁移详细使用说明，增加技术栈徽章与适配明暗主题的 Star 历史曲线。
+
 - [018：发布 1.2.3](018-release-1.2.3.md)：自动补丁升版为 1.2.3（Build 7），发布结果以 Actions 为准。
 - [017：独立共用 ISO 日期解析](017-shared-iso-date-parser.md)：Codex、Claude、Kimi 共用独立 ISO 日期解析，保留时区与小数秒兼容及原有解析失败回退。
 
@@ -54,3 +56,4 @@
 | [016](016-claude-reset-inference.md) | refactor | 合并 Claude 重置推断遍历 | 2026-11-13 |
 | [017](017-shared-iso-date-parser.md) | refactor | 独立共用 ISO 日期解析 | 2026-11-13 |
 | [018](018-release-1.2.3.md) | release | 发布 1.2.3 | 2026-11-12 |
+| [019](019-simplify-readme.md) | docs | 精简 README 与技术栈展示 | 2026-11-14 |

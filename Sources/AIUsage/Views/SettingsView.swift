@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：移除 MiniMax API 授权入口，保留本地额度；刷新按模型调度，Kimi 拒绝旧验证响应，日志与日期解析统一复用。",
-                            "This build: removes unused MiniMax authorization, scopes provider refreshes, rejects outdated Kimi verification results, and shares log and date parsing."
+                            "本次构建：精简项目首页，补充技术栈徽章、使用指南与 Star 历史曲线；用量采集与额度刷新行为保持不变。",
+                            "This build: simplifies the project README and adds technology badges, a usage guide, and a star history chart. Usage collection and quota refresh behavior are unchanged."
                         ))
                     }
                     .font(.callout)
