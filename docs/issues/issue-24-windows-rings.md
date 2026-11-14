@@ -3,7 +3,7 @@
 ## 基本信息
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/24
 - 类型：`type/feature`
-- 状态：实施中；本地核心与 macOS 验证通过，待 Windows 原生 CI
+- 状态：实现与隔离验证完成，PR #25 待审阅；真实 Windows 11 用户环境的验收边界见下文
 - 工作分支：`codex/issue-24-windows-rings`（已核对无同名分支，唯一关联本 Issue）
 - 负责人：YuSec2021
 - 设计或产出文档：`docs/design/issue-24-windows-rings.md`，已完成复用调查、模块拆解和验证计划
@@ -25,13 +25,13 @@
 N/A — 当前类型不需要 Bug 根因说明。
 
 ## 验收标准
-- [ ] 准备 JSON、完整设计及复用声明独立提交，通过 make check-prepare 后实施。
-- [ ] 托盘/浮窗采用模型 Logo + 外圈、无常驻百分比；无数据不伪装 0%，过期样本不作为当前额度。
-- [ ] 浮窗可拖动置顶、吸附、记忆/恢复位置，隐藏后由托盘恢复；Explorer 重启可恢复图标，多实例可恢复已有入口。
-- [ ] Codex 只读协议有界退出并回退日志；Claude 集成可保留并恢复已有 statusLine；Kimi Key 使用 Windows Credential Manager，不记录密钥或会话正文。
-- [ ] 临时 fixture 覆盖解析、过期、无限、部分写入、凭证/集成恢复与状态；测试不读取真实日志或凭证。
-- [ ] Windows CI 编译、核心测试、原生启动与产物打包验证；无法完成的 GUI/真实额度范围如实记录。
-- [ ] About、编号记录、索引、Unreleased、README/Windows 使用文档同步；make verify 与工作流静态检查通过。
+- [x] 准备 JSON、完整设计及复用声明独立提交，通过 make check-prepare 后实施。
+- [x] 托盘/浮窗采用模型 Logo + 外圈、无常驻百分比；无数据不伪装 0%，过期样本不作为当前额度。
+- [x] 浮窗可拖动置顶、吸附、记忆/恢复位置，隐藏后由托盘恢复；Explorer 重启可恢复图标，多实例可恢复已有入口。
+- [x] Codex 只读协议有界退出并回退日志；Claude 集成可保留并恢复已有 statusLine；Kimi Key 使用 Windows Credential Manager，不记录密钥或会话正文。
+- [x] 临时 fixture 覆盖解析、过期、无限、部分写入、凭证/集成恢复与状态；测试不读取真实日志或凭证。
+- [x] Windows CI 编译、核心测试、原生启动与产物打包验证；无法完成的 GUI/真实额度范围如实记录。
+- [x] About、编号记录、索引、Unreleased、README/Windows 使用文档同步；make verify 与工作流静态检查通过。
 
 ## 模块拆解
 | 模块 / 路径 | 修改内容 | 调用方或依赖 | 验证 |
@@ -53,7 +53,16 @@ N/A — 当前类型不需要 Bug 根因说明。
 - 发布与回滚：通过 PR 交付，独立 Windows Actions 产物；未授权前不替换应用，回退对应 PR/关闭 Windows 构建入口即可，不覆盖 Tag。
 
 ## 完成定义
-- [ ] 设计、复用、唯一分支和拆解与最终实现一致。
-- [ ] 验收结果与未验证范围准确记录。
-- [ ] 本机 make verify、核心测试、Windows CI 通过。
-- [ ] 文档、凭证、发布与回滚事项处理完成。
+- [x] 设计、复用、唯一分支和拆解与最终实现一致。
+- [x] 验收结果与未验证范围准确记录。
+- [x] 本机 make verify、核心测试、Windows CI 通过。
+- [x] 文档、凭证、发布与回滚事项处理完成。
+
+## 实际验收记录
+- 准备提交 `701e0cb` 早于实现；make check-prepare、make verify、actionlint 与差异检查通过。
+- 本机与 Windows runner 的 16 项 .NET 核心回归通过；原 macOS 双架构 PR 检查通过，不手动升版。
+- [原生 CI](https://github.com/YuSec2021/ai-usage-display/actions/runs/43618912141) 验证启动、4 个托盘图标、浮窗置顶/隐藏恢复、零值/未知、无百分比、3 个页面及 ZIP/SHA-256；5 张原生 XAML 截图已人工检查。
+- 已实现拖动/吸附/位置与显示器记忆、Explorer 重注册及多实例入口恢复；真实鼠标交互、多屏/DPI、Explorer 重启与多实例恢复未手工验收。Windows CI 为 Server/NT 10.0.26100 环境，不等同于用户 Windows 11 机器实测。
+- Codex/Claude/Kimi 的解析与协议使用临时 fixture；未读取用户真实日志/凭证，未验证 Windows 用户真实登录、额度刷新或 Credential Manager 实际读写。MiniMax/WSL 明确不支持。
+- 主资源索引固定为 resources.pri；浮窗/导航使用系统主题背景。CI 从 ZIP 解压后的含空格路径运行 smoke；同一 PR 的最新检查作为交付门禁。
+- [PR #25](https://github.com/YuSec2021/ai-usage-display/pull/25) 提供便携预览与 SHA-256；尚未合并 main、创建正式 Windows Release 或替换已安装应用。About、编号记录、索引、Unreleased 与使用指南已同步。用户已有的 AGENTS.md 修改保留，不纳入本次提交。

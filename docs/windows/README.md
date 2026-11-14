@@ -4,6 +4,14 @@
 
 Windows 11 x64 原生应用，采用 C#、.NET 10 LTS 与 WinUI 3。每个模型使用 Logo 和外圈表示 **5 小时已用额度**；托盘与浮窗不显示百分比文字。零用量是空轨道，未知是虚线，过期窗口不会继续作为当前额度；周额度与 Token 不替代主圆环。
 
+## 原生浮窗效果
+
+以下为 Windows CI 中渲染的真实 WinUI 界面，使用匿名样本；生产模式从实际数据源读取。
+
+![紧凑圆环浮窗，匿名样本](screenshots/floating-compact.png)
+
+![展开浮窗，匿名样本](screenshots/floating-expanded.png)
+
 ## 下载与运行
 
 在 [Windows Actions](https://github.com/YuSec2021/ai-usage-display/actions/workflows/windows.yml) 中选择对应 PR 或 main 的成功任务，下载 `AI-Usage-Windows-x64-preview` Artifact。解压其中的预览 ZIP，保留整个目录并运行 `AIUsage.Windows.exe`；同包 `.sha256` 可验证 ZIP。
@@ -40,7 +48,7 @@ dotnet test windows/AIUsage.Core.Tests/AIUsage.Core.Tests.csproj -c Release
 dotnet publish windows/AIUsage.Windows/AIUsage.Windows.csproj -c Release -r win-x64 --self-contained true -o dist/windows-x64 -p:Platform=x64
 ```
 
-项目通过 `windows/Directory.Build.props` 从根目录 project.yml 读取版本与构建号，不手动升版。WinUI 构建需 Windows；在 macOS 通过核心测试不代表 Windows GUI 通过。GitHub Windows workflow 编译、运行核心回归、验证 collector 模式、启动带匿名样本的原生窗口，导出紧凑/展开浮窗和主窗口 PNG，再生成 ZIP 与 SHA-256。`windows-verification` Artifact 包含测试和烟雾结果；示例数据仅在显式 smoke 模式使用，生产默认从不显示模拟额度。
+项目通过 `windows/Directory.Build.props` 从根目录 project.yml 读取版本与构建号，不手动升版。WinUI 构建需 Windows；在 macOS 通过核心测试不代表 Windows GUI 通过。GitHub Windows workflow 编译、运行核心回归、生成 ZIP 与 SHA-256，再从 ZIP 解压到含空格路径，验证 collector 模式并启动带匿名样本的原生窗口，导出紧凑/展开浮窗、主窗口、历史和设置 PNG。`windows-verification` Artifact 包含测试和烟雾结果；示例数据仅在显式 smoke 模式使用，生产默认从不显示模拟额度。
 
 ```powershell
 ./windows/scripts/smoke.ps1 -Executable dist/windows-x64/AIUsage.Windows.exe -Output "$env:TEMP/ai-usage-smoke"

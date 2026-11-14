@@ -38,9 +38,6 @@ jobs:
         run: dotnet test windows/AIUsage.Core.Tests/AIUsage.Core.Tests.csproj -c Release --logger "trx;LogFileName=core.trx"
       - name: Publish native self-contained app
         run: dotnet publish windows/AIUsage.Windows/AIUsage.Windows.csproj -c Release -r win-x64 --self-contained true -o dist/windows-x64 -p:Platform=x64
-      - name: Verify native windows, tray, and collector
-        shell: pwsh
-        run: ./windows/scripts/smoke.ps1 -Executable dist/windows-x64/AIUsage.Windows.exe -Output "$env:RUNNER_TEMP/ai-usage-smoke"
       - name: Package portable build and checksum
         shell: pwsh
         run: |
@@ -51,6 +48,13 @@ jobs:
           Compress-Archive -Path dist/windows-x64/* -DestinationPath "dist/$name"
           $hash = (Get-FileHash "dist/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  $name" | Set-Content -Encoding ascii "dist/$name.sha256"
+      - name: Verify extracted portable app, tray, and collector
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem dist/AI-Usage-Windows-*-x64-preview.zip | Select-Object -First 1
+          $portable = Join-Path $env:RUNNER_TEMP 'AI Usage Portable'
+          Expand-Archive -Path $archive.FullName -DestinationPath $portable
+          ./windows/scripts/smoke.ps1 -Executable (Join-Path $portable 'AIUsage.Windows.exe') -Output "$env:RUNNER_TEMP/ai-usage-smoke"
       - name: Upload native verification evidence
         if: always()
         uses: actions/upload-artifact@v4
