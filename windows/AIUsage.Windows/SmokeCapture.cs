@@ -28,13 +28,18 @@ internal static class SmokeCapture
         await Task.Delay(700);
         await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, "floating-expanded.png"));
         await CaptureAsync((FrameworkElement)app.Main.Content, Path.Combine(output, "main-window.png"));
+        app.Main.SelectPage("history"); await Task.Delay(400);
+        await CaptureAsync((FrameworkElement)app.Main.Content, Path.Combine(output, "history.png"));
+        app.Main.SelectPage("settings"); await Task.Delay(400);
+        await CaptureAsync((FrameworkElement)app.Main.Content, Path.Combine(output, "settings.png"));
+        app.Main.SelectOverview(null);
         app.Floating.AppWindow.Hide();
         var hidden = !Native.IsWindowVisible(floating);
         app.Floating.Show();
         if (!hidden || !Native.IsWindowVisible(floating)) throw new InvalidOperationException("浮窗隐藏/恢复失败");
         AtomicJson.Write(Path.Combine(output, "smoke.json"), new { success = true, trayIcons = trayCount, topmost,
             noFloatingPercentages = !percentages, realZeroPreserved = zero == 0, unknownPreserved = unknown is null,
-            hideRestore = true, isolated = true, source = "anonymous-fixture", windowsVersion = Environment.OSVersion.VersionString });
+            hideRestore = true, navigationPages = true, isolated = true, source = "anonymous-fixture", windowsVersion = Environment.OSVersion.VersionString });
     }
     private static IEnumerable<string> Text(DependencyObject element)
     {

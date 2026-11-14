@@ -29,11 +29,12 @@ public partial class App : Microsoft.UI.Xaml.Application
         SmokeOutput = args.Length == 2 && args[0] == "--smoke-test" ? Path.GetFullPath(args[1]) : null;
         var data = SmokeOutput is not null ? Path.Combine(SmokeOutput, "isolated-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AIUsage");
-        Paths = new(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), data);
+        Paths = new(SmokeOutput is null ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) : Path.Combine(data, "home"), data);
         try { Preferences = AtomicJson.ReadPreferences(Path.Combine(data, "settings.json")); }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         { Preferences = new(); canSave = false; SettingsWarning = "设置无法读取，本次使用默认配置且不覆盖原文件。"; }
-        Claude = new(Path.Combine(Paths.Claude, "settings.json"), Path.Combine(data, "claude-collector.json"), Environment.ProcessPath!, Paths.ClaudeSnapshot);
+        var claudeSettings = SmokeOutput is null ? Path.Combine(Paths.Claude, "settings.json") : Path.Combine(data, "claude-settings.json");
+        Claude = new(claudeSettings, Path.Combine(data, "claude-collector.json"), Environment.ProcessPath!, Paths.ClaudeSnapshot);
         if (SmokeOutput is not null)
             Monitor = new(Providers.All.Select(id => (IUsageProvider)new FixtureProvider(id)).ToArray());
         else

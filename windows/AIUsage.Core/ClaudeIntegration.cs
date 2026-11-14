@@ -18,7 +18,7 @@ public sealed class ClaudeIntegration(string settingsPath, string collectorPath,
     public bool IsInstalled()
     {
         try { return ReadSettings()["statusLine"]?["command"]?.GetValue<string>() == Command; }
-        catch (Exception error) when (error is IOException or JsonException or InvalidOperationException) { return false; }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or InvalidOperationException) { return false; }
     }
     public void Install()
     {

@@ -13,8 +13,8 @@ internal sealed class MainWindow : Window
     private readonly App app;
     private readonly NavigationView navigation;
     private readonly Grid root = new();
-    private readonly TextBlock status = new() { FontSize = 12, Opacity = .7, TextWrapping = TextWrapping.Wrap };
-    private readonly TextBlock settingsStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
+    private TextBlock status = new() { FontSize = 12, Opacity = .7, TextWrapping = TextWrapping.Wrap };
+    private TextBlock settingsStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
     private string page = "overview";
     private ProviderId? focused;
     public MainWindow(App app)
@@ -41,7 +41,13 @@ internal sealed class MainWindow : Window
     internal void ApplyAppearance() => root.RequestedTheme = app.Preferences.Theme switch
         { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => ElementTheme.Default };
     internal void SelectOverview(ProviderId? provider)
-    { focused = provider; navigation.SelectedItem = navigation.MenuItems[0]; page = "overview"; Build(); }
+    { focused = provider; SelectPage("overview"); }
+    internal void SelectPage(string value)
+    {
+        page = value;
+        navigation.SelectedItem = navigation.MenuItems.Cast<NavigationViewItem>().First(item => (string)item.Tag == value);
+        Build();
+    }
     internal void Refresh()
     {
         status.Text = app.SettingsWarning ?? (app.Monitor.IsRefreshing ? "正在刷新…" :
@@ -50,7 +56,8 @@ internal sealed class MainWindow : Window
     }
     private void Build()
     {
-        if (status.Parent is Panel previous) previous.Children.Remove(status);
+        // A detached NavigationView tree can still own its children; create fresh status elements.
+        status = new TextBlock { Text = status.Text, FontSize = 12, Opacity = .7, TextWrapping = TextWrapping.Wrap };
         var content = new StackPanel { Spacing = 14, Margin = new Thickness(22, 10, 22, 24) };
         content.Children.Add(status);
         if (page == "overview") Overview(content);
@@ -128,7 +135,7 @@ internal sealed class MainWindow : Window
     }
     private void Settings(StackPanel content)
     {
-        if (settingsStatus.Parent is Panel old) old.Children.Remove(settingsStatus);
+        settingsStatus = new TextBlock { Text = settingsStatus.Text, FontSize = 12, TextWrapping = TextWrapping.Wrap };
         content.Children.Add(settingsStatus); RefreshSettingsStatus();
         var display = new StackPanel { Spacing = 12 };
         display.Children.Add(Label("显示与外观", 18));
