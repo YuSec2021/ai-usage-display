@@ -1,0 +1,25 @@
+name: 研发变更
+description: 建立实施前的唯一 Issue 与准备材料
+title: "[变更] "
+body:
+  - type: dropdown
+    id: type
+    attributes:
+      label: 变更类型
+      options:
+        - type/feature
+        - type/bug
+        - type/chore
+        - type/docs
+        - type/spike
+        - type/refactor
+    validations:
+      required: true
+  - type: textarea
+    id: preparation
+    attributes:
+      label: 准备材料
+      description: 使用仓库 Issue 模板，填写背景、目标、验收、模块拆解、风险及验证计划；创建后回填唯一工作分支。
+      placeholder: "粘贴 .agents/skills/standard-dev-flow/assets/issue.md 的完整内容；避免重复声明不同类型。"
+    validations:
+      required: true

@@ -4,6 +4,7 @@
 
 ## 基本信息
 
+- Issue：<真实 Issue URL>
 - 类型：`type/feature` / `type/bug` / `type/chore` / `type/docs` / `type/spike` / `type/refactor`
 - 状态：待设计 / 设计中 / 待实施 / 实施中 / 待验收 / 已完成
 - 工作分支：<一条 Issue 只能填写一个工作分支>
@@ -11,13 +12,10 @@
 - 设计或产出文档：<`type/feature`、`type/refactor` 必填设计文档；`type/spike` 填产出文档；其他类型写 N/A — 原因>
 
 <!--
-分支映射：
-- type/feature、type/refactor：feature/<板块号>-<短描述>
-- type/bug：bug-<issue号>
-- type/chore：chore/<issue号>-<短描述>
-- type/docs：docs/<issue号>-<短描述>
-- type/spike：spike/<issue号>-<短描述>
-不得为同一 Issue 创建第二个工作分支，也不得在一个工作分支混入多个 Issue。
+本项目六种类型统一使用 codex/issue-<真实Issue号>-<短描述>。
+建立 docs/issues/issue-<Issue号>.json，关联本文件和必要设计/调研材料。
+将准备材料单独提交，运行 make check-prepare 后才能实施。
+不得为同一 Issue 创建第二个工作分支，也不得在一个分支混入多个 Issue。
 -->
 
 ## 背景

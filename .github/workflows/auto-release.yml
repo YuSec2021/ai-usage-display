@@ -14,53 +14,89 @@ concurrency:
 
 jobs:
   version:
-    name: Prepare release version
+    name: Prepare release PR or tag reviewed version
     runs-on: macos-15
     timeout-minutes: 15
     permissions:
       contents: write
+      pull-requests: write
+      actions: write
     outputs:
       tag: ${{ steps.version.outputs.tag }}
+      publish: ${{ steps.version.outputs.publish }}
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: main
+          ref: ${{ github.sha }}
           fetch-depth: 0
 
-      - name: Prepare or reuse release version
-        id: version
-        run: python3 scripts/bump-release-version.py >> "$GITHUB_OUTPUT"
-
       - name: Install XcodeGen
-        if: steps.version.outputs.changed == 'true'
         env:
           HOMEBREW_NO_AUTO_UPDATE: '1'
         run: brew install xcodegen
 
-      - name: Generate and validate version metadata
-        if: steps.version.outputs.changed == 'true'
+      - name: Prepare version PR or publish merged version
+        id: version
         env:
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
+          GH_TOKEN: ${{ github.token }}
+        shell: bash
         run: |
-          make generate
-          ./scripts/verify-release-version.sh "$RELEASE_TAG"
-          git diff --check
-
-      - name: Commit version and push tag atomically
-        if: steps.version.outputs.changed == 'true'
-        env:
-          RELEASE_TAG: ${{ steps.version.outputs.tag }}
-        run: |
+          set -euo pipefail
+          git fetch origin main --tags
+          source_sha=$(git rev-parse HEAD)
+          if [[ "$source_sha" != "$(git rev-parse origin/main)" ]]; then
+            echo "main 已有更新，由对应的新任务准备版本。"
+            echo "publish=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          mode=$(python3 scripts/release-contract.py mode)
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if [[ "$mode" == 'mode=publish' ]]; then
+            release_version=$(awk '/MARKETING_VERSION:/ { print $2; exit }' project.yml)
+            tag="v$release_version"
+            ./scripts/verify-release-version.sh "$tag"
+            if git rev-parse -q --verify "refs/tags/$tag" >/dev/null; then
+              [[ "$(git rev-list -n 1 "$tag")" == "$source_sha" ]] || { echo "已有 Tag 指向其他提交，停止。"; exit 1; }
+            else
+              git tag -a "$tag" -m "Release $tag"
+              git push origin "refs/tags/$tag"
+            fi
+            echo "tag=$tag" >> "$GITHUB_OUTPUT"
+            echo "publish=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          python3 scripts/bump-release-version.py > "$RUNNER_TEMP/version-output"
+          tag=$(sed -n 's/^tag=//p' "$RUNNER_TEMP/version-output")
+          branch="codex/release-${tag#v}-${source_sha:0:12}"
+          make generate
+          ./scripts/verify-release-version.sh "$tag"
+          git diff --check
+          git switch -c "$branch"
           git add project.yml AIUsage.xcodeproj README.md CHANGELOG.md docs/changelog
-          git commit -m "chore(release): $RELEASE_TAG"
-          git tag -a "$RELEASE_TAG" -m "Release $RELEASE_TAG"
-          git push --atomic origin HEAD:refs/heads/main "refs/tags/$RELEASE_TAG"
+          git commit -m "chore(release): prepare $tag via protected main PR"
+          if git ls-remote --exit-code --heads origin "$branch" >/dev/null; then
+            git fetch origin "$branch"
+            [[ "$(git rev-parse 'FETCH_HEAD^{tree}')" == "$(git rev-parse 'HEAD^{tree}')" ]] || { echo "已有版本分支内容不同，不覆盖。"; exit 1; }
+          else
+            git push origin "HEAD:refs/heads/$branch"
+          fi
+          pr=$(gh pr list --base main --head "$branch" --state open --json url --jq '.[0].url // empty')
+          if [[ -z "$pr" ]]; then
+            printf '发布 %s。此 PR 仅包含发布脚本与 XcodeGen 生成内容。\n\n来源提交：%s\n\n双架构检查通过后由维护者合并；随后 Automatic release 创建 Tag 并发布。\n' "$tag" "$source_sha" > "$RUNNER_TEMP/release-pr.md"
+            pr=$(gh pr create --base main --head "$branch" --title "chore(release): $tag" --body-file "$RUNNER_TEMP/release-pr.md")
+          fi
+          # Dispatch explicitly: token-created PR runs may require approval.
+          gh workflow run pr-check.yml --ref "$branch" -f "base_ref=$source_sha"
+          echo "publish=false" >> "$GITHUB_OUTPUT"
+          echo "### 版本 PR 等待维护者合并" >> "$GITHUB_STEP_SUMMARY"
+          echo "$pr" >> "$GITHUB_STEP_SUMMARY"
 
   release:
     name: Build and publish release
     needs: version
+    if: needs.version.outputs.publish == 'true'
     permissions:
       contents: write
     uses: ./.github/workflows/release.yml

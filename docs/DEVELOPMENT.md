@@ -8,21 +8,21 @@
 
 ### 补充技能：standard-dev-flow
 
-项目内同时保存了从 `ai_novel_agent`（来源 HEAD：`1df7a8bf6ff942b3146fc04e9b08296e459f2886`）原样复制的 [standard-dev-flow](../.agents/skills/standard-dev-flow/SKILL.md)。用户提及的 `standard-dev-workflow` 在源仓库中的实际目录名是 `standard-dev-flow`；本地保留原名，可用 `$standard-dev-flow` 调用。
+项目内的 [standard-dev-flow](../.agents/skills/standard-dev-flow/SKILL.md) 最初来自 `ai_novel_agent`（来源 HEAD：`1df7a8bf6ff942b3146fc04e9b08296e459f2886`），现已按本项目适配。用户提及的 `standard-dev-workflow` 在源仓库中的实际目录名是 `standard-dev-flow`；本地保留原名，可用 `$standard-dev-flow` 调用。
 
-完整目录包含四个文件：技能正文 `SKILL.md`、界面配置 `agents/openai.yaml`、[Issue 模板](../.agents/skills/standard-dev-flow/assets/issue.md) 和[模块设计模板](../.agents/skills/standard-dev-flow/assets/module-design.md)。功能/重构要求模块设计与真实复用调查，Bug 要求根因说明，维护/文档类型无需设计，调研类型以决策文档为产出；所有类型均包含模块拆解和验证计划。
+技能最初从源项目原样导入，现已按 AI Usage 适配并设为开发入口，历史来源见 [004 记录](changelog/004-import-standard-dev-flow.md)。根目录 AGENTS.md 与技能统一：六种类型均使用 `codex/issue-<真实Issue号>-<短描述>`，类型记录在准备材料中；每个 Issue 只有一条工作分支。
 
-本次仅放入完整技能包，未复制小说项目的应用代码、Git Hook、其他技能或环境分支配置。源包保留原始的类型分支映射；当前项目的 Git、About、变更日志和 `make verify` 规则继续以根目录 `AGENTS.md` 为准，导入本身不切换 Git 流程。若后续要将源技能整套设为强制工作流，应先明确其类型分支映射与现有 `codex/` 约定的适配，不能静默混用。
+创建真实 Issue（可使用 GitHub 的研发变更表单）后，填写 `docs/issues/issue-<Issue号>.json`，字段为 issue、type、branch、status、document、design、research。完整 Issue 文档使用[模板](../.agents/skills/standard-dev-flow/assets/issue.md)；feature/refactor 另用[设计模板](../.agents/skills/standard-dev-flow/assets/module-design.md)，bug 填四行根因，spike 提供带决策问题与产出的调研文档；chore/docs 标记无需设计。先独立提交全部准备材料，运行 `make check-prepare` 后再实施。无真实 Issue 号时只保留草稿，不创建占位符分支。
 
-本次准备记录见 [导入技能的本地 Issue 草稿](issues/import-standard-dev-flow.md)。草稿未关联真实 Issue 号，未创建占位符分支，也未修改外部 Issue 系统。
+准备 JSON 的 status 使用 ready、implementing、complete。PR 正文使用提供的模板，写明 `Closes #<Issue号>` 与准备记录路径。CI 核对远程 Issue 类型及唯一分支、本地材料和准备提交顺序；结构检查不能代替对设计与复用事实的审查。历史已完成任务不追溯补准备提交；历史文档保留阶段证据，并在顶部补最终交付入口。
 
 ### 一次变更的步骤
 
-1. 查看 `git status`，阅读相关实现、调用方与测试，明确问题、修改范围和验收标准；保留已有工作区改动。需要新分支时使用 `codex/<description>`。
+1. 查看 `git status`，阅读相关实现、调用方与测试，明确问题、修改范围和验收标准；保留已有工作区改动。先建立 Issue、唯一工作分支与独立准备提交，执行 `make check-prepare`。
 2. 完成最小可用修改，给行为变更补充相关回归验证。Provider 使用临时 fixture，避免真实日志、会话内容或凭证进入测试和 Git。
 3. 同步 `SettingsView.swift` 的 About 版本说明，新增 `docs/changelog/NNN-description.md`，在其索引的“最新更新”和“变更索引”中添加链接，并更新根目录 `CHANGELOG.md` 的 `Unreleased` 摘要。
 4. 修改 `project.yml` 后执行 `make generate`，一并提交生成的 Xcode 工程与共享 scheme。测试 scheme 固定中文参数，仅作用于测试进程，避免本机语言偏好影响断言。
-5. 运行 `make verify`。它检查本次变更的 About/日志配套修改、运行流程检查器的自测与全部 Swift 测试，再核对构建出的 App 版本。不依赖手工修改 `.xctestrun` 或用户偏好。
+5. 运行 `make verify`。它检查准备门禁、About/日志配套修改和编号唯一性，运行流程检查器的自测与全部 Swift 测试，再核对构建出的 App 版本。不依赖手工修改 `.xctestrun` 或用户偏好。
 6. 查看最终 diff，确认 About、日志、文档和实际行为一致。交付说明列出已验证项与未验证范围；本地通过不等于 CI、UI、真实额度采集或发布验证已通过。
 
 单条变更记录须写明日期、问题与结果、实现范围、执行的验证及结果、未验证项、是否变更版本号。编号递增；发生分支编号冲突时，合并前分配新编号并修正索引链接。已有历史发布摘要保留在根目录 `CHANGELOG.md`，不批量重写成新的逐次记录。
@@ -34,6 +34,7 @@
 | `make generate` | 从 `project.yml` 重新生成工程（需要 XcodeGen） |
 | `make build` / `make app` | 构建当前机器架构的 Debug 应用 |
 | `make test` / `make test-all` | 运行全部 Swift 单元测试 |
+| `make check-prepare` | 检查真实 Issue 记录、类型、分支、准备材料与提交顺序 |
 | `make check-process` | 检查未提交变更的 About/变更记录配套更新及索引链接 |
 | `make check-process BASE_REF=<ref>` | 按 `<ref>...HEAD` 检查 PR 变更；需能访问该 Git 基准 |
 | `make release-check` | 检查当前配置的版本与 About 版本来源 |
@@ -44,7 +45,7 @@
 
 `.github/workflows/pr-check.yml` 在 PR 中分别使用 Apple Silicon 和 Intel runner 执行 `make verify`，包括与 PR 基准的流程检查；任务限时 30 分钟，新提交会取消同一 PR 的旧任务。Tag 版本检查已整合到 `.github/workflows/release.yml`，保留构建前后门禁并自动打包。CI 工作流须推送到 GitHub 后才能验证运行结果。
 
-开发分支保留当前版本号。按用户授权，合入 `main` 后由 `auto-release.yml` 自动递增补丁版本与构建号，更新版本、生成工程、README、根目录摘要和编号发布记录，原子推送机器人版本提交及 Tag，然后调用 Release。About 从 Info.plist 读取版本，无需机器人反复修改 UI 源码。此自动流程不替换已安装应用。
+开发分支保留当前版本号。main 合入普通 PR 后自动创建版本 PR；版本 PR 使用受限生成契约，通过同样的双架构检查，由维护者合并后才打 Tag 和发布。main 必须经 PR，要求 Verify arm64 / Verify x86_64 成功并保持最新，管理员同样适用，不设机器人豁免。此流程不替换已安装应用。
 
 ## 1. 技术选择
 
@@ -330,25 +331,15 @@ integration.claude
 ./scripts/build-direct-release.sh
 ```
 
-main 合入后会自动同步 `project.yml` 的 `MARKETING_VERSION`、`CURRENT_PROJECT_VERSION`、
-生成的 Xcode 工程、README 和发布日志，再创建版本 Tag。日常开发不要手动升版；可随时运行版本来源检查：
+main 合入普通 PR 后，`auto-release.yml` 在来源提交上调用版本脚本和 XcodeGen，创建 `codex/release-X.Y.Z-<来源SHA前12位>` 与版本 PR；同步 project.yml、工程、README 和发布记录。开发者不手动升版，可用 `make release-check` 检查当前版本。
 
-```bash
-make release-check
-```
+机器人仅推版本分支，不直接推 main。版本 PR 的差异须与来源 main 上发布脚本和 XcodeGen 的完整生成结果一致；混入代码、篡改说明或版本号会失败。维护者在 Verify arm64 / Verify x86_64 通过后合并版本 PR，新的 main 任务复核生成契约，在合并提交创建 Tag 并复用 Release。普通开发 PR 不可修改版本号来假冒发布。
 
-`.github/workflows/auto-release.yml` 监听 main 的 push（包括 PR 合并），串行执行版本准备。
-版本脚本要求干净工作区，以当前配置和已有正式版本 Tag 的最大值递增补丁号，构建号加一；
-不会将预发布 Tag 当作正式版本。Unreleased 摘要归档为新版本，并生成下一条编号发布记录。
-如果 HEAD 已带有匹配配置的版本 Tag，则复用该 Tag，重跑不会额外升版。
+版本准备任务使用显式 contents/pull-requests/actions 写权限，仓库 Actions 默认仍为只读。需开启 Allow GitHub Actions to create and approve pull requests，仅用于创建版本 PR；本流程不自动审批。token 创建的 PR 检查可能需要批准，因此显式 workflow_dispatch 派发双架构验证。参考 [GITHUB_TOKEN 事件规则](https://docs.github.com/en/actions/concepts/security/github_token)。
 
-版本提交与 Tag 通过 `git push --atomic` 一次推送，拒绝非快进与 Tag 冲突，不强制覆盖。
-若准备期间 main 又有新提交导致失败，可重跑 Automatic release，基于最新 main 重新准备。
-使用内置 GITHUB_TOKEN 的推送不会触发普通 push 工作流，因此通过 `workflow_call` 显式调用 Release，
-无需额外 PAT，也不依赖新增 push 事件。版本准备与发布任务分别授予所需的 `contents: write`；
-若分支保护阻止机器人提交，流程会明确失败，不修改保护配置。
-参考 [GitHub 事件触发说明](https://docs.github.com/en/actions/how-tos/write-workflows/choose-when-workflows-run/trigger-a-workflow)
-和[复用工作流](https://docs.github.com/en/actions/how-tos/reuse-automations/reuse-workflows)。
+重跑相同来源会复用内容一致的版本分支和 PR，不强推、不覆盖不同内容。main 前进后旧版本 PR 必须关闭并基于最新 main 重新准备，分支最新检查会阻止旧版本 PR 合并。重跑已标记发布提交会复用指向该提交的 Tag；已有同名 Tag 指向其他提交时停止。main 在任务开始后前进，则旧任务不再准备或发布，由新 main 任务接续。
+
+版本 PR 合并需要维护者操作；这是 main 保护下的发布步骤，不再由机器人原子写 main 与 Tag。若自动准备或构建失败，在 Actions 重跑对应任务；不关闭保护、不绕过检查、不覆盖 Tag。
 
 自动调用、Tag 推送或手动重建时，`.github/workflows/release.yml` 会再次检查 Tag、项目配置和“关于”页的版本来源，
 运行 `make verify`，再调用原有打包脚本构建 Release，检查 App 的 `CFBundleShortVersionString`、

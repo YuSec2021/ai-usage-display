@@ -1,7 +1,9 @@
+# Issue #21：落实标准开发门禁与受保护分支发布
+
 ## 基本信息
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/21
 - 类型：`type/chore`
-- 状态：准备完成，待实施
+- 状态：本地实现及验证完成；远程保护与发布闭环以 Issue #21 最终交付结果为准
 - 唯一工作分支：`codex/issue-21-standard-dev-flow`（仅关联本 Issue；实施前核对无同名分支或重复准备记录）。
 - 负责人：YuSec2021
 - 设计或产出文档：N/A — 当前类型不需要设计；流程、契约与模块拆解如下。
@@ -36,7 +38,7 @@ N/A — type/chore 不要求四行 Bug 根因。
 | .github/workflows/auto-release.yml、pr-check.yml、发布脚本与GitHub设置 | 创建/复用版本PR，显式触发检查，合入后tag和发布；main保护 | GITHUB_TOKEN、原Release | 本地回归、双架构CI、真实main规则和版本PR发布闭环 |
 
 ## 风险、假设与待决策项
-- 风险：GITHUB_TOKEN 创建PR不会自动触发其他workflow，因此增加显式workflow_dispatch；仓库需允许Actions创建PR。启用保护前先让新流程具备完整PR交付能力。
+- 风险：GITHUB_TOKEN 创建的PR检查可能需要批准或不能自动运行，因此增加显式workflow_dispatch；仓库需允许Actions创建PR。启用保护前先让新流程具备完整PR交付能力。
 - 假设：用户“按建议完善”授权落实已列出的仓库流程与远程main保护；仅使用最小权限，不申请额外Token。未来版本PR由维护者合并。
 - 待决策：N/A — 保留现有双架构检查、原Release打包实现，采用无保护豁免的版本PR流程。
 
@@ -51,3 +53,7 @@ N/A — type/chore 不要求四行 Bug 根因。
 - [ ] 所有验收通过，限制如实记录。
 - [ ] 本地与远程门禁通过，保护与发布不冲突。
 - [ ] 文档和最终交付状态同步。
+
+## 本地验证与交付入口
+
+34 项隔离流程测试通过；make verify 的 Swift 测试报告 73 项、0 失败，1 项 GPU 预览默认跳过；构建版本 1.2.5 核对通过。工作流 actionlint/ShellCheck 与差异检查通过。远程 CI、main 保护与版本 PR 发布结果持续记录在本 Issue 的最终交付章节；此文件保留本地实施阶段材料，不以此处阶段状态代替远程最终状态。

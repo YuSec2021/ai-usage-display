@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：精简项目首页，补充技术栈徽章、使用指南与 Star 历史曲线；用量采集与额度刷新行为保持不变。",
-                            "This build: simplifies the project README and adds technology badges, a usage guide, and a star history chart. Usage collection and quota refresh behavior are unchanged."
+                            "本次构建：完善 Issue 准备门禁、变更编号校验与版本 PR 发布流程；版本通过审核后发布，用量监控功能保持原有行为。",
+                            "This build: adds Issue preparation gates, unique change numbers, and reviewed release PRs. Usage monitoring retains its existing behavior."
                         ))
                     }
                     .font(.callout)

@@ -54,6 +54,21 @@ class ProjectUpdateTests(unittest.TestCase):
         (self.root / "docs/changelog/001-update.md").unlink()
         self.assertTrue(any("须新增" in error for error in checker.check_update(self.root)))
 
+    def test_rejects_duplicate_change_numbers(self):
+        self.complete_update()
+        self.write("docs/changelog/001-second.md", "another change\n")
+        self.assertTrue(any("编号重复" in error for error in checker.check_update(self.root)))
+
+    def test_rejects_manual_version_change_in_development_pr(self):
+        self.write("project.yml", "  MARKETING_VERSION: 1.2.5\n")
+        self.git("add", ".")
+        self.git("-c", "user.name=Workflow Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "version baseline")
+        self.complete_update()
+        self.write("project.yml", "  MARKETING_VERSION: 1.2.6\n")
+        self.git("add", ".")
+        self.git("-c", "user.name=Workflow Test", "-c", "user.email=test@example.invalid", "commit", "-qm", "manual version")
+        self.assertTrue(any("不可手动" in error for error in checker.check_update(self.root, "HEAD~1")))
+
     def test_rejects_missing_index_section_and_broken_links(self):
         self.complete_update()
         self.write("docs/changelog/README.md", "## 最新更新\n[001](001-update.md)\n[missing](999-missing.md)\n## 变更索引\n")
