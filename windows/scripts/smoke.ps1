@@ -51,6 +51,22 @@ if ($process.ExitCode -ne 0) {
     Start-Sleep -Seconds 2
     Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-2); Level = 2 } -ErrorAction SilentlyContinue |
         Select-Object -First 4 TimeCreated, ProviderName, Message | Format-List | Out-String | Write-Output
+    $cdb = Join-Path ${env:ProgramFiles(x86)} 'Windows Kits/10/Debuggers/x64/cdb.exe'
+    if ($env:CI -eq 'true' -and (Test-Path $cdb)) {
+        $debugStart = [System.Diagnostics.ProcessStartInfo]::new($cdb)
+        $debugStart.UseShellExecute = $false
+        $debugStart.RedirectStandardOutput = $true
+        foreach ($argument in @('-o', '-g', '-G', '-c', '.symfix; sxe -c ".exr -1;kb;!analyze -v;q" 0xc000027b;g', $Executable, '--smoke-test', $Output)) {
+            $debugStart.ArgumentList.Add($argument)
+        }
+        $debugger = [System.Diagnostics.Process]::Start($debugStart)
+        $debugOutput = $debugger.StandardOutput.ReadToEndAsync()
+        if (-not $debugger.WaitForExit(120000)) { $debugger.Kill($true); $debugger.WaitForExit(5000) | Out-Null }
+        if ($debugOutput.Wait(5000)) {
+            $debugOutput.Result | Set-Content (Join-Path $Output 'native-debugger.txt')
+            $debugOutput.Result | Write-Output
+        }
+    }
     throw "Native smoke test failed with exit code $($process.ExitCode)"
 }
 $result = Get-Content -Raw (Join-Path $Output 'smoke.json') | ConvertFrom-Json
