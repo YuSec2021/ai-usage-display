@@ -15,6 +15,7 @@ Issue：[24](https://github.com/YuSec2021/ai-usage-display/issues/24)。唯一�
 - MiniMax Windows 缓存和 WSL 明确暂不支持，不伪造模型用量。日志初读/行大小/文件数量有界，历史不完整时标记。
 - 新增 Windows CI、匿名核心测试、原生启动/collector 烟雾、浮窗截图与自包含 ZIP/SHA-256；保留原 macOS 工程和发布流程。
 - 同步 About 中英文说明、README、Windows 指南、索引与 Unreleased。PNG/ICO 从既有项目图标导出，用于 Windows 原生渲染。
+- 使用系统主题背景保持文字对比度，同页刷新保留滚动位置；烟雾回归检查刷新不会把用户带回页面顶部。
 
 ## 验证
 

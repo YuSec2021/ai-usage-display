@@ -30,6 +30,12 @@ internal static class SmokeCapture
         app.TraceSmoke("capturing-expanded");
         await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, "floating-expanded.png"));
         await CaptureAsync((FrameworkElement)app.Main.Content, Path.Combine(output, "main-window.png"));
+        app.Main.PageScroll.ChangeView(null, Math.Min(100, app.Main.PageScroll.ScrollableHeight), null, true);
+        await Task.Delay(250);
+        var offset = app.Main.PageScroll.VerticalOffset;
+        app.Main.Refresh(); await Task.Delay(250);
+        if (offset <= 0 || Math.Abs(app.Main.PageScroll.VerticalOffset - offset) > 2)
+            throw new InvalidOperationException("刷新后滚动位置未保留");
         app.Main.SelectPage("history"); await Task.Delay(400);
         await CaptureAsync((FrameworkElement)app.Main.Content, Path.Combine(output, "history.png"));
         app.Main.SelectPage("settings"); await Task.Delay(400);
@@ -41,7 +47,7 @@ internal static class SmokeCapture
         if (!hidden || !Native.IsWindowVisible(floating)) throw new InvalidOperationException("浮窗隐藏/恢复失败");
         AtomicJson.Write(Path.Combine(output, "smoke.json"), new { success = true, trayIcons = trayCount, topmost,
             noFloatingPercentages = !percentages, realZeroPreserved = zero == 0, unknownPreserved = unknown is null,
-            hideRestore = true, navigationPages = true, isolated = true, source = "anonymous-fixture", windowsVersion = Environment.OSVersion.VersionString });
+            hideRestore = true, navigationPages = true, scrollPreserved = true, isolated = true, source = "anonymous-fixture", windowsVersion = Environment.OSVersion.VersionString });
     }
     private static IEnumerable<string> Text(DependencyObject element)
     {

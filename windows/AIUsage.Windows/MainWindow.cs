@@ -14,7 +14,9 @@ public sealed partial class MainWindow : Window
     private TextBlock status = new() { FontSize = 12, Opacity = .7, TextWrapping = TextWrapping.Wrap };
     private TextBlock settingsStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
     private string page = "overview";
+    private string? renderedPage;
     private ProviderId? focused;
+    internal ScrollViewer PageScroll => (ScrollViewer)navigation.Content;
     public MainWindow(App app)
     {
         this.app = app; InitializeComponent(); Title = "AI Usage"; SystemBackdrop = new MicaBackdrop();
@@ -49,6 +51,7 @@ public sealed partial class MainWindow : Window
     }
     private void Build()
     {
+        var offset = renderedPage == page && navigation.Content is ScrollViewer previous ? previous.VerticalOffset : 0;
         // A detached NavigationView tree can still own its children; create fresh status elements.
         status = new TextBlock { Text = status.Text, FontSize = 12, Opacity = .7, TextWrapping = TextWrapping.Wrap };
         var content = new StackPanel { Spacing = 14, Margin = new Thickness(22, 10, 22, 24) };
@@ -56,7 +59,9 @@ public sealed partial class MainWindow : Window
         if (page == "overview") Overview(content);
         else if (page == "history") History(content);
         else Settings(content);
-        navigation.Content = new ScrollViewer { Content = content, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        var scroll = new ScrollViewer { Content = content, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled };
+        scroll.Loaded += (_, _) => scroll.ChangeView(null, offset, null, true);
+        navigation.Content = scroll; renderedPage = page;
     }
     private void Overview(StackPanel content)
     {
