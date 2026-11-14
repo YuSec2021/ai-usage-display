@@ -4,6 +4,8 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Executable = (Resolve-Path $Executable).Path
+$resourceIndex = Join-Path (Split-Path $Executable) 'resources.pri'
+if (-not (Test-Path $resourceIndex)) { throw 'Published WinUI resource index is missing' }
 New-Item -ItemType Directory -Path $Output -Force | Out-Null
 $Output = (Resolve-Path $Output).Path
 
