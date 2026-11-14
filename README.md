@@ -8,7 +8,7 @@
 
 在 macOS 菜单栏，一眼查看 **Codex、Claude Code、Kimi Code 和 MiniMax** 的用量、额度窗口与重置时间。
 
-> 当前版本：1.2.3。支持 Apple Silicon 与 Intel，运行需要 macOS 13+。
+> 当前版本：1.2.4。支持 Apple Silicon 与 Intel，运行需要 macOS 13+。
 
 [下载最新版本](https://github.com/YuSec2021/ai-usage-display/releases/latest) · [使用指南](docs/USAGE.md) · [更新记录](CHANGELOG.md)
 

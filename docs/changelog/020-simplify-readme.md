@@ -1,4 +1,4 @@
-# 019：精简 README 与技术栈展示
+# 020：精简 README 与技术栈展示
 
 日期：2026-11-14
 
@@ -28,4 +28,4 @@
 
 ## 版本
 
-保持 1.2.3（Build 7），版本与构建号仍从 Info.plist 读取。未修改 `project.yml` 或生成工程，未手动升版。
+同步最新 main 的自动发布版本 1.2.4（Build 8），版本与构建号仍从 Info.plist 读取；保留 main 的 Ko-fi 赞助配置。原编号 019 已由自动发布记录占用，本记录调整为 020 并同步索引。合并 main 后运行 `make generate`，未手动升版；PR 合入后由 Automatic release 处理后续版本。
