@@ -8,29 +8,22 @@ using Windows.UI;
 
 namespace AIUsage.Windows;
 
-internal sealed class MainWindow : Window
+public sealed partial class MainWindow : Window
 {
     private readonly App app;
-    private readonly NavigationView navigation;
-    private readonly Grid root = new();
     private TextBlock status = new() { FontSize = 12, Opacity = .7, TextWrapping = TextWrapping.Wrap };
     private TextBlock settingsStatus = new() { FontSize = 12, TextWrapping = TextWrapping.Wrap };
     private string page = "overview";
     private ProviderId? focused;
     public MainWindow(App app)
     {
-        this.app = app; Title = "AI Usage"; SystemBackdrop = new MicaBackdrop();
+        this.app = app; InitializeComponent(); Title = "AI Usage"; SystemBackdrop = new MicaBackdrop();
         AppWindow.SetIcon(Path.Combine(AppContext.BaseDirectory, "Assets", "app.ico"));
-        navigation = new NavigationView { PaneDisplayMode = NavigationViewPaneDisplayMode.Top,
-            IsBackButtonVisible = NavigationViewBackButtonVisible.Collapsed, IsSettingsVisible = false,
-            Header = new TextBlock { Text = app.SmokeOutput is null ? "AI Usage" : "AI Usage · CI 匿名示例", FontSize = 26, FontWeight = FontWeights.SemiBold } };
-        foreach (var (tag, text, icon) in new[] { ("overview", "用量", Symbol.ViewAll), ("history", "历史", Symbol.Calendar), ("settings", "设置", Symbol.Setting) })
-            navigation.MenuItems.Add(new NavigationViewItem { Content = text, Tag = tag, Icon = new SymbolIcon(icon) });
+        navigation.Header = new TextBlock { Text = app.SmokeOutput is null ? "AI Usage" : "AI Usage · CI 匿名示例", FontSize = 26, FontWeight = FontWeights.SemiBold };
         navigation.SelectionChanged += (_, args) =>
         {
             if (args.SelectedItem is NavigationViewItem item) { page = (string)item.Tag; Build(); }
         };
-        root.Children.Add(navigation); Content = root;
         var scale = Math.Max(Native.GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)), 96) / 96d;
         AppWindow.Resize(new((int)(480 * scale), (int)(760 * scale)));
         AppWindow.Closing += (_, args) => { if (!app.Exiting) { args.Cancel = true; AppWindow.Hide(); } };

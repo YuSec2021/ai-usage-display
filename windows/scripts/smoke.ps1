@@ -56,7 +56,7 @@ if ($process.ExitCode -ne 0) {
         $debugStart = [System.Diagnostics.ProcessStartInfo]::new($cdb)
         $debugStart.UseShellExecute = $false
         $debugStart.RedirectStandardOutput = $true
-        foreach ($argument in @('-o', '-g', '-G', '-c', '.symfix; sxe -c ".exr -1;kb;!analyze -v;q" 0xc000027b;g', $Executable, '--smoke-test', $Output)) {
+        foreach ($argument in @('-o', '-g', '-G', '-c', '.symfix;kb;!analyze -v;q', $Executable, '--smoke-test', $Output)) {
             $debugStart.ArgumentList.Add($argument)
         }
         $debugger = [System.Diagnostics.Process]::Start($debugStart)
