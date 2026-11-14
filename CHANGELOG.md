@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.6 — 2026-11-14
+
 - Enforce Issue preparation before implementation, unify branch conventions, reject duplicate change numbers, and release through reviewed version PRs compatible with protected main.
 
 ## 1.2.5 — 2026-11-14
