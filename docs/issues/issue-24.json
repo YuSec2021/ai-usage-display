@@ -1,0 +1,9 @@
+{
+  "issue": 24,
+  "type": "feature",
+  "branch": "codex/issue-24-windows-rings",
+  "status": "ready",
+  "document": "docs/issues/issue-24-windows-rings.md",
+  "design": "docs/design/issue-24-windows-rings.md",
+  "research": null
+}
