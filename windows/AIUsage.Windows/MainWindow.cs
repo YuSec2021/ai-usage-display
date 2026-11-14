@@ -34,7 +34,9 @@ internal sealed class MainWindow : Window
         var scale = Math.Max(Native.GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)), 96) / 96d;
         AppWindow.Resize(new((int)(480 * scale), (int)(760 * scale)));
         AppWindow.Closing += (_, args) => { if (!app.Exiting) { args.Cancel = true; AppWindow.Hide(); } };
-        ApplyAppearance(); navigation.SelectedItem = navigation.MenuItems[0];
+        ApplyAppearance(); Build();
+        // Top navigation must have its visual containers before selection is applied.
+        navigation.Loaded += (_, _) => { if (navigation.SelectedItem is null) navigation.SelectedItem = navigation.MenuItems[0]; };
     }
     internal void ApplyAppearance() => root.RequestedTheme = app.Preferences.Theme switch
         { "light" => ElementTheme.Light, "dark" => ElementTheme.Dark, _ => ElementTheme.Default };
