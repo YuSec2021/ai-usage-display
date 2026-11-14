@@ -380,6 +380,8 @@ Developer ID 发布流程：
 
 ## 9. 开发完成检查表
 
+Windows 原生工程、数据源范围、开发和 CI 入口见 [Windows 指南](windows/README.md)。跨平台核心可运行 `make windows-test`，Windows 主机使用 `make windows-build` 或文档中的 PowerShell 命令。Windows PR 另外通过 `Windows x64` 的构建、隔离测试与原生启动检查；原有 `make verify` 继续验证 macOS。Windows ZIP 是预览产物，不替换已安装应用，也不更改现有 macOS 自动发布触发策略。
+
 - [ ] About 说明、编号变更记录、日志索引和 `CHANGELOG.md` 摘要与实际改动一致。
 - [ ] `make verify` 通过，未验证项在变更记录和交付说明中明确列出。
 - [ ] 若为发布：Tag、`MARKETING_VERSION`、生成工程与“关于”页版本完全一致，`CURRENT_PROJECT_VERSION` 已递增。

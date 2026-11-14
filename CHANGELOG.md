@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add a separate Windows 11 x64 preview using C# / WinUI 3, model-ring tray icons, a persistent floating window, isolated provider tests, and native Windows CI artifacts. Codex, Claude Code and Kimi are adapted; MiniMax and WSL are explicitly unsupported in this preview.
+
 ## 1.2.6 — 2026-11-14
 
 - Enforce Issue preparation before implementation, unify branch conventions, reject duplicate change numbers, and release through reviewed version PRs compatible with protected main.

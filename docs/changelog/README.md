@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [024：Windows 圆环托盘与桌面浮窗预览](024-windows-rings.md)：新增原生 WinUI 3 工程，任务栏右侧圆环与独立浮窗共用用量状态，提供 Windows CI、自包含预览与隔离验证。
+
 - [023：发布 1.2.6](023-release-1.2.6.md)：自动补丁升版为 1.2.6（Build 10），发布结果以 Actions 为准。
 - [022：落实标准开发门禁与受保护分支发布](022-standard-dev-gates.md)：统一 Issue/分支准备记录，检查准备提交顺序和日志编号，采用版本 PR 发布并落实 main 保护。
 
@@ -66,3 +68,4 @@
 | [021](021-release-1.2.5.md) | release | 发布 1.2.5 | 2026-11-14 |
 | [022](022-standard-dev-gates.md) | chore | 落实标准开发门禁与受保护分支发布 | 2026-11-14 |
 | [023](023-release-1.2.6.md) | release | 发布 1.2.6 | 2026-11-14 |
+| [024](024-windows-rings.md) | feature | Windows 圆环托盘与桌面浮窗预览 | 2026-11-15 |

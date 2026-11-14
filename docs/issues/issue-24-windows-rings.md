@@ -3,7 +3,7 @@
 ## 基本信息
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/24
 - 类型：`type/feature`
-- 状态：准备完成，待实施
+- 状态：实施中；本地核心与 macOS 验证通过，待 Windows 原生 CI
 - 工作分支：`codex/issue-24-windows-rings`（已核对无同名分支，唯一关联本 Issue）
 - 负责人：YuSec2021
 - 设计或产出文档：`docs/design/issue-24-windows-rings.md`，已完成复用调查、模块拆解和验证计划

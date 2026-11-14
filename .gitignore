@@ -6,3 +6,6 @@ xcuserdata/
 dist/
 tmp/
 __pycache__/
+**/bin/
+**/obj/
+**/TestResults/
