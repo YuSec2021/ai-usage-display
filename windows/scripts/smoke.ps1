@@ -41,7 +41,11 @@ $start.ArgumentList.Add('--smoke-test')
 $start.ArgumentList.Add($Output)
 $process = [System.Diagnostics.Process]::Start($start)
 if (-not $process.WaitForExit(60000)) { $process.Kill($true); throw 'Native WinUI smoke test timed out' }
-if ($process.ExitCode -ne 0) { throw "Native smoke test failed with exit code $($process.ExitCode)" }
+if ($process.ExitCode -ne 0) {
+    $errorFile = Join-Path $Output 'smoke-error.json'
+    if (Test-Path $errorFile) { Get-Content -Raw $errorFile | Write-Output }
+    throw "Native smoke test failed with exit code $($process.ExitCode)"
+}
 $result = Get-Content -Raw (Join-Path $Output 'smoke.json') | ConvertFrom-Json
 if (-not $result.success -or $result.trayIcons -ne 4 -or -not $result.noFloatingPercentages) { throw 'Native smoke assertions failed' }
 $result | ConvertTo-Json

@@ -31,7 +31,8 @@ internal sealed class MainWindow : Window
             if (args.SelectedItem is NavigationViewItem item) { page = (string)item.Tag; Build(); }
         };
         root.Children.Add(navigation); Content = root;
-        AppWindow.Resize(new(480, 760));
+        var scale = Math.Max(Native.GetDpiForWindow(WinRT.Interop.WindowNative.GetWindowHandle(this)), 96) / 96d;
+        AppWindow.Resize(new((int)(480 * scale), (int)(760 * scale)));
         AppWindow.Closing += (_, args) => { if (!app.Exiting) { args.Cancel = true; AppWindow.Hide(); } };
         ApplyAppearance(); navigation.SelectedItem = navigation.MenuItems[0];
     }

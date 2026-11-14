@@ -41,7 +41,7 @@ internal sealed class FloatingWindow : Window, IDisposable
     internal void Show()
     {
         Refresh();
-        var work = Native.WorkArea(app.Preferences.FloatingX ?? 0, app.Preferences.FloatingY ?? 0).Bounds;
+        var work = Native.WorkArea(app.Preferences.FloatingX ?? 0, app.Preferences.FloatingY ?? 0, app.Preferences.FloatingDisplay).Bounds;
         var size = DesiredSize();
         var position = new WindowPlacement(app.Preferences.FloatingX ?? work.X + work.Width - size.Width - 24,
             app.Preferences.FloatingY ?? work.Y + work.Height - size.Height - 24, size.Width, size.Height).Fit(work);

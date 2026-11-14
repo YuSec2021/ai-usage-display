@@ -50,7 +50,7 @@ public partial class App : Microsoft.UI.Xaml.Application
         UnhandledException += (_, eventArgs) =>
         {
             if (SmokeOutput is not null)
-                AtomicJson.Write(Path.Combine(SmokeOutput, "smoke-error.json"), new { error = eventArgs.Exception.GetType().FullName });
+                AtomicJson.Write(Path.Combine(SmokeOutput, "smoke-error.json"), new { error = eventArgs.Exception.ToString() });
         };
     }
 

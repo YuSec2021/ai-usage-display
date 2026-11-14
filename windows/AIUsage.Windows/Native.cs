@@ -27,6 +27,8 @@ internal static class Native
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern nint FindWindowW(string? className, string title);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern uint RegisterWindowMessageW(string name);
     [DllImport("user32.dll")] private static extern nint MonitorFromPoint(Point point, uint flags);
+    [UnmanagedFunctionPointer(CallingConvention.Winapi)] private delegate bool MonitorCallback(nint monitor, nint context, ref Rect bounds, nint data);
+    [DllImport("user32.dll")] private static extern bool EnumDisplayMonitors(nint context, nint clip, MonitorCallback callback, nint data);
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] private static extern bool GetMonitorInfoW(nint monitor, ref MonitorInfo info);
     [DllImport("user32.dll")] internal static extern nint CreatePopupMenu();
     [DllImport("user32.dll", CharSet = CharSet.Unicode)] internal static extern bool AppendMenuW(nint menu, uint flags, nuint id, string? text);
@@ -34,10 +36,20 @@ internal static class Native
     [DllImport("user32.dll")] internal static extern bool DestroyMenu(nint menu);
     [DllImport("user32.dll")] internal static extern bool DestroyIcon(nint icon);
 
-    internal static (WindowPlacement Bounds, string Device) WorkArea(int x, int y)
+    internal static (WindowPlacement Bounds, string Device) WorkArea(int x, int y, string? preferredDevice = null)
     {
+        var monitor = MonitorFromPoint(new(x, y), 2);
+        if (!string.IsNullOrEmpty(preferredDevice))
+        {
+            EnumDisplayMonitors(0, 0, (nint candidate, nint context, ref Rect bounds, nint data) =>
+            {
+                var candidateInfo = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>(), Device = "" };
+                if (!GetMonitorInfoW(candidate, ref candidateInfo) || candidateInfo.Device != preferredDevice) return true;
+                monitor = candidate; return false;
+            }, 0);
+        }
         var info = new MonitorInfo { Size = Marshal.SizeOf<MonitorInfo>(), Device = "" };
-        if (!GetMonitorInfoW(MonitorFromPoint(new(x, y), 2), ref info))
+        if (!GetMonitorInfoW(monitor, ref info))
             return (new(0, 0, 1280, 720), "");
         return (new(info.Work.Left, info.Work.Top, info.Work.Right - info.Work.Left, info.Work.Bottom - info.Work.Top), info.Device);
     }
