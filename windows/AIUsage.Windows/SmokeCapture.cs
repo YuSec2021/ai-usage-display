@@ -25,7 +25,7 @@ internal static class SmokeCapture
             throw new InvalidOperationException("原生窗口、置顶、托盘、无百分比或零值/未知状态验证失败");
         app.TraceSmoke("capturing-compact");
         await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, "floating-compact.png"));
-        app.Preferences.Expanded = true; app.Floating.Refresh();
+        app.Preferences.Expanded = true; app.Floating.Refresh(); app.Floating.FitAndRemember();
         await Task.Delay(700);
         app.TraceSmoke("capturing-expanded");
         await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, "floating-expanded.png"));

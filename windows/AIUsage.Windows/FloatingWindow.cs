@@ -7,22 +7,18 @@ using Windows.Graphics;
 
 namespace AIUsage.Windows;
 
-internal sealed class FloatingWindow : Window, IDisposable
+public sealed partial class FloatingWindow : Window, IDisposable
 {
     private readonly App app;
-    private readonly StackPanel content = new() { Spacing = 10, Margin = new Thickness(12, 8, 12, 8) };
-    private readonly Border surface;
     private readonly nint handle;
     private readonly WindowHook hook;
     private bool moving;
     public FloatingWindow(App app)
     {
-        this.app = app; Title = "AI Usage Floating";
+        this.app = app; InitializeComponent(); Title = "AI Usage Floating";
         handle = WinRT.Interop.WindowNative.GetWindowHandle(this);
         SystemBackdrop = new DesktopAcrylicBackdrop();
-        surface = new Border { Child = content, CornerRadius = new CornerRadius(18), BorderThickness = new Thickness(1),
-            BorderBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(50, 128, 128, 128)) };
-        Content = surface;
+        surface.BorderBrush = new SolidColorBrush(global::Windows.UI.Color.FromArgb(50, 128, 128, 128));
         var presenter = (OverlappedPresenter)AppWindow.Presenter;
         presenter.SetBorderAndTitleBar(false, false); presenter.IsResizable = false; presenter.IsMaximizable = false;
         presenter.IsMinimizable = false; presenter.IsAlwaysOnTop = app.Preferences.AlwaysOnTop;
