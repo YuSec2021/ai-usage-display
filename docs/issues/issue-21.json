@@ -1,0 +1,9 @@
+{
+  "issue": 21,
+  "type": "chore",
+  "branch": "codex/issue-21-standard-dev-flow",
+  "status": "complete",
+  "document": "docs/issues/issue-21-standard-dev-flow.md",
+  "design": null,
+  "research": null
+}

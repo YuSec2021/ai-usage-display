@@ -9,13 +9,14 @@ XCODE_FLAGS = -project AIUsage.xcodeproj -scheme AIUsage \
 	-configuration "$(CONFIGURATION)" -derivedDataPath "$(BUILD_DIR)" \
 	CODE_SIGNING_ALLOWED=NO ARCHS="$(ARCH)" ONLY_ACTIVE_ARCH=YES
 
-.PHONY: help generate build app test test-all check-process release-check verify dmg
+.PHONY: help generate build app test test-all check-prepare check-process release-check verify dmg
 
 help:
 	@echo "make generate       Generate the Xcode project after editing project.yml"
 	@echo "make build          Build the app for the current architecture (alias: app)"
 	@echo "make test           Run all Swift tests (alias: test-all)"
 	@echo "make check-process  Check About and changelog updates; BASE_REF=<git-ref> for a PR"
+	@echo "make check-prepare  Check Issue, task type, branch, and preparation commit"
 	@echo "make release-check  Verify the configured release version"
 	@echo "make verify         Check the update process, run tests, and verify the built version"
 	@echo "make dmg            Build the existing ad-hoc signed release DMG"
@@ -33,7 +34,10 @@ test:
 
 test-all: test
 
-check-process:
+check-prepare:
+	python3 scripts/check-preparation.py $(if $(BASE_REF),--base "$(BASE_REF)")
+
+check-process: check-prepare
 	python3 -m unittest discover -s Tests/WorkflowTests -p 'test_*.py'
 	python3 scripts/check-project-update.py $(if $(BASE_REF),--base "$(BASE_REF)")
 

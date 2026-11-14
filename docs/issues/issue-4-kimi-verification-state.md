@@ -1,5 +1,7 @@
 # #4：Kimi 验证状态与旧响应回写
 
+> 最终交付：已通过 [PR #14](https://github.com/YuSec2021/ai-usage-display/pull/14) 与 [PR #19](https://github.com/YuSec2021/ai-usage-display/pull/19) 合入 main，并发布 [v1.2.3](https://github.com/YuSec2021/ai-usage-display/releases/tag/v1.2.3)；[Issue #4](https://github.com/YuSec2021/ai-usage-display/issues/4) 已关闭。下文保留实施阶段记录，其中“待 PR”“尚未发布”描述的是当时状态。
+
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/4
 - 类型：type/bug；状态：本地实现及隔离验证完成，待 PR 交付；负责人：当前项目维护者
 - 唯一工作分支：codex/issue-4-kimi-verification-state（已创建）

@@ -11,13 +11,14 @@ description: 在实施前，通过强制创建 Issue、一对一工作分支、�
 
 | `type/*` | 准备要求 | 工作分支 |
 |---|---|---|
-| `type/feature` | 必须提供模块设计，哪怕只有半页 | `feature/<板块号>-<短描述>` |
-| `type/bug` | 不需要模块设计；必须提供四行根因说明 | `bug-<issue号>` |
-| `type/chore` | 不需要模块设计 | `chore/<issue号>-<短描述>` |
-| `type/docs` | 不需要模块设计 | `docs/<issue号>-<短描述>` |
-| `type/spike` | 不需要模块设计；产出物就是文档 | `spike/<issue号>-<短描述>` |
-| `type/refactor` | 必须提供模块设计 | `feature/<板块号>-<短描述>` |
+| `type/feature` | 必须提供模块设计，哪怕只有半页 | `codex/issue-<Issue号>-<短描述>` |
+| `type/bug` | 不需要模块设计；必须提供四行根因说明 | `codex/issue-<Issue号>-<短描述>` |
+| `type/chore` | 不需要模块设计 | `codex/issue-<Issue号>-<短描述>` |
+| `type/docs` | 不需要模块设计 | `codex/issue-<Issue号>-<短描述>` |
+| `type/spike` | 不需要模块设计；产出物就是文档 | `codex/issue-<Issue号>-<短描述>` |
+| `type/refactor` | 必须提供模块设计 | `codex/issue-<Issue号>-<短描述>` |
 
+本表为 AI Usage 的项目适配，类型记录在准备材料中，所有工作分支统一使用根目录 AGENTS.md 规定的 `codex/` 前缀。没有真实 Issue 号时只准备本地草稿，不创建占位符工作分支。
 长期存在的环境分支不是工作分支，不纳入一对一映射。
 
 ## 必须执行的顺序
@@ -37,7 +38,7 @@ description: 在实施前，通过强制创建 Issue、一对一工作分支、�
 6. 在 Issue 或必需的设计文档中拆解受影响模块。明确具体路径或组件、契约与数据变更、调用方、验证门禁和发布注意事项。
 7. 根据类型，将设计、根因说明或调研产出，以及模块拆解、风险和验证计划回填到 Issue。
 8. 确认该 Issue 没有其他工作分支，并且目标分支未分配给其他 Issue。在 Issue 中记录最终分支名。
-9. 核验准备门禁。只有通过后才能开始实施。
+9. 将完整 Issue 文档和 `docs/issues/issue-<Issue号>.json`、设计或调研材料单独提交。运行 `make check-prepare` 核验准备门禁；只有通过后才能开始实施。PR CI 复查该准备提交早于实施，且远程 Issue 类型与唯一分支一致。
 10. 实施期间，持续更新 Issue 状态和验收标准。范围或设计发生变化时，必须先更新准备产物和模块拆解，再继续实施。
 
 ## 准备门禁
@@ -69,3 +70,12 @@ description: 在实施前，通过强制创建 Issue、一对一工作分支、�
 - Issue 正文或本地草稿使用 [assets/issue.md](assets/issue.md)。
 
 对于确实不适用的必填章节，使用 `N/A — <原因>`。不得静默删除与风险相关的章节。
+
+
+## AI Usage 自动化契约
+
+准备记录使用 JSON 字段：`issue`（真实正整数）、`type`（表中类型去掉 `type/`）、`branch`、`status`（ready/implementing/complete）、`document`（docs/issues 下的完整 Issue 文档）、`design`、`research`。不适用的材料填 null。每条工作分支只关联一个记录；PR 正文填写 `Closes #<Issue号>` 和准备记录路径。
+
+准备提交只包含该任务的 JSON、Issue 文档及必要设计/调研材料。后续修改范围时先更新材料，再实施。代码审查仍须核对材料的事实与设计质量，结构检查不能代替人工判断。
+
+机器人版本分支为 `codex/release-X.Y.Z-<来源SHA前12位>`，不属于开发工作分支。它只允许发布脚本与 XcodeGen 的精确生成结果，通过同样的双架构检查并经维护者合并后创建 Tag；不更新 About 源码、不伪造产品 Issue、不直接推 main。历史已完成材料不追溯要求新增准备提交。
