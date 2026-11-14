@@ -57,12 +57,16 @@ public partial class App : Microsoft.UI.Xaml.Application
 
     protected override void OnLaunched(LaunchActivatedEventArgs args)
     {
+        TraceSmoke("creating-main");
         Main = new(this);
+        TraceSmoke("creating-floating");
         Floating = new(this);
+        TraceSmoke("creating-tray");
         tray = new(WinRT.Interop.WindowNative.GetWindowHandle(Main), ShowMain, () => ShowFloating(!Preferences.FloatingVisible),
             () => _ = Monitor.RefreshAsync(), Shutdown, () => Preferences.FloatingVisible, SmokeOutput is not null);
         Monitor.Changed += () => dispatcher.TryEnqueue(() => { if (!Exiting) Render(); });
         Main.Activate();
+        TraceSmoke("main-activated");
         if (Preferences.FloatingVisible) Floating.Show();
         periodic = new DispatcherTimer { Interval = TimeSpan.FromSeconds(Preferences.RefreshSeconds) };
         periodic.Tick += (_, _) => _ = Monitor.RefreshAsync();
@@ -75,6 +79,11 @@ public partial class App : Microsoft.UI.Xaml.Application
         Render();
         _ = Monitor.RefreshAsync();
         if (SmokeOutput is not null) _ = RunSmokeAsync();
+    }
+
+    internal void TraceSmoke(string stage)
+    {
+        if (SmokeOutput is not null) AtomicJson.Write(Path.Combine(SmokeOutput, "smoke-progress.json"), new { stage });
     }
 
     internal IReadOnlyList<UsageSnapshot> VisibleSnapshots() => Preferences.VisibleProviders().Select(id =>
@@ -136,8 +145,11 @@ public partial class App : Microsoft.UI.Xaml.Application
         try
         {
             await Monitor.RefreshAsync();
+            TraceSmoke("waiting-for-layout");
             await Task.Delay(2500);
+            TraceSmoke("rendering-fixtures");
             Render();
+            TraceSmoke("checking-native-state");
             await SmokeCapture.RunAsync(this, tray.Count, SmokeOutput!);
             Shutdown();
         }

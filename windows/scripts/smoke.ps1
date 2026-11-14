@@ -44,6 +44,10 @@ if (-not $process.WaitForExit(60000)) { $process.Kill($true); throw 'Native WinU
 if ($process.ExitCode -ne 0) {
     $errorFile = Join-Path $Output 'smoke-error.json'
     if (Test-Path $errorFile) { Get-Content -Raw $errorFile | Write-Output }
+    $progressFile = Join-Path $Output 'smoke-progress.json'
+    if (Test-Path $progressFile) { Get-Content -Raw $progressFile | Write-Output }
+    Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-2); Level = 2 } -ErrorAction SilentlyContinue |
+        Select-Object -First 4 TimeCreated, ProviderName, Message | Format-List | Out-String | Write-Output
     throw "Native smoke test failed with exit code $($process.ExitCode)"
 }
 $result = Get-Content -Raw (Join-Path $Output 'smoke.json') | ConvertFrom-Json

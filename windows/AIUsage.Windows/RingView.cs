@@ -52,7 +52,7 @@ internal static class RingView
         var tile = new Border { Width = size * .51, Height = size * .51, CornerRadius = new CornerRadius(6),
             Background = new SolidColorBrush(Color.FromArgb(245, 248, 248, 248)), HorizontalAlignment = HorizontalAlignment.Center,
             VerticalAlignment = VerticalAlignment.Center };
-        tile.Child = new Image { Source = new BitmapImage(new Uri(System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", snapshot.Provider.Logo() + ".png"))), Margin = new Thickness(2) };
+        tile.Child = new Image { Source = new BitmapImage(new Uri("ms-appx:///Assets/" + snapshot.Provider.Logo() + ".png")), Margin = new Thickness(2) };
         root.Children.Add(tile);
         AutomationProperties.SetName(root, snapshot.Provider.Name() + "，5 小时额度圆环，" + snapshot.Status(now));
         ToolTipService.SetToolTip(root, snapshot.Provider.Name() + " · " + snapshot.Status(now));
