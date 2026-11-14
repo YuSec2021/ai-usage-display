@@ -46,6 +46,9 @@ if ($process.ExitCode -ne 0) {
     if (Test-Path $errorFile) { Get-Content -Raw $errorFile | Write-Output }
     $progressFile = Join-Path $Output 'smoke-progress.json'
     if (Test-Path $progressFile) { Get-Content -Raw $progressFile | Write-Output }
+    $exceptionsFile = Join-Path $Output 'smoke-exceptions.txt'
+    if (Test-Path $exceptionsFile) { Get-Content -Raw $exceptionsFile | Write-Output }
+    Start-Sleep -Seconds 2
     Get-WinEvent -FilterHashtable @{ LogName = 'Application'; StartTime = (Get-Date).AddMinutes(-2); Level = 2 } -ErrorAction SilentlyContinue |
         Select-Object -First 4 TimeCreated, ProviderName, Message | Format-List | Out-String | Write-Output
     throw "Native smoke test failed with exit code $($process.ExitCode)"

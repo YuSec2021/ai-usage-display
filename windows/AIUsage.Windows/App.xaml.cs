@@ -27,6 +27,17 @@ public partial class App : Microsoft.UI.Xaml.Application
         InitializeComponent();
         dispatcher = DispatcherQueue.GetForCurrentThread();
         SmokeOutput = args.Length == 2 && args[0] == "--smoke-test" ? Path.GetFullPath(args[1]) : null;
+        if (SmokeOutput is not null)
+        {
+            var exceptionCount = 0;
+            Directory.CreateDirectory(SmokeOutput);
+            // WinRT event exceptions can become native stowed exceptions before XAML's handler runs.
+            AppDomain.CurrentDomain.FirstChanceException += (_, error) =>
+            {
+                if (Interlocked.Increment(ref exceptionCount) <= 64)
+                    File.AppendAllText(Path.Combine(SmokeOutput, "smoke-exceptions.txt"), error.Exception + Environment.NewLine);
+            };
+        }
         var data = SmokeOutput is not null ? Path.Combine(SmokeOutput, "isolated-data") :
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "AIUsage");
         Paths = new(SmokeOutput is null ? Environment.GetFolderPath(Environment.SpecialFolder.UserProfile) : Path.Combine(data, "home"), data);
