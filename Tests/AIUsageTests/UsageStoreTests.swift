@@ -13,7 +13,7 @@ final class UsageStoreTests: XCTestCase {
 
     private func store(_ providers: [StoreProvider], defaults: UserDefaults, modified: @escaping () -> Date? = { nil }) -> UsageStore {
         UsageStore(codexProvider: providers[0], claudeProvider: providers[1], kimiProvider: providers[2],
-                   miniMaxProvider: providers[3], antigravityProvider: providers[4],
+                   miniMaxProvider: providers[3], antigravityProvider: providers[4], grokProvider: providers[5],
                    defaults: defaults, startsAutomatically: false,
                    claudeModificationDate: modified)
     }
@@ -122,6 +122,23 @@ final class UsageStoreTests: XCTestCase {
             [.codex, .claudeCode]
         )
     }
+
+    func testGrokSelectionMigrationPreservesCustomSelectionAndIsOneTime() {
+        let providers = ProviderID.allCases.map { StoreProvider($0) }
+        let prefs = defaults()
+        prefs.set("codex,claudeCode,kimiCode,miniMax,antigravity", forKey: ProviderID.selectionStorageKey)
+        let value = store(providers, defaults: prefs)
+        value.migrateProviderSelectionForGrok()
+        XCTAssertEqual(prefs.string(forKey: ProviderID.selectionStorageKey), ProviderID.defaultSelectionRawValue)
+        prefs.set("codex,antigravity", forKey: ProviderID.selectionStorageKey)
+        value.migrateProviderSelectionForGrok()
+        XCTAssertEqual(prefs.string(forKey: ProviderID.selectionStorageKey), "codex,antigravity")
+
+        let custom = defaults([.codex, .miniMax])
+        store(providers, defaults: custom).migrateProviderSelectionForGrok()
+        XCTAssertEqual(custom.string(forKey: ProviderID.selectionStorageKey), "codex,miniMax")
+    }
+
 }
 
 private actor StoreGate {

@@ -35,6 +35,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case kimiCode
     case miniMax
     case antigravity
+    case grok
 
     var id: Self { self }
 
@@ -45,6 +46,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .kimiCode: "Kimi Code"
         case .miniMax: "MiniMax"
         case .antigravity: "Antigravity"
+        case .grok: "Grok"
         }
     }
 
@@ -55,6 +57,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .kimiCode: Color(red: 0.20, green: 0.45, blue: 0.96)
         case .miniMax: Color(red: 0.95, green: 0.10, blue: 0.48)
         case .antigravity: Color(red: 0.26, green: 0.52, blue: 0.96)
+        case .grok: Color.primary
         }
     }
 
@@ -66,10 +69,25 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .kimiCode: "KimiLogo"
         case .miniMax: "MiniMaxLogo"
         case .antigravity: "AntigravityLogo"
+        case .grok: "GrokLogo"
         }
     }
 
-    var logoUsesPrimaryColor: Bool { self == .codex || self == .kimiCode }
+    var logoUsesPrimaryColor: Bool { self == .codex || self == .kimiCode || self == .grok }
+
+    var primaryQuotaLabel: String {
+        self == .grok ? L10n.text("本周", "Weekly") : L10n.text("5 小时", "5 hours")
+    }
+
+    var primaryQuotaUsedTitle: String {
+        self == .grok ? L10n.text("订阅周额度已用", "Weekly subscription quota used")
+            : L10n.text("5 小时已用额度", "5-hour quota used")
+    }
+
+    var primaryQuotaUnavailable: String {
+        self == .grok ? L10n.text("暂无有效订阅周额度", "Weekly subscription quota unavailable")
+            : L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable")
+    }
 
     static let selectionStorageKey = "providers.selected"
     static let orderStorageKey = "providers.order"
@@ -288,6 +306,21 @@ struct UsageSnapshot: Equatable, Sendable, Identifiable {
                 && $0.usedPercentage.isFinite
                 && ($0.resetsAt.map { $0 > date } ?? true)
         }
+    }
+
+    func primaryQuotaWindow(at date: Date = Date()) -> RateLimitWindow? {
+        guard provider == .grok else { return fiveHourWindow(at: date) }
+        guard availability.hasUsableData else { return nil }
+        return windows.first {
+            $0.kind == .long && $0.durationMinutes == 10_080 && $0.usedPercentage.isFinite
+                && ($0.resetsAt.map { $0 > date } ?? true)
+        }
+    }
+
+    func primaryQuotaStatusDescription(at date: Date = Date()) -> String {
+        guard provider == .grok else { return fiveHourStatusDescription(at: date) }
+        guard let window = primaryQuotaWindow(at: date) else { return provider.primaryQuotaUnavailable }
+        return UsageFormatting.resetDescription(window.resetsAt)
     }
 
     func fiveHourStatusDescription(at date: Date = Date()) -> String {

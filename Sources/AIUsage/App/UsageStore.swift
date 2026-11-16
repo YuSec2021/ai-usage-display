@@ -27,6 +27,7 @@ final class UsageStore: ObservableObject {
         kimiProvider: any UsageProvider = KimiUsageProvider(),
         miniMaxProvider: any UsageProvider = MiniMaxUsageProvider(),
         antigravityProvider: any UsageProvider = AntigravityUsageProvider(),
+        grokProvider: any UsageProvider = GrokUsageProvider(),
         defaults: UserDefaults = .standard,
         startsAutomatically: Bool = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
         claudeModificationDate: @escaping () -> Date? = {
@@ -43,7 +44,8 @@ final class UsageStore: ObservableObject {
             .claudeCode: claudeProvider,
             .kimiCode: kimiProvider,
             .miniMax: miniMaxProvider,
-            .antigravity: antigravityProvider
+            .antigravity: antigravityProvider,
+            .grok: grokProvider
         ]
         self.defaults = defaults
         self.claudeModificationDate = claudeModificationDate
@@ -52,6 +54,7 @@ final class UsageStore: ObservableObject {
         if startsAutomatically {
             migrateProviderSelectionForMiniMax()
             migrateProviderSelectionForAntigravity()
+            migrateProviderSelectionForGrok()
             start()
         }
     }
@@ -98,6 +101,16 @@ final class UsageStore: ObservableObject {
                 ProviderID.defaultSelectionRawValue,
                 forKey: ProviderID.selectionStorageKey
             )
+        }
+    }
+
+    func migrateProviderSelectionForGrok() {
+        let migrationKey = "providers.selection.migrated.grok"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+        defer { defaults.set(true, forKey: migrationKey) }
+        let previousDefault = ProviderID.allCases.filter { $0 != .grok }.map(\.rawValue).joined(separator: ",")
+        if defaults.string(forKey: ProviderID.selectionStorageKey) == previousDefault {
+            defaults.set(ProviderID.defaultSelectionRawValue, forKey: ProviderID.selectionStorageKey)
         }
     }
 

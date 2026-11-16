@@ -8,23 +8,30 @@ struct ProviderCard: View {
 
     private var accent: Color { snapshot.provider.accent }
 
-    private var fiveHourWindow: RateLimitWindow? { snapshot.fiveHourWindow() }
+    private var primaryWindow: RateLimitWindow? { snapshot.primaryQuotaWindow() }
+
+    private var secondaryWindows: [RateLimitWindow] {
+        snapshot.windows.filter {
+            snapshot.provider == .grok ? $0.id != primaryWindow?.id
+                : $0.kind != .short || $0.durationMinutes != 300
+        }
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             HStack(spacing: 18) {
                 UsageRing(
                     provider: snapshot.provider,
-                    window: fiveHourWindow,
+                    window: primaryWindow,
                     isStale: snapshot.availability.isStale
                 )
                 VStack(alignment: .leading, spacing: 6) {
                     Text(snapshot.provider.displayName)
                         .font(.title3.weight(.semibold))
-                    Text(L10n.text("5 小时已用额度", "5-hour quota used"))
+                    Text(snapshot.provider.primaryQuotaUsedTitle)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
-                    Text(snapshot.fiveHourStatusDescription())
+                    Text(snapshot.primaryQuotaStatusDescription())
                         .font(.caption)
                         .foregroundStyle(.secondary)
                 }
@@ -48,7 +55,7 @@ struct ProviderCard: View {
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
-            ForEach(snapshot.windows.filter { $0.kind != .short || $0.durationMinutes != 300 }) { window in
+            ForEach(secondaryWindows) { window in
                 HStack(spacing: 10) {
                     UsageRing(provider: snapshot.provider, window: window, size: 30, isStale: snapshot.availability.isStale)
                     Text(window.label)
@@ -61,7 +68,7 @@ struct ProviderCard: View {
                 }
             }
 
-            if snapshot.provider != .miniMax {
+            if snapshot.provider != .miniMax && snapshot.provider != .grok {
                 Divider()
 
                 HStack {
@@ -107,6 +114,17 @@ struct ProviderCard: View {
     }
 
     private var emptyStateMessage: String {
+        if snapshot.provider == .grok {
+            switch snapshot.availability {
+            case .cliNotInstalled:
+                return L10n.text("未检测到 Grok Bot 订阅缓存，请先安装并登录 Grok Bot", "Grok Bot subscription cache not found. Install and sign in to Grok Bot.")
+            case .stale, .waitingForFirstSample:
+                return L10n.text("周额度缓存已过期，请打开 Grok Bot 的 Usage & Billing 后刷新", "Weekly cache expired. Open Usage & Billing in Grok Bot, then refresh.")
+            case .unsupportedFormat:
+                return L10n.text("Grok Bot 额度缓存格式暂不支持，请更新 Grok Bot 后重试", "Unsupported Grok Bot quota cache. Update Grok Bot and retry.")
+            default: return snapshot.availability.message
+            }
+        }
         if snapshot.provider == .miniMax {
             switch snapshot.availability {
             case .cliNotInstalled:

@@ -50,8 +50,8 @@ struct SettingsView: View {
                 Text("AI Usage")
                     .font(.title2.weight(.semibold))
                 Text(L10n.text(
-                    "Codex、Claude Code、Kimi Code、MiniMax 与 Antigravity 本地用量监控",
-                    "Local usage monitor for Codex, Claude Code, Kimi Code, MiniMax, and Antigravity"
+                    "Codex、Claude Code、Kimi Code、MiniMax、Antigravity 与 Grok 用量监控",
+                    "Usage monitor for Codex, Claude Code, Kimi Code, MiniMax, Antigravity, and Grok"
                 ))
                     .foregroundStyle(.secondary)
                 Text(L10n.text("作者：YuSec", "Author: YuSec"))
@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：新增 Google Antigravity 本地 Token 统计与多分组模型额度监控（Gemini 5 小时/本周、Argon 本周及 Claude/GPT 分组额度），支持菜单栏圆环与 7 天历史图。",
-                            "This build: adds Google Antigravity local token tracking and multi-group model quota monitoring (Gemini 5-hour/weekly, Argon weekly, and Claude/GPT group quotas), with menu bar rings and 7-day history."
+                            "本次构建：新增 Grok 订阅周额度，通过 Grok Bot 本地缓存显示已用比例与重置时间；圆环明确区分周额度与其他模型的 5 小时额度。",
+                            "This build: adds Grok weekly subscription usage and reset times from the local Grok Bot cache, with weekly rings distinct from other models’ 5-hour quotas."
                         ))
                     }
                     .font(.callout)
@@ -437,10 +437,39 @@ struct SettingsView: View {
                     .padding(.vertical, 4)
                 }
 
+                GroupBox("Grok") {
+                    VStack(alignment: .leading, spacing: 8) {
+                        let detected = FileManager.default.fileExists(atPath: ProviderPaths.grokBotCacheDirectory.path)
+                        HStack {
+                            Text(L10n.text("Grok Bot 本地缓存", "Local Grok Bot cache"))
+                            Spacer()
+                            Label(detected ? L10n.text("已检测", "Detected") : L10n.text("未检测", "Not detected"),
+                                  systemImage: detected ? "checkmark.circle.fill" : "exclamationmark.circle")
+                                .foregroundStyle(detected ? Color.green : Color.orange)
+                        }
+                        Text(L10n.text(
+                            "显示当前 Grok Bot 个人账号的共享订阅周额度。请登录 Grok Bot 并打开 Usage & Billing 更新缓存；AI Usage 的刷新只重读本地缓存，无需 API Key 或浏览器 Cookie。周额度不参与“最高 5 小时额度”比较。",
+                            "Shows the current Grok Bot personal account’s shared weekly subscription quota. Sign in and open Usage & Billing to update its cache; AI Usage only rereads that cache, without API keys or browser cookies. Weekly quotas are excluded from Highest 5-hour mode."
+                        ))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                        Button(L10n.text("打开 Grok Bot", "Open Grok Bot")) {
+                            if let url = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.anysphere.sand") {
+                                NSWorkspace.shared.open(url)
+                            } else {
+                                operationMessage = L10n.text("请先安装 Grok Bot 并登录订阅账号。", "Install Grok Bot and sign in to your subscription first.")
+                            }
+                        }
+                    }
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.vertical, 4)
+                }
+
                 GroupBox(L10n.text("隐私", "Privacy")) {
                     Text(L10n.text(
-                        "Kimi API Key 仅在你主动配置后保存至 macOS 钥匙串；MiniMax 与 Antigravity 无需 API Key。不会保存提示词、回答、代码或工具参数。",
-                        "The Kimi API key is saved to macOS Keychain only when explicitly configured; MiniMax and Antigravity need no API key. Prompts, responses, code, and tool parameters are not saved."
+                        "Kimi API Key 仅在你主动配置后保存至 macOS 钥匙串；MiniMax、Antigravity 与 Grok 无需 API Key。不会保存提示词、回答、代码或工具参数。",
+                        "The Kimi API key is saved to macOS Keychain only when explicitly configured; MiniMax, Antigravity, and Grok need no API key. Prompts, responses, code, and tool parameters are not saved."
                     ))
                         .font(.caption)
                         .foregroundStyle(.secondary)

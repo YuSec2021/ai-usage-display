@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [028：显示 Grok 订阅周额度](028-grok-subscription-usage.md)：只读当前 Grok Bot 个人账号缓存，显示共享周额度、重置时间与缓存状态，不将周额度混作 5 小时或 Token。
+
 - [026：新增 Google Antigravity 用量与多分组额度监控](026-antigravity-usage.md)：支持 Antigravity 本地轨迹 Token 增量统计与 Gemini 5h/本周、Argon 本周、Claude/GPT 等多分组额度展示。
 
 - [025：发布 1.2.7](025-release-1.2.7.md)：自动补丁升版为 1.2.7（Build 11），发布结果以 Actions 为准。
@@ -74,3 +76,4 @@
 | [024](024-windows-rings.md) | feature | Windows 圆环托盘与桌面浮窗预览 | 2026-11-15 |
 | [025](025-release-1.2.7.md) | release | 发布 1.2.7 | 2026-11-16 |
 | [026](026-antigravity-usage.md) | feature | 新增 Google Antigravity 用量与多分组额度监控 | 2026-11-16 |
+| [028](028-grok-subscription-usage.md) | feature | 显示 Grok 订阅周额度 | 2026-11-17 |

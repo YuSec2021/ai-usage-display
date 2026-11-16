@@ -68,6 +68,31 @@ final class PresentationTests: XCTestCase {
         XCTAssertNotEqual(newWindow.fiveHourStatusDescription(), value.fiveHourStatusDescription(at: reset))
     }
 
+
+    func testGrokSelectsWeeklyPrimaryWithoutChangingFiveHourProvidersOrHighestMode() {
+        let grok = snapshot(.grok, fiveHour: nil, weekly: 95)
+        let codex = snapshot(.codex, fiveHour: 20, weekly: 99)
+        XCTAssertNil(grok.fiveHourWindow())
+        XCTAssertEqual(grok.primaryQuotaWindow()?.usedPercentage, 95)
+        XCTAssertEqual(codex.primaryQuotaWindow(), codex.fiveHourWindow())
+        XCTAssertNil(snapshot(.kimiCode, fiveHour: nil).primaryQuotaWindow())
+        XCTAssertEqual(MenuBarDisplayMode.highestUsage.displayedSnapshots(from: [grok, codex]).map(\.provider), [.codex])
+        XCTAssertEqual(ProviderID.grok.primaryQuotaUsedTitle, "订阅周额度已用")
+        XCTAssertEqual(ProviderID.grok.primaryQuotaUnavailable, "暂无有效订阅周额度")
+        let reset = grok.primaryQuotaWindow()!.resetsAt!
+        XCTAssertNil(grok.primaryQuotaWindow(at: reset))
+    }
+
+    @MainActor
+    func testGrokWeeklyMenuRingDistinguishesZeroAndUnknown() throws {
+        var zero = snapshot(.grok, fiveHour: nil, weekly: 0)
+        let zeroImage = try XCTUnwrap(MenuBarRingImage.make(snapshots: [zero])?.tiffRepresentation)
+        zero.windows = []
+        let unknownImage = try XCTUnwrap(MenuBarRingImage.make(snapshots: [zero])?.tiffRepresentation)
+        XCTAssertNotEqual(zeroImage, unknownImage)
+        XCTAssertNotNil(NSImage(named: ProviderID.grok.logoAssetName))
+    }
+
     func testTransparencyBoundsAndAccessibilityOverride() {
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 0, reduceTransparency: false), 1)
         XCTAssertEqual(GlassAppearance.backgroundOpacity(transparency: 1, reduceTransparency: false), 0)

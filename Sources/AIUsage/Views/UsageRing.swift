@@ -35,13 +35,13 @@ struct UsageRing: View {
         .frame(width: size, height: size)
         .animation(reduceMotion ? nil : .easeInOut(duration: 0.35), value: window?.usedPercentage)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(provider.displayName) · \(window?.label ?? L10n.text("5 小时", "5 hours"))")
+        .accessibilityLabel("\(provider.displayName) · \(window?.label ?? provider.primaryQuotaLabel)")
         .accessibilityValue(usageDescription)
         .help(usageDescription)
     }
 
     private var usageDescription: String {
-        guard let window else { return L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable") }
+        guard let window else { return provider.primaryQuotaUnavailable }
         let prefix = isStale ? L10n.text("数据可能过期。", "Data may be outdated. ") : ""
         if window.isUnlimited { return prefix + L10n.text("无限制", "Unlimited") }
         return prefix + L10n.text(
@@ -60,7 +60,7 @@ enum MenuBarRingImage {
         let items = snapshots.map { snapshot in
             (
                 logo: NSImage(named: snapshot.provider.logoAssetName),
-                usage: snapshot.fiveHourWindow()?.usedPercentage,
+                usage: snapshot.primaryQuotaWindow()?.usedPercentage,
                 stale: snapshot.availability.isStale
             )
         }

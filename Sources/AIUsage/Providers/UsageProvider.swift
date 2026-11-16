@@ -83,6 +83,14 @@ enum ProviderPaths {
             || fileManager.fileExists(atPath: antigravityAppBundleURL.path)
     }
 
+    static var grokBotCacheDirectory: URL {
+        let configured = ProcessInfo.processInfo.environment["GROK_BOT_HOME"]
+        let root = configured.flatMap { $0.isEmpty ? nil : URL(
+            fileURLWithPath: ($0 as NSString).expandingTildeInPath, isDirectory: true
+        ) } ?? homeDirectory.appendingPathComponent("Library/Application Support/Grok Bot", isDirectory: true)
+        return root.appendingPathComponent("sand-client-persistence", isDirectory: true)
+    }
+
     static var applicationSupport: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("AI Usage", isDirectory: true)
