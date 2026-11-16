@@ -1,5 +1,7 @@
 # 项目文档
 
+当前包含稳定 macOS 客户端与 Windows 预览工程。下方 MVP 章节保留最初 macOS 版本的范围；Windows 首版实际支持与验证结果见 [Windows 指南](windows/README.md)。
+
 ## 1. 项目概述
 
 ### 1.1 名称

@@ -1,4 +1,4 @@
-# 024：新增 Google Antigravity 用量与多分组额度监控
+# 026：新增 Google Antigravity 用量与多分组额度监控
 
 日期：2026-11-16
 
@@ -30,4 +30,4 @@ AI Usage 此前支持 Codex、Claude Code、Kimi Code 与 MiniMax 四种模型�
 
 ## 版本
 
-开发分支保持 1.2.6（Build 10），不手动升版。合入 `main` 后由版本 PR 自动递增补丁版本与构建号；About 的版本与构建号继续从 Info.plist 读取。
+同步最新 main 后，开发分支保持 1.2.7（Build 11），不手动升版。合入 `main` 后由版本 PR 自动递增补丁版本与构建号；About 的版本与构建号继续从 Info.plist 读取。

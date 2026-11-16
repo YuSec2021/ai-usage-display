@@ -1,0 +1,74 @@
+name: Windows
+
+on:
+  pull_request:
+    paths:
+      - 'windows/**'
+      - '.github/workflows/windows.yml'
+      - 'project.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'windows/**'
+      - '.github/workflows/windows.yml'
+      - 'project.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: windows-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  windows:
+    name: Windows x64
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      DOTNET_CLI_TELEMETRY_OPTOUT: '1'
+      DOTNET_NOLOGO: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Test isolated domain and providers
+        run: dotnet test windows/AIUsage.Core.Tests/AIUsage.Core.Tests.csproj -c Release --logger "trx;LogFileName=core.trx"
+      - name: Publish native self-contained app
+        run: dotnet publish windows/AIUsage.Windows/AIUsage.Windows.csproj -c Release -r win-x64 --self-contained true -o dist/windows-x64 -p:Platform=x64
+      - name: Package portable build and checksum
+        shell: pwsh
+        run: |
+          $version = ([regex]::Match((Get-Content project.yml -Raw), 'MARKETING_VERSION:\s*([\d.]+)')).Groups[1].Value
+          if (-not $version) { throw 'Version missing' }
+          Copy-Item docs/windows/README.md dist/windows-x64/README.md
+          $name = "AI-Usage-Windows-$version-x64-preview.zip"
+          Compress-Archive -Path dist/windows-x64/* -DestinationPath "dist/$name"
+          $hash = (Get-FileHash "dist/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  $name" | Set-Content -Encoding ascii "dist/$name.sha256"
+      - name: Verify extracted portable app, tray, and collector
+        shell: pwsh
+        run: |
+          $archive = Get-ChildItem dist/AI-Usage-Windows-*-x64-preview.zip | Select-Object -First 1
+          $portable = Join-Path $env:RUNNER_TEMP 'AI Usage Portable'
+          Expand-Archive -Path $archive.FullName -DestinationPath $portable
+          ./windows/scripts/smoke.ps1 -Executable (Join-Path $portable 'AIUsage.Windows.exe') -Output "$env:RUNNER_TEMP/ai-usage-smoke"
+      - name: Upload native verification evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-verification
+          path: |
+            ${{ runner.temp }}/ai-usage-smoke
+            windows/AIUsage.Core.Tests/TestResults
+          if-no-files-found: warn
+      - name: Upload portable preview
+        uses: actions/upload-artifact@v4
+        with:
+          name: AI-Usage-Windows-x64-preview
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
