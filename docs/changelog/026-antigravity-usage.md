@@ -17,6 +17,8 @@ AI Usage 此前支持 Codex、Claude Code、Kimi Code 与 MiniMax 四种模型�
 - `SettingsView.swift` 新增 Antigravity 本地数据检测说明，同步更新“关于”页中英文版本说明。
 - `ProviderTests.swift` 与 `UsageStoreTests.swift` 新增隔离 fixture 回归测试，覆盖轨迹增量去重、多分组额度映射、过期降级、进程发现过滤与默认勾选迁移。
 
+- PR 验收遇到 macos-15 arm64 hosted runner 无法分配而取消，重跑仍排队；准备材料独立补充后，将 PR 的 ARM runner 迁移至官方 macos-26 原生 arm64 镜像，保留 Intel、检查名、完整测试和分支保护。未改变应用部署目标或发布工作流。
+
 ## 验证
 
 - 运行 `make check-prepare`，验证 Issue #26 准备记录、模块设计、唯一分支与独立准备提交顺序通过。
