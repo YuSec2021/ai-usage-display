@@ -3,7 +3,7 @@
 ## 基本信息
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/26
 - 类型：`type/feature`
-- 状态：实施中
+- 状态：已完成
 - 唯一工作分支：`codex/issue-26-antigravity-usage`
 - 负责人：YuSec2021
 - 设计或产出文档：[docs/design/issue-26-antigravity-usage.md](../design/issue-26-antigravity-usage.md)
@@ -23,10 +23,10 @@ AI Usage 现已支持 Codex、Claude Code、Kimi Code 与 MiniMax 的本地用�
 N/A — 当前类型为功能新增，不需要 Bug 四行根因说明。
 
 ## 验收标准
-- [ ] `ProviderID` 包含 `antigravity`，具备矢量模板图标 `AntigravityLogo`，旧默认全选配置自动迁移包含 Antigravity。
-- [ ] `AntigravityUsageProvider` 能从临时 fixture 的 `transcript.jsonl` 增量解析输入、缓存读取与输出 Token，同一 `step_index` 重复记录不重复累加。
-- [ ] `AntigravityUsageProvider` 能解析 `RetrieveUserQuotaSummary` 响应，将 Gemini 5 小时额度作为主 5 小时圆环窗口，并完整展示 Gemini 本周、Argon 本周与 Claude/GPT 5 小时/本周等分组额度及重置时间。
-- [ ] 设置页“集成”与“关于”说明、编号变更记录、`docs/changelog/README.md` 与 `CHANGELOG.md` 同步更新，并通过 `make check-prepare` 与 `make verify`。
+- [x] `ProviderID` 包含 `antigravity`，具备矢量模板图标 `AntigravityLogo`，旧默认全选配置自动迁移包含 Antigravity。
+- [x] `AntigravityUsageProvider` 能从临时 fixture 的 `transcript.jsonl` 增量解析输入、缓存读取与输出 Token，同一 `step_index` 重复记录不重复累加。
+- [x] `AntigravityUsageProvider` 能解析 `RetrieveUserQuotaSummary` 响应，将 Gemini 5 小时额度作为主 5 小时圆环窗口，并完整展示 Gemini 本周、Argon 本周与 Claude/GPT 5 小时/本周等分组额度及重置时间。
+- [x] 设置页“集成”与“关于”说明、编号变更记录、`docs/changelog/README.md` 与 `CHANGELOG.md` 同步更新，并通过 `make check-prepare` 与 `make verify`。
 
 ## 模块拆解
 | 模块 / 路径 | 修改内容 | 依赖 | 完成条件 |
@@ -49,7 +49,7 @@ N/A — 当前类型为功能新增，不需要 Bug 四行根因说明。
 - 发布与回滚：合并至 `main` 后由版本 PR 自动升版发布；如需回滚可直接还原本次 PR 提交。
 
 ## 完成定义
-- [ ] 设计和拆解与最终实现一致。
-- [ ] 所有验收标准已完成。
-- [ ] 必要测试、评测、构建和审查已通过。
-- [ ] 文档、埋点、迁移、发布及回滚事项已处理或明确标记不适用。
+- [x] 设计和拆解与最终实现一致。
+- [x] 所有验收标准已完成。
+- [x] 必要测试、评测、构建和审查已通过。
+- [x] 文档、埋点、迁移、发布及回滚事项已处理或明确标记不适用。

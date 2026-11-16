@@ -73,7 +73,7 @@ final class IncrementalLineReaderTests: XCTestCase {
     func testProvidersResetBusinessStateOnSameSizeRewriteAndTruncation() async throws {
         let now = Date()
         let timestamp = ISO8601DateFormatter().string(from: now)
-        for id in [ProviderID.codex, .claudeCode, .kimiCode] {
+        for id in [ProviderID.codex, .claudeCode, .kimiCode, .antigravity] {
             let root = try file().deletingLastPathComponent()
             let file: URL
             let provider: any UsageProvider
@@ -94,6 +94,10 @@ final class IncrementalLineReaderTests: XCTestCase {
                 file = root.appendingPathComponent("sessions/sample/wire.jsonl")
                 provider = KimiUsageProvider(rootDirectory: root, desktopLogURLs: [], rateLimitLoader: { nil })
                 line = { #"{"type":"usage.record","model":"fixture","usage":{"inputOther":\#($0)},"usageScope":"turn","time":\#(now.timeIntervalSince1970 * 1_000)}"# }
+            case .antigravity:
+                file = root.appendingPathComponent("brain/sample/.system_generated/logs/transcript.jsonl")
+                provider = AntigravityUsageProvider(rootDirectory: root, now: { now })
+                line = { #"{"step_index":1,"created_at":"\#(timestamp)","input_tokens":\#($0)}"# }
             case .miniMax: continue
             }
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)

@@ -101,7 +101,7 @@ final class FormattingTests: XCTestCase {
     func testProviderOrderIgnoresDuplicatesAndAppendsNewProviders() {
         XCTAssertEqual(
             ProviderID.orderedProviders(from: "claudeCode,codex,claudeCode,unknown"),
-            [.claudeCode, .codex, .kimiCode, .miniMax]
+            [.claudeCode, .codex, .kimiCode, .miniMax, .antigravity]
         )
     }
 
@@ -112,9 +112,9 @@ final class FormattingTests: XCTestCase {
             in: ProviderID.allCases
         )
 
-        XCTAssertEqual(reordered, [.kimiCode, .codex, .claudeCode, .miniMax])
+        XCTAssertEqual(reordered, [.kimiCode, .codex, .claudeCode, .miniMax, .antigravity])
         let encoded = ProviderID.orderRawValue(for: reordered)
-        XCTAssertEqual(encoded, "kimiCode,codex,claudeCode,miniMax")
+        XCTAssertEqual(encoded, "kimiCode,codex,claudeCode,miniMax,antigravity")
         XCTAssertEqual(ProviderID.orderedProviders(from: encoded), reordered)
     }
 
