@@ -3,7 +3,7 @@
 ## 基本信息
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/26
 - 类型：`type/feature`
-- 状态：已完成
+- 状态：实现完成，PR 验证与合并中
 - 唯一工作分支：`codex/issue-26-antigravity-usage`
 - 负责人：YuSec2021
 - 设计或产出文档：[docs/design/issue-26-antigravity-usage.md](../design/issue-26-antigravity-usage.md)
@@ -37,13 +37,16 @@ N/A — 当前类型为功能新增，不需要 Bug 四行根因说明。
 | Sources/AIUsage/Views/SettingsView.swift、ProviderCard.swift、Resources | 新增 `AntigravityLogo.imageset`、设置集成检测说明与 About 版本说明 | UsageModels、ProviderPaths | `make verify` 通过 |
 | Tests/AIUsageTests/ProviderTests.swift、UsageStoreTests.swift | 新增 Antigravity 单元测试与回归验证 | XCTest | 全部测试通过 |
 
+| .github/workflows/pr-check.yml、docs/DEVELOPMENT.md | ARM runner 从 macos-15 迁移到官方 macos-26，保留原生 arm64/x86_64 测试及检查名 | GitHub hosted runners、Xcode 26 | actionlint、本地 make verify 与双架构 CI 通过 |
+
 ## 风险、假设与待决策项
+- CI 验收补充（2026-11-17）：PR #28 的 macos-15 arm64 任务因未分配到 hosted runner 而在 15 分钟后取消，重跑仍排队；改用官方原生 arm64 macos-26 镜像尝试完成真实验证。检查名、测试命令和 main 保护均保持；若仍无资源则记录基础设施阻塞，不伪造通过状态。
 - 风险：Antigravity 未运行时本地 Language Server 不可连接；此时保留进程内上次未过期额度或回退为仅展示本地 `transcript.jsonl` Token 统计。
 - 假设：本机 Antigravity 使用默认 `~/.gemini/antigravity` 或 `~/.gemini/antigravity-ide` 目录结构（支持 `ANTIGRAVITY_HOME` 覆盖）。
 - 待决策：N/A — 无阻塞项，展示范围已由用户确认。
 
 ## 验证计划
-- 自动验证：运行 `make check-prepare`、`make test` 与 `make verify`，使用临时目录 fixture 验证 `AntigravityUsageProvider` 与 `UsageStore`。
+- 自动验证：工作流变更先运行 actionlint；ARM runner 在 macos-26 上运行完整 make verify，Intel 保持 macos-15-intel；运行 `make check-prepare`、`make test` 与 `make verify`，使用临时目录 fixture 验证 `AntigravityUsageProvider` 与 `UsageStore`。
 - 人工验证：检查设置页、关于页与变更记录一致性；真实桌面 UI 交互如未在测试进程外手点则在交付说明中明确标注。
 - 埋点与可观测性：沿用本地状态枚举 `ProviderAvailability`，不采集或输出任何用户会话内容与凭证。
 - 发布与回滚：合并至 `main` 后由版本 PR 自动升版发布；如需回滚可直接还原本次 PR 提交。

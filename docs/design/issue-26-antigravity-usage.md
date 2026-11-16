@@ -62,6 +62,8 @@ AI Usage 目前支持 Codex、Claude Code、Kimi Code 与 MiniMax 四种模型�
 | Sources/AIUsage/Views/SettingsView.swift、Resources/Assets.xcassets/AntigravityLogo.imageset | 新增矢量图标资产、设置集成页 Antigravity 状态说明及 About 版本说明 | SettingsView、ProviderLogo | `make verify` 与流程检查 |
 | Tests/AIUsageTests/ProviderTests.swift、UsageStoreTests.swift | 新增 Antigravity 轨迹增量去重、多分组额度映射、过期/离线回退与存储迁移测试 | `make test` | 全部 XCTest 通过 |
 
+| .github/workflows/pr-check.yml、docs/DEVELOPMENT.md | ARM runner 迁移至官方 macos-26 原生 arm64 镜像，缓解 macos-15 runner 无法分配的验收阻塞 | 双架构 PR CI | actionlint、原生 arm64 与 Intel make verify |
+
 ## 6. 异常、安全与兼容性
 
 - 失败处理：Language Server 未启动、端口失效或超时（3 秒）时，若已有进程内缓存的未过期额度则保留，否则回退为仅展示本地 Token；目录为空时返回 `.waitingForFirstSample`。
@@ -77,6 +79,10 @@ AI Usage 目前支持 Codex、Claude Code、Kimi Code 与 MiniMax 四种模型�
 - 自动验证：运行 `make check-prepare`、`make test` 与 `make verify`，覆盖流程自测、Swift 单元测试与构建版本检查。
 - 人工验证：核对设置页、卡片与历史页的 Antigravity 文案及图标配置；GUI 交互与真机菜单栏渲染如未人工点击则在变更记录中如实标注。
 - 发布与回滚：遵循版本 PR 自动发布流程，不在开发分支手动修改版本号；回滚可通过还原提交完成。
+
+### 2026-11-17 CI 验收环境调整
+
+[官方 runner 列表](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) 列出 macos-26 为标准 arm64 镜像；[镜像说明](https://github.com/actions/runner-images/blob/main/images/macos/macos-26-arm64-Readme.md) 提供 Xcode 26。PR #28 的 macos-15 arm64 任务在未开始测试时因 runner 无法分配而取消，重跑仍排队，因此只迁移 PR 检查的 ARM 镜像。检查名、ARCH、make verify 命令、超时和 main 保护不变，Intel 和发布工作流不改；保留 macOS 13 的应用部署目标。新镜像仍可能遇到平台容量限制，必须以真实双架构 CI 结果作为合并门禁。
 
 ## 9. 待决策项
 
