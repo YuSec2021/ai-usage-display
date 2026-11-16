@@ -1,0 +1,9 @@
+{
+  "issue": 26,
+  "type": "feature",
+  "branch": "codex/issue-26-antigravity-usage",
+  "status": "complete",
+  "document": "docs/issues/issue-26-antigravity-usage.md",
+  "design": "docs/design/issue-26-antigravity-usage.md",
+  "research": null
+}

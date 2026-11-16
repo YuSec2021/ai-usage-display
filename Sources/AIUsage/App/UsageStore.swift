@@ -26,6 +26,7 @@ final class UsageStore: ObservableObject {
         claudeProvider: any UsageProvider = ClaudeUsageProvider(),
         kimiProvider: any UsageProvider = KimiUsageProvider(),
         miniMaxProvider: any UsageProvider = MiniMaxUsageProvider(),
+        antigravityProvider: any UsageProvider = AntigravityUsageProvider(),
         defaults: UserDefaults = .standard,
         startsAutomatically: Bool = ProcessInfo.processInfo.environment["XCTestConfigurationFilePath"] == nil,
         claudeModificationDate: @escaping () -> Date? = {
@@ -41,7 +42,8 @@ final class UsageStore: ObservableObject {
             .codex: codexProvider,
             .claudeCode: claudeProvider,
             .kimiCode: kimiProvider,
-            .miniMax: miniMaxProvider
+            .miniMax: miniMaxProvider,
+            .antigravity: antigravityProvider
         ]
         self.defaults = defaults
         self.claudeModificationDate = claudeModificationDate
@@ -49,6 +51,7 @@ final class UsageStore: ObservableObject {
         // real CLI history while isolated provider tests are running.
         if startsAutomatically {
             migrateProviderSelectionForMiniMax()
+            migrateProviderSelectionForAntigravity()
             start()
         }
     }
@@ -64,6 +67,33 @@ final class UsageStore: ObservableObject {
             ProviderID.kimiCode.rawValue
         ].joined(separator: ",")
         if defaults.string(forKey: ProviderID.selectionStorageKey) == previousDefault {
+            defaults.set(
+                ProviderID.defaultSelectionRawValue,
+                forKey: ProviderID.selectionStorageKey
+            )
+        }
+    }
+
+    func migrateProviderSelectionForAntigravity() {
+        let migrationKey = "providers.selection.migrated.antigravity"
+        guard !defaults.bool(forKey: migrationKey) else { return }
+        defer { defaults.set(true, forKey: migrationKey) }
+
+        let previousDefaults = [
+            [
+                ProviderID.codex.rawValue,
+                ProviderID.claudeCode.rawValue,
+                ProviderID.kimiCode.rawValue
+            ].joined(separator: ","),
+            [
+                ProviderID.codex.rawValue,
+                ProviderID.claudeCode.rawValue,
+                ProviderID.kimiCode.rawValue,
+                ProviderID.miniMax.rawValue
+            ].joined(separator: ",")
+        ]
+        if let stored = defaults.string(forKey: ProviderID.selectionStorageKey),
+           previousDefaults.contains(stored) {
             defaults.set(
                 ProviderID.defaultSelectionRawValue,
                 forKey: ProviderID.selectionStorageKey

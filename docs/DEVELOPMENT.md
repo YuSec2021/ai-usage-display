@@ -43,7 +43,7 @@
 
 可覆盖 `BUILD_DIR`、`CONFIGURATION` 和 `ARCH`，例如 `make build ARCH=x86_64` 做 Intel 交叉构建。只有匹配的宿主机器才能完成该架构的原生运行验证。
 
-`.github/workflows/pr-check.yml` 在 PR 中分别使用 Apple Silicon 和 Intel runner 执行 `make verify`，包括与 PR 基准的流程检查；任务限时 30 分钟，新提交会取消同一 PR 的旧任务。Tag 版本检查已整合到 `.github/workflows/release.yml`，保留构建前后门禁并自动打包。CI 工作流须推送到 GitHub 后才能验证运行结果。
+`.github/workflows/pr-check.yml` 在 PR 中分别使用 macos-26 原生 Apple Silicon 和 macos-15-intel 原生 Intel runner 执行 `make verify`，包括与 PR 基准的流程检查；任务限时 30 分钟，新提交会取消同一 PR 的旧任务。Tag 版本检查已整合到 `.github/workflows/release.yml`，保留构建前后门禁并自动打包。CI 工作流须推送到 GitHub 后才能验证运行结果。
 
 开发分支保留当前版本号。main 合入普通 PR 后自动创建版本 PR；版本 PR 使用受限生成契约，通过同样的双架构检查，由维护者合并后才打 Tag 和发布。main 必须经 PR，要求 Verify arm64 / Verify x86_64 成功并保持最新，管理员同样适用，不设机器人豁免。此流程不替换已安装应用。
 

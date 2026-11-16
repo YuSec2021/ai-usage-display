@@ -57,6 +57,32 @@ enum ProviderPaths {
             .appendingPathComponent("plan-usage-history.json")
     }
 
+    static var antigravityDirectories: [URL] {
+        if let configured = ProcessInfo.processInfo.environment["ANTIGRAVITY_HOME"],
+           !configured.isEmpty {
+            return [
+                URL(
+                    fileURLWithPath: (configured as NSString).expandingTildeInPath,
+                    isDirectory: true
+                )
+            ]
+        }
+        return [
+            homeDirectory.appendingPathComponent(".gemini/antigravity", isDirectory: true),
+            homeDirectory.appendingPathComponent(".gemini/antigravity-ide", isDirectory: true)
+        ]
+    }
+
+    static var antigravityAppBundleURL: URL {
+        URL(fileURLWithPath: "/Applications/Antigravity.app", isDirectory: true)
+    }
+
+    static var hasAntigravityInstallation: Bool {
+        let fileManager = FileManager.default
+        return antigravityDirectories.contains { fileManager.fileExists(atPath: $0.path) }
+            || fileManager.fileExists(atPath: antigravityAppBundleURL.path)
+    }
+
     static var applicationSupport: URL {
         FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
             .appendingPathComponent("AI Usage", isDirectory: true)

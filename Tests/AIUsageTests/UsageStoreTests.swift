@@ -13,7 +13,8 @@ final class UsageStoreTests: XCTestCase {
 
     private func store(_ providers: [StoreProvider], defaults: UserDefaults, modified: @escaping () -> Date? = { nil }) -> UsageStore {
         UsageStore(codexProvider: providers[0], claudeProvider: providers[1], kimiProvider: providers[2],
-                   miniMaxProvider: providers[3], defaults: defaults, startsAutomatically: false,
+                   miniMaxProvider: providers[3], antigravityProvider: providers[4],
+                   defaults: defaults, startsAutomatically: false,
                    claudeModificationDate: modified)
     }
 
@@ -94,6 +95,32 @@ final class UsageStoreTests: XCTestCase {
         await first.value
         XCTAssertEqual(store.snapshot(for: .codex).todayTokens?.input, 2)
         XCTAssertFalse(store.isRefreshing)
+    }
+
+    func testAntigravitySelectionMigrationUpgradesPreviousDefaultOnly() {
+        let providers = ProviderID.allCases.map { StoreProvider($0) }
+        let previousDefault = [
+            ProviderID.codex.rawValue,
+            ProviderID.claudeCode.rawValue,
+            ProviderID.kimiCode.rawValue,
+            ProviderID.miniMax.rawValue
+        ].joined(separator: ",")
+        let defaultPrefs = defaults()
+        defaultPrefs.set(previousDefault, forKey: ProviderID.selectionStorageKey)
+        let migratedStore = store(providers, defaults: defaultPrefs)
+        migratedStore.migrateProviderSelectionForAntigravity()
+        XCTAssertEqual(
+            ProviderID.selectedProviders(from: defaultPrefs.string(forKey: ProviderID.selectionStorageKey) ?? ""),
+            Set(ProviderID.allCases)
+        )
+
+        let customPrefs = defaults([.codex, .claudeCode])
+        let customStore = store(providers, defaults: customPrefs)
+        customStore.migrateProviderSelectionForAntigravity()
+        XCTAssertEqual(
+            ProviderID.selectedProviders(from: customPrefs.string(forKey: ProviderID.selectionStorageKey) ?? ""),
+            [.codex, .claudeCode]
+        )
     }
 }
 

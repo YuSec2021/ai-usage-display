@@ -548,10 +548,195 @@ final class ProviderTests: XCTestCase {
             rateLimitLoader: { nil }
         ).load()
         let miniMax = await MiniMaxUsageProvider(cacheDirectory: missing).load()
+        let antigravity = await AntigravityUsageProvider(rootDirectory: missing).load()
         XCTAssertEqual(codex.snapshot.availability, .cliNotInstalled)
         XCTAssertEqual(claude.snapshot.availability, .cliNotInstalled)
         XCTAssertEqual(kimi.snapshot.availability, .cliNotInstalled)
         XCTAssertEqual(miniMax.snapshot.availability, .cliNotInstalled)
+        XCTAssertEqual(antigravity.snapshot.availability, .cliNotInstalled)
+    }
+
+    func testAntigravityParsesTranscriptTokensAndDeduplicatesStepIndex() async throws {
+        let root = try makeTemporaryDirectory()
+        let logs = root.appendingPathComponent(
+            "brain/conv-1/.system_generated/logs",
+            isDirectory: true
+        )
+        try FileManager.default.createDirectory(at: logs, withIntermediateDirectories: true)
+        let transcriptURL = logs.appendingPathComponent("transcript.jsonl")
+        let now = Date()
+        let timestamp = ISO8601DateFormatter().string(from: now)
+        let initial = """
+        {"step_index":0,"source":"USER_EXPLICIT","type":"USER_INPUT","status":"DONE","created_at":"\(timestamp)"}
+        {"step_index":1,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"\(timestamp)","input_tokens":100,"cache_read_tokens":20,"output_tokens":15}
+        {"step_index":1,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"\(timestamp)","input_tokens":120,"cache_read_tokens":30,"output_tokens":20}
+        {"step_index":2,"source":"MODEL","type":"GENERIC","status":"DONE","created_at":"\(timestamp)"}
+        {"step_index":3,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"\(timestamp)","input_tokens":50,"cache_read_tokens":150,"cache_write_tokens":10,"output_tokens":25}
+        """
+        try initial.write(to: transcriptURL, atomically: true, encoding: .utf8)
+
+        let provider = AntigravityUsageProvider(rootDirectory: root)
+        let result = await provider.load()
+
+        XCTAssertTrue(result.snapshot.availability.isReady)
+        XCTAssertTrue(result.snapshot.windows.isEmpty)
+        XCTAssertEqual(result.snapshot.todayTokens?.input, 360)
+        XCTAssertEqual(result.snapshot.todayTokens?.cachedInput, 190)
+        XCTAssertEqual(result.snapshot.todayTokens?.output, 45)
+        XCTAssertEqual(result.snapshot.todayTokens?.total, 405)
+        XCTAssertEqual(result.dailyUsage.first?.provider, .antigravity)
+
+        let unchanged = await provider.load()
+        XCTAssertEqual(unchanged.snapshot.todayTokens, result.snapshot.todayTokens)
+
+        let appended = initial + """
+
+        {"step_index":5,"source":"MODEL","type":"PLANNER_RESPONSE","status":"DONE","created_at":"\(timestamp)","input_tokens":40,"cache_read_tokens":200,"output_tokens":10}
+        """
+        try appended.write(to: transcriptURL, atomically: true, encoding: .utf8)
+
+        let updated = await provider.load()
+        XCTAssertEqual(updated.snapshot.todayTokens?.input, 600)
+        XCTAssertEqual(updated.snapshot.todayTokens?.cachedInput, 390)
+        XCTAssertEqual(updated.snapshot.todayTokens?.output, 55)
+        XCTAssertEqual(updated.snapshot.todayTokens?.total, 655)
+    }
+
+    func testAntigravityMapsGeminiPrimaryRingAndAdditionalQuotaGroups() async throws {
+        let missingRoot = FileManager.default.temporaryDirectory
+            .appendingPathComponent(UUID().uuidString)
+        let clock = MutableTestClock(date: Date())
+        let fiveHourReset = ISO8601DateFormatter().string(
+            from: clock.date.addingTimeInterval(3_600)
+        )
+        let weeklyReset = ISO8601DateFormatter().string(
+            from: clock.date.addingTimeInterval(5 * 86_400)
+        )
+        let payload = Data(
+            """
+            {
+              "response": {
+                "description": "Shared model quotas",
+                "buckets": [],
+                "groups": [
+                  {
+                    "displayName": "Gemini Models",
+                    "buckets": [
+                      {
+                        "bucketId": "gemini-weekly",
+                        "displayName": "Weekly Limit Remaining",
+                        "window": "weekly",
+                        "remainingFraction": 0.65,
+                        "resetTime": "\(weeklyReset)"
+                      },
+                      {
+                        "bucketId": "gemini-5h",
+                        "displayName": "Five Hour Limit Remaining",
+                        "window": "5h",
+                        "remainingFraction": 0.80,
+                        "resetTime": "\(fiveHourReset)"
+                      }
+                    ]
+                  },
+                  {
+                    "displayName": "Claude and GPT models",
+                    "buckets": [
+                      {
+                        "bucketId": "3p-weekly",
+                        "displayName": "Weekly Limit Remaining",
+                        "window": "weekly",
+                        "remainingFraction": 0.75,
+                        "resetTime": "\(weeklyReset)"
+                      },
+                      {
+                        "bucketId": "3p-5h",
+                        "displayName": "Five Hour Limit Remaining",
+                        "window": "5h",
+                        "remainingFraction": 0.90,
+                        "resetTime": "\(fiveHourReset)"
+                      }
+                    ]
+                  },
+                  {
+                    "displayName": "Gemini 4 Argon",
+                    "buckets": [
+                      {
+                        "bucketId": "gemini-argon-wtu-weekly",
+                        "displayName": "Gemini 4 Argon Weekly Limit",
+                        "window": "weekly",
+                        "remainingFraction": 0.40,
+                        "resetTime": "\(weeklyReset)"
+                      }
+                    ]
+                  }
+                ]
+              }
+            }
+            """.utf8
+        )
+        let summary = try XCTUnwrap(AntigravityQuotaClient.decodeQuotaSummary(from: payload))
+
+        let provider = AntigravityUsageProvider(
+            rootDirectory: missingRoot,
+            now: { clock.date },
+            quotaLoader: { summary }
+        )
+        let result = await provider.load()
+
+        XCTAssertTrue(result.snapshot.availability.isReady)
+        XCTAssertEqual(result.snapshot.fiveHourWindow()?.usedPercentage ?? -1, 20, accuracy: 0.001)
+        XCTAssertEqual(
+            result.snapshot.windows.map(\.label),
+            ["5 小时", "本周", "Claude/GPT · 本周", "Claude/GPT · 5 小时", "Argon · 本周"]
+        )
+        XCTAssertEqual(
+            result.snapshot.windows.map { Int($0.usedPercentage.rounded()) },
+            [20, 35, 25, 10, 60]
+        )
+        let secondaryWindows = result.snapshot.windows.filter {
+            $0.kind != .short || $0.durationMinutes != 300
+        }
+        XCTAssertEqual(secondaryWindows.count, 4)
+
+        clock.date = clock.date.addingTimeInterval(6 * 86_400)
+        let expired = await provider.load()
+        XCTAssertTrue(expired.snapshot.windows.isEmpty)
+        XCTAssertTrue(expired.snapshot.availability.isStale)
+    }
+
+    func testAntigravityDiscoveryFiltersDeadProcessesAndSortsNewestFirst() throws {
+        let root = try makeTemporaryDirectory()
+        let daemon = root.appendingPathComponent("daemon", isDirectory: true)
+        try FileManager.default.createDirectory(at: daemon, withIntermediateDirectories: true)
+
+        let olderURL = daemon.appendingPathComponent("hub_49001.json")
+        let newerURL = daemon.appendingPathComponent("hub_49002.json")
+        let deadURL = daemon.appendingPathComponent("hub_49003.json")
+
+        try #"{"pid":101,"httpPort":49001,"csrfToken":"tok-1"}"#
+            .write(to: olderURL, atomically: true, encoding: .utf8)
+        try #"{"pid":102,"httpPort":49002,"csrfToken":"tok-2"}"#
+            .write(to: newerURL, atomically: true, encoding: .utf8)
+        try #"{"pid":103,"httpPort":49003,"csrfToken":"tok-dead"}"#
+            .write(to: deadURL, atomically: true, encoding: .utf8)
+
+        let now = Date()
+        try FileManager.default.setAttributes(
+            [.modificationDate: now.addingTimeInterval(-60)],
+            ofItemAtPath: olderURL.path
+        )
+        try FileManager.default.setAttributes(
+            [.modificationDate: now],
+            ofItemAtPath: newerURL.path
+        )
+
+        let endpoints = AntigravityQuotaClient.discoverEndpoints(
+            in: [root],
+            isProcessAlive: { $0 != 103 }
+        ).filter { $0.port == 49001 || $0.port == 49002 || $0.port == 49003 }
+
+        XCTAssertEqual(endpoints.map(\.port), [49002, 49001])
+        XCTAssertEqual(endpoints.map(\.csrfToken), ["tok-2", "tok-1"])
     }
 
     func testClaudeExpiresCachedQuotasAndAcceptsFreshSnapshotOnRefresh() async throws {

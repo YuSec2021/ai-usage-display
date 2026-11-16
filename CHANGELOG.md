@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Add Google Antigravity usage monitoring with local transcript token aggregation, 7-day history, and multi-group model quota windows (Gemini 5-hour/weekly, Gemini 4 Argon weekly, and Claude/GPT 5-hour/weekly) from the local Antigravity language server. (#26)
+
 ## 1.2.7 — 2026-11-16
 
 - Add a separate Windows 11 x64 preview using C# / WinUI 3, model-ring tray icons, a persistent floating window, isolated provider tests, and native Windows CI artifacts. Codex, Claude Code and Kimi are adapted; MiniMax and WSL are explicitly unsupported in this preview.

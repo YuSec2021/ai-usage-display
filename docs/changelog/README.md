@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [026：新增 Google Antigravity 用量与多分组额度监控](026-antigravity-usage.md)：支持 Antigravity 本地轨迹 Token 增量统计与 Gemini 5h/本周、Argon 本周、Claude/GPT 等多分组额度展示。
+
 - [025：发布 1.2.7](025-release-1.2.7.md)：自动补丁升版为 1.2.7（Build 11），发布结果以 Actions 为准。
 - [024：Windows 圆环托盘与桌面浮窗预览](024-windows-rings.md)：新增原生 WinUI 3 工程，任务栏右侧圆环与独立浮窗共用用量状态，提供 Windows CI、自包含预览与隔离验证。
 
@@ -71,3 +73,4 @@
 | [023](023-release-1.2.6.md) | release | 发布 1.2.6 | 2026-11-14 |
 | [024](024-windows-rings.md) | feature | Windows 圆环托盘与桌面浮窗预览 | 2026-11-15 |
 | [025](025-release-1.2.7.md) | release | 发布 1.2.7 | 2026-11-16 |
+| [026](026-antigravity-usage.md) | feature | 新增 Google Antigravity 用量与多分组额度监控 | 2026-11-16 |

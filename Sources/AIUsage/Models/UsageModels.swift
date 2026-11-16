@@ -34,6 +34,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
     case claudeCode
     case kimiCode
     case miniMax
+    case antigravity
 
     var id: Self { self }
 
@@ -43,6 +44,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .claudeCode: "Claude Code"
         case .kimiCode: "Kimi Code"
         case .miniMax: "MiniMax"
+        case .antigravity: "Antigravity"
         }
     }
 
@@ -52,6 +54,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .claudeCode: Color(red: 0.96, green: 0.38, blue: 0.02)
         case .kimiCode: Color(red: 0.20, green: 0.45, blue: 0.96)
         case .miniMax: Color(red: 0.95, green: 0.10, blue: 0.48)
+        case .antigravity: Color(red: 0.26, green: 0.52, blue: 0.96)
         }
     }
 
@@ -62,6 +65,7 @@ enum ProviderID: String, Codable, CaseIterable, Identifiable, Sendable {
         case .claudeCode: "ClaudeLogo"
         case .kimiCode: "KimiLogo"
         case .miniMax: "MiniMaxLogo"
+        case .antigravity: "AntigravityLogo"
         }
     }
 
