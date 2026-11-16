@@ -50,7 +50,7 @@ AI Usage 目前支持 Codex、Claude Code、Kimi Code 与 MiniMax 四种模型�
 
 - `ProviderID` 新增 `case antigravity`，展示名 `Antigravity`，配色采用 Google 蓝，图标资产 `AntigravityLogo`。
 - `UsageStore` 新增 `antigravityProvider` 注入参数与默认偏好迁移 `migrateProviderSelectionForAntigravity()`，使旧版本默认全选用户升级后自动勾选 Antigravity。
-- `RateLimitWindow.id` 包含 `kind`、`label` 与 `durationMinutes`，确保多分组的 5 小时与周额度窗口在卡片列表中拥有唯一标识且除主 5 小时窗口外全部在卡片展开展示。
+- `RateLimitWindow.id` 沿用已有的 `kind` 与 `label`；新增分组标签区分各组的 5 小时与周额度窗口，除主 5 小时窗口外全部在卡片展开展示。
 
 ### 受影响模块
 

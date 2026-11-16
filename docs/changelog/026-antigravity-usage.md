@@ -20,7 +20,7 @@ AI Usage 此前支持 Codex、Claude Code、Kimi Code 与 MiniMax 四种模型�
 ## 验证
 
 - 运行 `make check-prepare`，验证 Issue #26 准备记录、模块设计、唯一分支与独立准备提交顺序通过。
-- 运行 `make verify`，流程自测、Swift 单元测试与构建后版本检查全部通过。
+- 同步 v1.2.7 的 main 并解决 About/发布摘要冲突，记录编号改为 026；运行 `make generate` 和 `make verify BASE_REF=origin/main`，34 项流程自测、77 项 Swift 测试报告通过（1 项 GPU 预览默认跳过，0 失败），构建版本 1.2.7（Build 11）核对通过。
 - 本机通过 `RetrieveUserQuotaSummary` 实测核对返回分组字段结构（仅验证额度白名单字段，不写入仓库）。
 
 ## 未验证范围
