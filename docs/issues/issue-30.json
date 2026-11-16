@@ -1,0 +1,9 @@
+{
+  "issue": 30,
+  "type": "feature",
+  "branch": "codex/issue-30-grok-subscription-usage",
+  "status": "ready",
+  "document": "docs/issues/issue-30-grok-subscription-usage.md",
+  "design": "docs/design/issue-30-grok-subscription-usage.md",
+  "research": null
+}
