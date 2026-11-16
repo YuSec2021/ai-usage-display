@@ -91,6 +91,9 @@ final class PresentationTests: XCTestCase {
         let unknownImage = try XCTUnwrap(MenuBarRingImage.make(snapshots: [zero])?.tiffRepresentation)
         XCTAssertNotEqual(zeroImage, unknownImage)
         XCTAssertNotNil(NSImage(named: ProviderID.grok.logoAssetName))
+        let weekly = snapshot(.grok, fiveHour: nil, weekly: 95)
+        let highestFallback = try XCTUnwrap(MenuBarRingImage.make(snapshots: [weekly], fiveHourOnly: true)?.tiffRepresentation)
+        XCTAssertEqual(highestFallback, unknownImage)
     }
 
     func testTransparencyBoundsAndAccessibilityOverride() {
@@ -160,6 +163,7 @@ final class PresentationTests: XCTestCase {
                 ProviderCard(snapshot: snapshot(), showsDragHandle: true)
                 ProviderCard(snapshot: snapshot(.claudeCode, fiveHour: 82, weekly: 45), showsDragHandle: true)
                 ProviderCard(snapshot: miniMax, showsDragHandle: true)
+                ProviderCard(snapshot: snapshot(.grok, fiveHour: nil, weekly: 37), showsDragHandle: true)
                 HStack(spacing: 20) {
                     ForEach([0.0, 50.0, 100.0], id: \.self) { usage in
                         UsageRing(provider: .codex, window: self.snapshot(fiveHour: usage).fiveHourWindow(), size: 38)

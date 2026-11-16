@@ -369,22 +369,26 @@ struct MenuBarLabel: View {
     private var usageDescription: String {
         guard !displayedSnapshots.isEmpty else { return L10n.text("未选择用量模型", "No usage models selected") }
         return displayedSnapshots.map { snapshot in
-            guard let window = snapshot.primaryQuotaWindow() else {
-                return "\(snapshot.provider.displayName): " + snapshot.provider.primaryQuotaUnavailable
+            let fiveHourOnly = mode == .highestUsage
+            let period = fiveHourOnly ? L10n.text("5 小时", "5-hour") : snapshot.provider.primaryQuotaLabel
+            let selectedWindow = fiveHourOnly ? snapshot.fiveHourWindow() : snapshot.primaryQuotaWindow()
+            guard let window = selectedWindow else {
+                return "\(snapshot.provider.displayName): " + (fiveHourOnly
+                    ? L10n.text("暂无 5 小时额度数据", "5-hour quota unavailable") : snapshot.provider.primaryQuotaUnavailable)
             }
             if window.isUnlimited {
-                return "\(snapshot.provider.displayName): " + L10n.text("\(snapshot.provider.primaryQuotaLabel)无限制", "Unlimited \(snapshot.provider.primaryQuotaLabel) quota")
+                return "\(snapshot.provider.displayName): " + L10n.text("\(period)无限制", "Unlimited \(period) quota")
             }
             return "\(snapshot.provider.displayName): " + L10n.text(
-                "\(snapshot.provider.primaryQuotaLabel)已用百分之\(Int(window.usedPercentage.rounded()))，\(snapshot.availability.message)",
-                "\(Int(window.usedPercentage.rounded())) percent of \(snapshot.provider.primaryQuotaLabel) quota used. \(snapshot.availability.message)"
+                "\(period)已用百分之\(Int(window.usedPercentage.rounded()))，\(snapshot.availability.message)",
+                "\(Int(window.usedPercentage.rounded())) percent of \(period) quota used. \(snapshot.availability.message)"
             )
         }.joined(separator: "\n")
     }
 
     var body: some View {
         Group {
-            if let image = MenuBarRingImage.make(snapshots: displayedSnapshots, showsProgress: mode != .iconOnly) {
+            if let image = MenuBarRingImage.make(snapshots: displayedSnapshots, showsProgress: mode != .iconOnly, fiveHourOnly: mode == .highestUsage) {
                 Image(nsImage: image)
                     .renderingMode(.template)
                     .fixedSize()

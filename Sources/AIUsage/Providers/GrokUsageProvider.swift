@@ -58,8 +58,14 @@ actor GrokUsageProvider: UsageProvider {
                     "Select a personal subscription in Grok Bot; team quotas are not supported."
                 )))
             }
-            guard usage.hasNonZeroIncludedLimit,
-                  usage.percentUsed.isFinite, usage.percentUsed >= 0,
+            guard usage.hasNonZeroIncludedLimit else {
+                previous = nil
+                return empty(.failed(L10n.text(
+                    "当前 Grok 账号未提供订阅周额度，请在 Grok Bot 核对订阅状态",
+                    "This Grok account has no included weekly quota. Check its subscription in Grok Bot."
+                )))
+            }
+            guard usage.percentUsed.isFinite, usage.percentUsed >= 0,
                   reading.readAtMs.isFinite, reading.readAtMs > 0,
                   cache.expiresAtMs.isFinite, cache.expiresAtMs > reading.readAtMs,
                   reading.readAtMs / 1_000 <= date.timeIntervalSince1970 + 60,

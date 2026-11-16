@@ -53,14 +53,14 @@ struct UsageRing: View {
 
 @MainActor
 enum MenuBarRingImage {
-    static func make(snapshots: [UsageSnapshot], showsProgress: Bool = true) -> NSImage? {
+    static func make(snapshots: [UsageSnapshot], showsProgress: Bool = true, fiveHourOnly: Bool = false) -> NSImage? {
         guard !snapshots.isEmpty else { return nil }
         let size: CGFloat = 22
         let spacing: CGFloat = 5
         let items = snapshots.map { snapshot in
             (
                 logo: NSImage(named: snapshot.provider.logoAssetName),
-                usage: snapshot.primaryQuotaWindow()?.usedPercentage,
+                usage: (fiveHourOnly ? snapshot.fiveHourWindow() : snapshot.primaryQuotaWindow())?.usedPercentage,
                 stale: snapshot.availability.isStale
             )
         }
