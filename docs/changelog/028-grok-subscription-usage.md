@@ -15,7 +15,7 @@ Issue：[30](https://github.com/YuSec2021/ai-usage-display/issues/30)。唯一�
 - 超过 5 分钟标记旧样本；超过缓存 expiresAtMs、24 小时上限或服务端重置时间不再展示当前进度；未知重置时间不推算。
 - Grok 主圆环为周额度，其他模型继续选择明确的 300 分钟窗口；最高 5 小时模式不比较周额度。Grok 不显示本地 Token，不生成 Token 历史。
 - 新增图标、默认全选迁移、设置数据来源说明和打开 Grok Bot 的入口；保留自定义选择及排序。图标来源与 MIT 许可见 [GROK_ASSET_LICENSE](../GROK_ASSET_LICENSE.md)。
-- About、编号记录和索引、Unreleased、使用指南及生成工程同步。028 编号避开已存在的 v1.2.8 版本 PR 使用的 027。
+- About、编号记录和索引、Unreleased、使用指南、隐私说明及生成工程同步。028 编号避开已存在的 v1.2.8 版本 PR 使用的 027。
 
 ## 验证
 

@@ -8,7 +8,7 @@
 [![.NET 10](https://img.shields.io/badge/Windows-.NET_10-512BD4?logo=dotnet&logoColor=white)](windows/Directory.Build.props)
 [![WinUI 3](https://img.shields.io/badge/UI-WinUI_3-0078D4)](docs/windows/README.md)
 
-在 macOS 菜单栏，一眼查看 **Codex、Claude Code、Kimi Code 和 MiniMax** 的用量、额度窗口与重置时间。
+在 macOS 菜单栏，一眼查看 **Codex、Claude Code、Kimi Code、MiniMax、Antigravity 和 Grok** 的用量、额度窗口与重置时间。
 
 > 当前版本：1.2.7。支持 Apple Silicon 与 Intel，运行需要 macOS 13+。
 
@@ -20,7 +20,7 @@ Windows 首版采用 C# / WinUI 3：任务栏右侧模型圆环、可置顶的�
 
 Grok 个人订阅支持从已登录 Grok Bot 本地缓存显示共享周额度；接入方式与限制见[使用指南](docs/USAGE.md#grok-订阅周额度)。
 
-- **额度一目了然**：菜单栏圆环显示 5 小时已用额度，详情展示其他可用额度窗口和重置时间。
+- **额度一目了然**：菜单栏圆环显示各模型 5 小时已用额度，Grok 显示订阅周额度；详情展示其他可用窗口和重置时间。
 - **最近 7 天用量**：查看 Codex、Claude Code、Kimi Code 的本地 Token 历史。
 - **按习惯排列**：拖动卡片调整顺序，菜单栏显示优先级最高的前三个已选模型。
 - **原生外观**：浅色、深色或跟随系统；macOS 26+ 支持 Liquid Glass 与透明度调节。
@@ -38,6 +38,8 @@ Grok 个人订阅支持从已登录 Grok Bot 本地缓存显示共享周额度�
 | Claude Code | 在“设置 → 集成”安装用量集成，完成一次对话后更新额度。 |
 | Kimi Code | 自动读取本地 Token；5 小时与每周额度需在“设置 → 集成”配置 Kimi Code API Key。 |
 | MiniMax | 打开 MiniMax Code 的额度面板更新本地缓存，无需 API Key；不提供 Token 历史。 |
+| Antigravity | 从本地轨迹统计 Token；运行 Antigravity 后读取本机语言服务的模型额度。 |
+| Grok | 登录 Grok Bot 并打开 Usage & Billing 更新本地共享订阅周额度缓存；不需要 API Key。 |
 
 当前安装包采用临时签名，尚未经过 Apple 公证。首次打开若被阻止，可在 Finder 中右键选择“打开”，或前往“系统设置 → 隐私与安全性”选择“仍要打开”。
 
