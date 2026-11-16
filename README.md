@@ -1,16 +1,20 @@
-# AI Usage for macOS
+# AI Usage
 
 [![Swift 6](https://img.shields.io/badge/Swift-6-F05138?logo=swift&logoColor=white)](project.yml)
 [![SwiftUI](https://img.shields.io/badge/UI-SwiftUI-007AFF)](Sources/AIUsage/Views)
 [![macOS 13+](https://img.shields.io/badge/macOS-13%2B-000000?logo=apple&logoColor=white)](project.yml)
 [![Xcode 26+](https://img.shields.io/badge/Xcode-26%2B-147EFB?logo=xcode&logoColor=white)](docs/DEVELOPMENT.md#1-技术选择)
 [![XcodeGen](https://img.shields.io/badge/Build-XcodeGen-2C8EBB)](project.yml)
+[![.NET 10](https://img.shields.io/badge/Windows-.NET_10-512BD4?logo=dotnet&logoColor=white)](windows/Directory.Build.props)
+[![WinUI 3](https://img.shields.io/badge/UI-WinUI_3-0078D4)](docs/windows/README.md)
 
 在 macOS 菜单栏，一眼查看 **Codex、Claude Code、Kimi Code 和 MiniMax** 的用量、额度窗口与重置时间。
 
 > 当前版本：1.2.6。支持 Apple Silicon 与 Intel，运行需要 macOS 13+。
 
-[下载最新版本](https://github.com/YuSec2021/ai-usage-display/releases/latest) · [使用指南](docs/USAGE.md) · [更新记录](CHANGELOG.md)
+[下载 macOS 稳定版](https://github.com/YuSec2021/ai-usage-display/releases/latest) · [Windows 预览版](docs/windows/README.md) · [使用指南](docs/USAGE.md) · [更新记录](CHANGELOG.md)
+
+Windows 首版采用 C# / WinUI 3：任务栏右侧模型圆环、可置顶的桌面浮窗，常驻区域不显示百分比文字。支持范围、构建和下载方式见 [Windows 指南](docs/windows/README.md)。
 
 ## 功能
 

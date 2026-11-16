@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：完善 Issue 准备门禁、变更编号校验与版本 PR 发布流程；版本通过审核后发布，用量监控功能保持原有行为。",
-                            "This build: adds Issue preparation gates, unique change numbers, and reviewed release PRs. Usage monitoring retains its existing behavior."
+                            "本次构建：新增独立 Windows 预览工程，采用模型圆环托盘与桌面浮窗；macOS 用量监控保持原有行为。",
+                            "This build: adds a separate Windows preview with model-ring tray icons and a floating window. macOS usage monitoring retains its existing behavior."
                         ))
                     }
                     .font(.callout)
