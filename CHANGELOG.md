@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.8 — 2026-11-16
+
 - Add Google Antigravity usage monitoring with local transcript token aggregation, 7-day history, and multi-group model quota windows (Gemini 5-hour/weekly, Gemini 4 Argon weekly, and Claude/GPT 5-hour/weekly) from the local Antigravity language server. (#26)
 
 ## 1.2.7 — 2026-11-16
