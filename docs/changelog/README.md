@@ -4,6 +4,8 @@
 
 ## 最新更新
 
+- [030：补齐 Windows Release 附件与自动发布](030-windows-release-assets.md)：复用 Windows 验证流程按同一 Tag 构建，双平台成功后共同发布安装包与 SHA-256。
+
 - [029：发布 1.2.8](029-release-1.2.8.md)：自动补丁升版为 1.2.8（Build 12），发布结果以 Actions 为准。
 - [028：显示 Grok 订阅周额度](028-grok-subscription-usage.md)：只读当前 Grok Bot 个人账号缓存，显示共享周额度、重置时间与缓存状态，不将周额度混作 5 小时或 Token。
 
@@ -79,3 +81,4 @@
 | [026](026-antigravity-usage.md) | feature | 新增 Google Antigravity 用量与多分组额度监控 | 2026-11-16 |
 | [028](028-grok-subscription-usage.md) | feature | 显示 Grok 订阅周额度 | 2026-11-17 |
 | [029](029-release-1.2.8.md) | release | 发布 1.2.8 | 2026-11-16 |
+| [030](030-windows-release-assets.md) | bugfix | 补齐 Windows Release 附件与自动发布 | 2026-11-17 |

@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：新增 Grok 订阅周额度，通过 Grok Bot 本地缓存显示已用比例与重置时间；圆环明确区分周额度与其他模型的 5 小时额度。",
-                            "This build: adds Grok weekly subscription usage and reset times from the local Grok Bot cache, with weekly rings distinct from other models’ 5-hour quotas."
+                            "本次构建：Windows x64 预览包与 SHA-256 校验文件可直接从 GitHub Release 下载，完整解压后即可运行。",
+                            "This build: Windows x64 preview packages and SHA-256 checksums are available from GitHub Releases. Extract the entire ZIP to run the app."
                         ))
                     }
                     .font(.callout)

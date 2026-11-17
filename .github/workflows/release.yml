@@ -80,9 +80,15 @@ jobs:
             dist/*.dmg.sha256
           if-no-files-found: error
 
+  windows:
+    name: Build Windows preview
+    uses: ./.github/workflows/windows.yml
+    with:
+      tag: ${{ inputs.tag || github.ref_name }}
+
   release:
     name: Publish release assets
-    needs: build
+    needs: [build, windows]
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
@@ -93,11 +99,16 @@ jobs:
           name: AI-Usage-${{ env.RELEASE_TAG }}-universal
           path: dist
 
+      - uses: actions/download-artifact@v4
+        with:
+          name: AI-Usage-Windows-x64-preview
+          path: dist
+
       - name: Verify downloaded checksums
         working-directory: dist
         run: sha256sum -c ./*.sha256
 
-      - name: Publish DMG and SHA-256
+      - name: Publish macOS and Windows packages with SHA-256
         uses: softprops/action-gh-release@v2
         with:
           tag_name: ${{ env.RELEASE_TAG }}
@@ -109,6 +120,12 @@ jobs:
 
             此安装包使用临时代码签名，未经过 Apple 公证。
             首次启动方法请参阅仓库 README；可使用随包 SHA-256 文件验证下载内容。
+
+            Windows 11 x64 预览版：下载 AI-Usage-Windows-*-x64-preview.zip，完整解压后运行 AIUsage.Windows.exe。
+            Windows 包自包含运行时，尚未签名；支持 Codex、Claude Code 与 Kimi Code，MiniMax、Antigravity 和 Grok 暂未接入。
+            使用方式与验证范围见 [Windows 指南](https://github.com/YuSec2021/ai-usage-display/blob/main/docs/windows/README.md)。
           files: |
             dist/*.dmg
             dist/*.dmg.sha256
+            dist/*.zip
+            dist/*.zip.sha256
