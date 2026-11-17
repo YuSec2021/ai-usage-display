@@ -3,7 +3,7 @@
 ## 基本信息
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/33
 - 类型：`type/bug`
-- 状态：准备完成
+- 状态：实现与本地验证完成，等待 PR 远程验收
 - 唯一工作分支：`codex/issue-33-windows-release-assets`
 - 负责人：YuSec2021
 - 设计或产出文档：N/A — Bug 使用四行根因说明，不要求模块设计。
@@ -27,11 +27,11 @@ v1.2.8 Release 只有 macOS DMG。Windows main 任务 44012008360 在同一提�
 - 回归：覆盖发布依赖两个平台、可复用 Windows 工作流按 Tag checkout/版本校验、Artifact 名称一致，以及 ZIP/DMG 与两份校验文件共同下载、校验和发布；原生 Windows CI 继续运行测试和解压烟雾验证。
 
 ## 验收标准
-- [ ] v1.2.8 Release 补齐同一提交的 Windows ZIP 与 SHA-256，校验通过且不覆盖现有附件。
-- [ ] Release 调用现有 Windows 流程并等待其成功；任一平台失败不执行发布。
-- [ ] Windows 发布调用检出指定版本 Tag，拒绝非法 Tag 或版本不一致，普通 PR/main 构建行为保留。
+- [x] v1.2.8 Release 补齐同一提交的 Windows ZIP 与 SHA-256，校验通过且不覆盖现有附件。
+- [x] Release 调用现有 Windows 流程并等待其成功；任一平台失败不执行发布。
+- [x] Windows 发布调用检出指定版本 Tag，拒绝非法 Tag 或版本不一致，普通 PR/main 构建行为保留。
 - [ ] 工作流回归、actionlint、make verify 与差异检查通过；远程 Windows 原生测试、构建和烟雾结果明确记录。
-- [ ] About、编号变更记录、索引和 Windows 下载文档同步，版本号保持 main 配置。
+- [x] About、编号变更记录、索引和 Windows 下载文档同步，版本号保持 main 配置。
 
 ## 模块拆解
 | 模块 / 路径 | 修改内容 | 依赖 | 完成条件 |
@@ -53,7 +53,12 @@ v1.2.8 Release 只有 macOS DMG。Windows main 任务 44012008360 在同一提�
 - 发布与回滚：仅补当前版本缺失附件，保留 Tag 和既有 DMG。工作流经 PR 审核合入，由既有版本 PR/Tag 流程发布下一版本；首个新 Tag 的完整双平台自动发布需在实际运行后验收。回滚可还原工作流 PR，错误新增附件可单独删除，不重写 Tag。
 
 ## 完成定义
-- [ ] 根因与模块拆解和最终实现一致。
+- [x] 根因与模块拆解和最终实现一致。
 - [ ] 所有验收标准完成或明确记录远程验收状态。
 - [ ] 必要回归、构建和检查已通过。
-- [ ] 文档、发布及回滚事项已处理，真实机器未验证范围明确记录。
+- [x] 文档、发布及回滚事项已处理，真实机器未验证范围明确记录。
+
+## 执行结果
+- 准备提交 b4e720b 先于实施，make check-prepare 通过。新增 4 项工作流回归在旧配置失败、修复后通过；actionlint 通过。
+- make verify BASE_REF=origin/main 通过：38 项流程测试、90 项 Swift 测试（1 项 GPU 预览跳过，零失败），构建版本 1.2.8（Build 12）。
+- v1.2.8 Windows ZIP/SHA-256 已上传，Artifact/ZIP/远端摘要核对通过；旧校验文件 CRLF 规范为 LF，ZIP 未改动。详见 030 变更记录。
