@@ -13,6 +13,8 @@ AI Usage 是一款本地运行的 macOS 菜单栏应用。
 - MiniMax Desktop 本地 HTTP 缓存中官方订阅额度响应的套餐类型、剩余百分比与重置时间字段。
 - 用户主动配置 MiniMax API Key 后，MiniMax 官方模型列表接口返回的模型标识，仅用于确认授权有效。
 
+- Grok Bot 当前账号槽位及该账号的个人订阅周额度缓存：已用比例、额度状态、观察时间、缓存到期和服务端重置时间。账号槽位只在内存中用于隔离账户，不展示或写入日志。
+
 ## 不读取或不保存的数据
 
 - 登录密码、浏览器 Cookie及非用户主动配置的访问令牌或 API Key。
@@ -24,6 +26,8 @@ AI Usage 是一款本地运行的 macOS 菜单栏应用。
 AI Usage 的本地用量解析在本机完成。配置 Kimi Code API Key 后，应用会将该 Key 作为 Bearer 凭证仅发送至 Kimi 官方的 `https://api.kimi.com/coding/v1/usages`，以读取 5 小时与每周额度。
 
 配置 MiniMax API Key 后，应用会将该 Key 作为 Bearer 凭证，仅发送至用户所选区域的官方模型列表接口：国内为 `https://api.minimaxi.com/v1/models`，海外为 `https://api.minimax.io/v1/models`。该请求不包含提示词或生成内容，只用于验证授权。应用不会把 Key、用量数据、会话信息或设备信息上传到开发者服务器。
+
+Grok 订阅显示完全从本机 Grok Bot 缓存读取，不发起网络请求，不读取浏览器 Cookie、Grok Bot 凭证或会话内容。
 
 ## 本地文件
 
@@ -44,3 +48,6 @@ MiniMax 用量只从 `~/Library/Application Support/MiniMax/Cache/Cache_Data` �
 # AI Usage Privacy Notice
 
 AI Usage is a local macOS menu bar application. It reads only usage, rate-limit, reset-time, and token-count fields required for display. Explicitly configured Kimi Code and MiniMax API keys are stored only in macOS Keychain and sent only to their documented official endpoints. MiniMax authorization uses the selected region's model-list endpoint and sends no prompt or generated content. MiniMax usage still comes exclusively from the latest complete official subscription-quota response in MiniMax Desktop's local HTTP cache. The app does not send credentials, usage, or conversation data to a developer-operated server, and does not save prompts, responses, source code, or tool arguments.
+
+
+Grok subscription usage is read locally from the active Grok Bot account’s personal weekly-quota cache. Only its account-slot identifier and quota/timestamp fields are decoded; the identifier is used in memory for account isolation and is not displayed or logged. This integration makes no network requests, reads no browser cookies, credentials, or conversations, and does not modify Grok Bot files.

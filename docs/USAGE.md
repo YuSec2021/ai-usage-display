@@ -32,3 +32,14 @@ MiniMax 只读取 MiniMax Desktop Chromium HTTP 缓存目录
 MiniMax 无需 API Key；设置只保留本地缓存状态和更新说明。旧版本保存的 MiniMax API Key 与区域偏好不会被自动读取或删除，需要清理遗留 Key 时可使用 macOS“钥匙串访问”。
 
 构建、测试与发布步骤见[开发文档](DEVELOPMENT.md#8-构建与发布)。
+
+
+## Grok 订阅周额度
+
+Grok 显示当前 Grok Bot 个人账号的共享订阅周额度；这与 xAI API Key 用量不同。需要安装并登录 Grok Bot，在它的 **Settings → Usage & Billing** 打开额度面板，让原应用更新本地缓存，然后点击 AI Usage 的刷新。设置 → 集成 → Grok 可查看缓存目录检测结果并打开 Grok Bot。
+
+数据源为 `~/Library/Application Support/Grok Bot/sand-client-persistence`。自定义 userData 目录可用 `GROK_BOT_HOME` 指定；AI Usage 只读取当前账号槽位及其周额度两个逻辑键，不读取浏览器 Cookie、账户凭证或对话，不发送网络请求，也不修改原应用文件。
+
+圆环明确使用**周额度**，显示服务端提供的重置时间；“最高 5 小时额度”模式不会拿周额度参与比较。没有 Token 统计或合成历史。超过 5 分钟的样本标记为旧；缓存到期、超过 24 小时或周期已重置后，旧比例不会作为当前额度展示。若切换账号或退出登录，需要让 Grok Bot 完成同步后再刷新 AI Usage。
+
+当前读取 Grok Bot 的个人订阅缓存，不提供 Grok 网站直接登录或团队额度支持。未登录、格式变化或未生成缓存时会显示引导，不将“未知”显示成 0%。

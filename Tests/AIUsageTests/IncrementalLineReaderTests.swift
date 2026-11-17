@@ -98,7 +98,7 @@ final class IncrementalLineReaderTests: XCTestCase {
                 file = root.appendingPathComponent("brain/sample/.system_generated/logs/transcript.jsonl")
                 provider = AntigravityUsageProvider(rootDirectory: root, now: { now })
                 line = { #"{"step_index":1,"created_at":"\#(timestamp)","input_tokens":\#($0)}"# }
-            case .miniMax: continue
+            case .miniMax, .grok: continue
             }
             try FileManager.default.createDirectory(at: file.deletingLastPathComponent(), withIntermediateDirectories: true)
             for (step, amount) in [9, 2, 0, 3].enumerated() {
