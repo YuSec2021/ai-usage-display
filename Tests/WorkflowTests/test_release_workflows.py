@@ -58,6 +58,7 @@ class ReleaseWorkflowTests(unittest.TestCase):
             self.assertIn(step, self.windows)
         self.assertLess(self.windows.index("./windows/scripts/smoke.ps1"),
                         self.windows.index("name: Upload portable preview"))
+        self.assertIn('"$hash  $name`n" | Set-Content -Encoding ascii -NoNewline', self.windows)
         self.assertIn("group: windows-${{ inputs.tag || github.head_ref || github.ref_name }}", self.windows)
         self.assertIn("cancel-in-progress: ${{ !inputs.tag }}", self.windows)
 

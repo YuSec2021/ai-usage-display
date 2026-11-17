@@ -72,7 +72,7 @@ jobs:
           $name = "AI-Usage-Windows-$version-x64-preview.zip"
           Compress-Archive -Path dist/windows-x64/* -DestinationPath "dist/$name"
           $hash = (Get-FileHash "dist/$name" -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  $name" | Set-Content -Encoding ascii "dist/$name.sha256"
+          "$hash  $name`n" | Set-Content -Encoding ascii -NoNewline "dist/$name.sha256"
       - name: Verify extracted portable app, tray, and collector
         shell: pwsh
         run: |
