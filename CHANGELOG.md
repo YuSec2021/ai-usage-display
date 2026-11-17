@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Publish the Windows x64 portable preview ZIP and SHA-256 alongside the macOS DMG, building both platforms from the same release tag and requiring both to pass before publication. Backfill the verified v1.2.8 Windows assets. (#33)
+
 ## 1.2.8 — 2026-11-16
 
 - Add Grok personal subscription weekly quota display from the active Grok Bot account’s local cache, with accurate weekly rings, account isolation, expiry handling, and no API key or browser-cookie access. (#30)

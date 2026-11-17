@@ -5,21 +5,33 @@ on:
     paths:
       - 'windows/**'
       - '.github/workflows/windows.yml'
+      - '.github/workflows/release.yml'
       - 'project.yml'
   push:
     branches: [main]
     paths:
       - 'windows/**'
       - '.github/workflows/windows.yml'
+      - '.github/workflows/release.yml'
       - 'project.yml'
   workflow_dispatch:
+    inputs:
+      tag:
+        description: '可选：验证已有版本 Tag 的 Windows 包，不发布 Release'
+        required: false
+        type: string
+  workflow_call:
+    inputs:
+      tag:
+        required: true
+        type: string
 
 permissions:
   contents: read
 
 concurrency:
-  group: windows-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  group: windows-${{ inputs.tag || github.head_ref || github.ref_name }}
+  cancel-in-progress: ${{ !inputs.tag }}
 
 jobs:
   windows:
@@ -29,8 +41,18 @@ jobs:
     env:
       DOTNET_CLI_TELEMETRY_OPTOUT: '1'
       DOTNET_NOLOGO: '1'
+      REQUESTED_TAG: ${{ inputs.tag || '' }}
     steps:
+      - name: Validate requested tag
+        shell: pwsh
+        run: |
+          if ($env:REQUESTED_TAG -and $env:REQUESTED_TAG -notmatch '^v?[0-9]+\.[0-9]+\.[0-9]+$') {
+            throw 'Version tag must use vX.Y.Z or X.Y.Z'
+          }
       - uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.tag && format('refs/tags/{0}', inputs.tag) || github.sha }}
+          persist-credentials: false
       - uses: actions/setup-dotnet@v4
         with:
           dotnet-version: '10.0.x'
@@ -43,6 +65,9 @@ jobs:
         run: |
           $version = ([regex]::Match((Get-Content project.yml -Raw), 'MARKETING_VERSION:\s*([\d.]+)')).Groups[1].Value
           if (-not $version) { throw 'Version missing' }
+          if ($env:REQUESTED_TAG -and $env:REQUESTED_TAG.TrimStart('v') -ne $version) {
+            throw 'Requested tag does not match project version'
+          }
           Copy-Item docs/windows/README.md dist/windows-x64/README.md
           $name = "AI-Usage-Windows-$version-x64-preview.zip"
           Compress-Archive -Path dist/windows-x64/* -DestinationPath "dist/$name"
