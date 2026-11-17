@@ -45,7 +45,7 @@ N/A — 当前类型为功能新增，不需要 Bug 四行根因说明。
 
 ## 验证计划
 - 自动验证：临时目录 fixture 覆盖 Base32/URI 键、长键 SHA-256 帧、账号变化、零值、无额度、坏文件、旧版本、时间边界；表现/迁移回归；运行 make check-prepare、make generate、make verify 和 git diff --check。
-- 人工验证：已核对 Grok Bot Usage & Billing 与其额度缓存白名单结构；浅/深色匿名样本渲染已检查。新增 AI Usage 实际窗口检查因 Mac 锁屏未能执行，未验证生产 Provider 真实缓存刷新或安装；自动测试只使用临时 fixture。
+- 人工验证：已核对原应用 Usage & Billing 及额度白名单、浅/深色匿名样本。解锁后用独立 Bundle ID 的临时窗口复用正式 MenuBarView/ProviderCard/SettingsView 与生产 Provider，核对真实比例/重置时间、标旧和新缓存刷新、无 Token 行、设置/打开 Grok Bot/About 流程；临时窗口代码已还原，不写入真实数据。原生菜单弹出/关闭未自动化点验，未替换已安装应用；自动测试仍只使用临时 fixture。
 - 埋点与可观测性：仅沿用 ProviderAvailability 展示读取状态，不记录账号、路径、原始缓存或凭证。
 - 发布与回滚：开发分支沿用 main 版本，不自动合并或安装；合入后通过版本 PR 发布，可还原本次 PR 回滚。
 
