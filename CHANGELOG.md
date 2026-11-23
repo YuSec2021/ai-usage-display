@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Refine the Windows floating dock with Win32 `SetWindowRgn` capsule/card contours, a native triangular caret aligned to the active ring, 2.6 DIP rings with monochrome `BitmapIcon` foregrounds, `Storyboard` transitions with reentry protection, and fix same-target caret animation restarts during theme/refresh updates. (#38)
+
 ## 1.2.9 — 2026-11-23
 
 - Upgrade the Windows floating window to a frosted-glass capsule dock and hover detail popover with empty-space dragging, aligned active indicator, pin toggle, light/dark glass palettes, and refresh/main-panel/hide menu actions. (#35)

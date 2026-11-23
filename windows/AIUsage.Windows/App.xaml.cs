@@ -162,6 +162,14 @@ public partial class App : Microsoft.UI.Xaml.Application
             Render();
             TraceSmoke("checking-native-state");
             await SmokeCapture.RunAsync(this, tray.Count, SmokeOutput!);
+            if (Environment.GetEnvironmentVariable("AIUSAGE_SMOKE_REVIEW") == "1")
+            {
+                Preferences.Theme = "light";
+                ApplyAppearance();
+                Main.AppWindow.Hide();
+                Floating.ShowDetail(ProviderId.Claude, pinned: true);
+                await Task.Delay(TimeSpan.FromSeconds(45));
+            }
             Shutdown();
         }
         catch (Exception error)
@@ -177,8 +185,9 @@ public partial class App : Microsoft.UI.Xaml.Application
         {
             var now = DateTimeOffset.UtcNow;
             IReadOnlyList<QuotaWindow> windows = id == ProviderId.MiniMax ? [] :
-                [new(300, id switch { ProviderId.Codex => 0, ProviderId.Claude => 82, _ => 37 }, now.AddHours(2)), new(10080, 40, now.AddDays(3))];
-            return Task.FromResult(new ProviderResult(new(id, windows, now, SourceState.Ready, "CI 匿名示例数据"),
+                [new(300, id switch { ProviderId.Codex => 0, ProviderId.Claude => 68, _ => 42 },
+                    now.AddMinutes(id switch { ProviderId.Codex => 64, ProviderId.Claude => 138, _ => 192 })), new(10080, 40, now.AddDays(3))];
+            return Task.FromResult(new ProviderResult(new(id, windows, now, id == ProviderId.MiniMax ? SourceState.Unsupported : SourceState.Ready, "CI 匿名示例数据"),
                 Enumerable.Range(0, 7).Select(day => new DailyUsage(DateOnly.FromDateTime(now.LocalDateTime).AddDays(-day), id,
                     new TokenUsage((day + 1) * 1000, day * 100, 200))).ToArray()));
         }

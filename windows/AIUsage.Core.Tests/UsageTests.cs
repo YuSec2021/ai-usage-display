@@ -230,6 +230,39 @@ public sealed class UsageTests : IDisposable
         Assert.Equal(12 + 64 + 10, below.Bounds.Y);
     }
 
+    [Theory]
+    [InlineData(1.0)]
+    [InlineData(1.25)]
+    [InlineData(1.5)]
+    [InlineData(2.0)]
+    public void FloatingCaretKeepsItsOwnSpaceAndTracksEveryRingAtEachDpi(double scale)
+    {
+        var work = new WindowPlacement(0, 0, 6000, 4000);
+        var cardHeight = (int)Math.Round(FloatingLayout.PopoverCardHeight * scale);
+        var caretHeight = (int)Math.Round(FloatingLayout.CaretHeight * scale);
+        var height = (int)Math.Round(FloatingLayout.PopoverHeight * scale);
+        var width = (int)Math.Round(FloatingLayout.PopoverWidth * scale);
+        var gap = (int)Math.Round(FloatingLayout.PopoverGap * scale);
+        Assert.InRange(height - cardHeight, caretHeight - 1, caretHeight + 1);
+        for (var count = 1; count <= 4; count++)
+        {
+            var size = FloatingLayout.ComputeDockSize(count);
+            for (var index = 0; index < count; index++)
+            {
+                var center = FloatingLayout.RingCenterX(size.Width, count, index) * scale;
+                foreach (var y in new[] { 0, 1000 })
+                {
+                    var dock = new WindowPlacement(1000, y, (int)Math.Round(size.Width * scale), (int)Math.Round(size.Height * scale));
+                    var placement = FloatingLayout.PlacePopover(dock, work, width, height, gap, center, 22 * scale);
+                    Assert.Equal(dock.X + center, placement.Bounds.X + placement.ArrowOffsetPx, 3);
+                    Assert.Equal(y > 0, placement.PlacedAbove);
+                    if (placement.PlacedAbove) Assert.Equal(gap, dock.Y - placement.Bounds.Y - placement.Bounds.Height);
+                    else Assert.Equal(gap, placement.Bounds.Y - dock.Y - dock.Height);
+                }
+            }
+        }
+    }
+
     private sealed class DelayedProvider(DateTimeOffset now) : IUsageProvider
     {
         public ProviderId Id => ProviderId.Kimi;

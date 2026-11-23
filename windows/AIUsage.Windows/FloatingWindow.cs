@@ -37,27 +37,27 @@ public sealed partial class FloatingWindow : Window, IDisposable
         presenter.IsMinimizable = false;
         presenter.IsAlwaysOnTop = app.Preferences.AlwaysOnTop;
         AppWindow.IsShownInSwitchers = false;
-        Native.ApplyRoundedCorners(handle);
+        Native.ConfigureFloatingFrame(handle);
         AppWindow.Closing += (_, args) => { if (!app.Exiting) { args.Cancel = true; app.ShowFloating(false); } };
         AppWindow.Changed += (_, args) =>
         {
-            if (args.DidVisibilityChange && !AppWindow.IsVisible)
-                detail.HideDetail();
+            if (args.DidVisibilityChange && !AppWindow.IsVisible && detail is { } panel)
+                panel.HideDetail(immediate: true);
         };
 
         hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
         hideTimer.Tick += (_, _) =>
         {
             hideTimer.Stop();
-            if (!pointerInDock && !pointerInDetail && !detail.IsPinned && !detail.IsMenuOpen)
-                detail.HideDetail();
+            if (!pointerInDock && !pointerInDetail && detail is { } panel && !panel.IsPinned && !panel.IsMenuOpen)
+                panel.HideDetail();
         };
 
         detail = new FloatingDetailWindow(
             app,
             onPointerEntered: () => { pointerInDetail = true; hideTimer.Stop(); },
             onPointerExited: () => { pointerInDetail = false; ScheduleDetailHide(); },
-            onDismissRequested: () => detail.HideDetail(resetPin: true));
+            onDismissRequested: () => detail?.HideDetail(resetPin: true));
 
         surface.PointerPressed += (_, args) =>
         {
@@ -123,12 +123,13 @@ public sealed partial class FloatingWindow : Window, IDisposable
     internal void Hide()
     {
         hideTimer.Stop();
-        detail.HideDetail(resetPin: true);
+        detail.HideDetail(resetPin: true, immediate: true);
         AppWindow.Hide();
     }
 
     internal void ShowDetail(ProviderId provider, bool? pinned = null)
     {
+        if (detail.IsPinned && pinned is null && detail.ActiveProvider != provider) return;
         var snapshots = app.VisibleSnapshots();
         var index = -1;
         for (var i = 0; i < snapshots.Count; i++)
@@ -160,8 +161,8 @@ public sealed partial class FloatingWindow : Window, IDisposable
         var dock = new WindowPlacement(rect.Left, rect.Top, dockWidth, dockHeight);
         var work = Native.WorkArea(dock.X, dock.Y, app.Preferences.FloatingDisplay).Bounds;
         var popoverWidth = (int)Math.Round(FloatingLayout.PopoverWidth * scale);
-        var popoverHeight = (int)Math.Round(FloatingLayout.PopoverCardHeight * scale);
-        var gap = (int)Math.Round(10 * scale);
+        var popoverHeight = (int)Math.Round(FloatingLayout.PopoverHeight * scale);
+        var gap = (int)Math.Round(FloatingLayout.PopoverGap * scale);
         var ringCenterPx = FloatingLayout.RingCenterX(dockDipWidth, count, index) * scale;
         return FloatingLayout.PlacePopover(dock, work, popoverWidth, popoverHeight, gap, ringCenterPx, 22 * scale);
     }
@@ -205,7 +206,7 @@ public sealed partial class FloatingWindow : Window, IDisposable
         {
             var snapshot = snapshots[i];
             var provider = snapshot.Provider;
-            var ring = RingView.Create(snapshot, FloatingLayout.RingSize, () => ShowDetail(provider), dockStyle: true, darkTheme: dark);
+            var ring = RingView.Create(snapshot, FloatingLayout.RingSize, () => ShowDetail(provider, pinned: false), dockStyle: true, darkTheme: dark);
             ring.PointerEntered += (_, _) =>
             {
                 pointerInDock = true;
@@ -217,6 +218,7 @@ public sealed partial class FloatingWindow : Window, IDisposable
         ((OverlappedPresenter)AppWindow.Presenter).IsAlwaysOnTop = app.Preferences.AlwaysOnTop;
         var size = DesiredSize();
         AppWindow.Resize(new SizeInt32(size.Width, size.Height));
+        Native.ApplyFloatingRegion(handle, size.Width, size.Height, 29 * Scale);
 
         if (detail.IsDetailVisible && activeProvider is { } current)
         {
@@ -250,6 +252,7 @@ public sealed partial class FloatingWindow : Window, IDisposable
             var position = new WindowPlacement(rect.Left, rect.Top, size.Width, size.Height).Fit(work.Bounds,
                 (int)(14 * Scale));
             AppWindow.MoveAndResize(new RectInt32(position.X, position.Y, position.Width, position.Height));
+            Native.ApplyFloatingRegion(handle, size.Width, size.Height, 29 * Scale);
             app.Preferences.FloatingX = position.X;
             app.Preferences.FloatingY = position.Y;
             app.Preferences.FloatingDisplay = work.Device;

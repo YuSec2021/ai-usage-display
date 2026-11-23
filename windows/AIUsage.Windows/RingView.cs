@@ -25,11 +25,11 @@ internal static class RingView
         var now = DateTimeOffset.UtcNow;
         var quota = snapshot.FiveHour(now);
         var stale = snapshot.IsStale(now);
-        var strokeWidth = dockStyle ? 3.2 : (size > 40 ? 4 : 2);
+        var strokeWidth = dockStyle ? 2.6 : (size > 40 ? 4 : 2);
         var trackColor = dockStyle
             ? (darkTheme ? Color.FromArgb(62, 200, 216, 240) : Color.FromArgb(46, 96, 117, 152))
             : Color.FromArgb(75, 128, 128, 128);
-        var inset = 1.0;
+        var inset = dockStyle ? 0.4 : 1.0;
         var track = new Ellipse
         {
             Stroke = new SolidColorBrush(trackColor),
@@ -37,7 +37,10 @@ internal static class RingView
             Margin = new Thickness(inset)
         };
         if (quota is null)
-            track.StrokeDashArray = dockStyle ? new DoubleCollection { 2.4, 2.2 } : new DoubleCollection { 2, 2 };
+        {
+            track.StrokeDashArray = dockStyle ? new DoubleCollection { 1.15, 1.46 } : new DoubleCollection { 2, 2 };
+            if (dockStyle) track.StrokeDashCap = PenLineCap.Round;
+        }
         root.Children.Add(track);
 
         if (quota is { Fraction: > 0 })
@@ -70,37 +73,19 @@ internal static class RingView
             root.Children.Add(progress);
         }
 
-        var iconSource = new BitmapImage(new Uri("ms-appx:///Assets/" + snapshot.Provider.Logo() + ".png"));
         if (dockStyle)
         {
-            var iconSize = Math.Round(size * 0.41);
-            var image = new Image
+            root.Children.Add(new BitmapIcon
             {
-                Source = iconSource,
-                Width = iconSize,
-                Height = iconSize,
+                UriSource = new Uri("ms-appx:///Assets/" + snapshot.Provider.Logo() + ".png"),
+                ShowAsMonochrome = true,
+                Foreground = Brush(darkTheme ? "#EEF3FA" : "#253040"),
+                Width = Math.Round(size * 0.41),
+                Height = Math.Round(size * 0.41),
                 Opacity = quota is null ? 0.70 : 0.82,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
-            };
-            if (darkTheme)
-            {
-                var plate = new Border
-                {
-                    Width = iconSize + 10,
-                    Height = iconSize + 10,
-                    CornerRadius = new CornerRadius((iconSize + 10) / 2),
-                    Background = new SolidColorBrush(Color.FromArgb(220, 236, 242, 250)),
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    VerticalAlignment = VerticalAlignment.Center,
-                    Child = image
-                };
-                root.Children.Add(plate);
-            }
-            else
-            {
-                root.Children.Add(image);
-            }
+            });
         }
         else
         {
@@ -114,7 +99,7 @@ internal static class RingView
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center
             };
-            tile.Child = new Image { Source = iconSource, Margin = new Thickness(2) };
+            tile.Child = new Image { Source = new BitmapImage(new Uri("ms-appx:///Assets/" + snapshot.Provider.Logo() + ".png")), Margin = new Thickness(2) };
             root.Children.Add(tile);
         }
 

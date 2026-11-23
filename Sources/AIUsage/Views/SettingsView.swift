@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：升级 Windows 桌面浮窗为毛玻璃胶囊 Dock 与悬浮详情卡样式，支持空白区拖拽、悬停切换与固定详情、深浅色毛玻璃适配及「刷新额度 / 打开主面板 / 隐藏浮窗」菜单。",
-                            "This build: upgrades the Windows floating window to a frosted glass capsule dock and hover detail popover with empty-space dragging, pin toggle, light/dark glass palettes, and refresh/main-panel/hide actions."
+                            "本次构建：修正 Windows 毛玻璃浮窗的实际窗口轮廓与三角指示箭头，恢复细圆环与无底板图标，并加入详情展开、收起和模型切换过渡。",
+                            "This build: corrects the Windows glass dock contour and triangular pointer, restores thin quota rings and direct monochrome logos, and adds detail opening, dismissal, and model-switch transitions."
                         ))
                     }
                     .font(.callout)

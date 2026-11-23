@@ -50,6 +50,7 @@ public static class FloatingLayout
     public const int PopoverWidth = 240;
     public const int PopoverCardHeight = 106;
     public const int CaretHeight = 9;
+    public const int PopoverHeight = PopoverCardHeight + CaretHeight;
     public const int PopoverGap = 4;
 
     public static (int Width, int Height) ComputeDockSize(int providerCount)
