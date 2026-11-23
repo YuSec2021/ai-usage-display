@@ -25,10 +25,13 @@ internal static class SmokeCapture
             throw new InvalidOperationException("原生窗口、置顶、托盘、无百分比或零值/未知状态验证失败");
         app.TraceSmoke("capturing-compact");
         await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, "floating-compact.png"));
-        app.Preferences.Expanded = true; app.Floating.Refresh(); app.Floating.FitAndRemember();
+        app.Floating.ShowDetail(ProviderId.Claude, pinned: true);
         await Task.Delay(700);
+        var detailPercentages = Text(app.Floating.Detail.Content).Any(text => text.Contains('%') || text.Contains('％'));
+        if (!app.Floating.Detail.IsDetailVisible || detailPercentages)
+            throw new InvalidOperationException("浮窗详情卡未显示或包含百分比文本");
         app.TraceSmoke("capturing-expanded");
-        await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, "floating-expanded.png"));
+        await CaptureAsync((FrameworkElement)app.Floating.Detail.Content, Path.Combine(output, "floating-expanded.png"));
         await CaptureAsync((FrameworkElement)app.Main.Content, Path.Combine(output, "main-window.png"));
         app.Main.PageScroll.ChangeView(null, Math.Min(100, app.Main.PageScroll.ScrollableHeight), null, true);
         await Task.Delay(250);
@@ -41,12 +44,12 @@ internal static class SmokeCapture
         app.Main.SelectPage("settings"); await Task.Delay(400);
         await CaptureAsync((FrameworkElement)app.Main.Content, Path.Combine(output, "settings.png"));
         app.Main.SelectOverview(null);
-        app.Floating.AppWindow.Hide();
-        var hidden = !Native.IsWindowVisible(floating);
+        app.Floating.Hide();
+        var hidden = !Native.IsWindowVisible(floating) && !app.Floating.Detail.IsDetailVisible;
         app.Floating.Show();
         if (!hidden || !Native.IsWindowVisible(floating)) throw new InvalidOperationException("浮窗隐藏/恢复失败");
         AtomicJson.Write(Path.Combine(output, "smoke.json"), new { success = true, trayIcons = trayCount, topmost,
-            noFloatingPercentages = !percentages, realZeroPreserved = zero == 0, unknownPreserved = unknown is null,
+            noFloatingPercentages = !percentages && !detailPercentages, realZeroPreserved = zero == 0, unknownPreserved = unknown is null,
             hideRestore = true, navigationPages = true, scrollPreserved = true, isolated = true, source = "anonymous-fixture", windowsVersion = Environment.OSVersion.VersionString });
     }
     private static IEnumerable<string> Text(DependencyObject element)

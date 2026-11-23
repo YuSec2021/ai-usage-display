@@ -109,7 +109,7 @@ public partial class App : Microsoft.UI.Xaml.Application
     internal void ShowFloating(bool visible)
     {
         Preferences.FloatingVisible = visible; Save();
-        if (visible) Floating.Show(); else Floating.AppWindow.Hide();
+        if (visible) Floating.Show(); else Floating.Hide();
         Main.RefreshSettingsStatus();
     }
     internal void Save()
