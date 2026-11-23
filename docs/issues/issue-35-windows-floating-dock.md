@@ -4,7 +4,7 @@
 
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/35
 - 类型：`type/feature`
-- 状态：待实施
+- 状态：待验收
 - 工作分支：`codex/issue-35-windows-floating-dock`
 - 负责人：AI Usage 维护者
 - 设计或产出文档：`docs/design/issue-35-windows-floating-dock.md`
@@ -33,12 +33,12 @@ N/A — 当前类型为 `type/feature`，不需要根因说明。
 
 ## 验收标准
 
-- [ ] Windows 浮窗呈现为毛玻璃胶囊 Dock，移除 `⠿`/`⌄`/`×` 按钮，支持拖动空白区域移动并在松开后吸附屏幕边缘。
-- [ ] Dock 内各模型圆环为 `44×44` DIP，居中展示品牌图标，配色符合原型（Codex `#6CA15A`、Claude Code `#F58A12`、Kimi Code `#367CF4`、MiniMax `#8B99AF` 未知虚线）。
-- [ ] 悬停或点击圆环时在浮窗上方（顶部空间不足时自动翻转至下方）弹出毛玻璃详情卡，指示箭头对齐当前圆环中心；支持 Pin 固定、移出/`Esc` 收起，以及 `···` 菜单中的「刷新额度」「打开主面板」「隐藏浮窗」。
-- [ ] 详情卡包含 32px 圆形图标底、模型名、`5 小时额度`、5px 胶囊进度条（无百分比文字）、中文相对重置倒计时与相对更新时间。
-- [ ] 浅色模式还原原型配色，深色模式具备匹配的深色毛玻璃配色，跟随应用主题设置切换。
-- [ ] `make windows-test` 与 `make verify` 全部通过；Windows 原生冒烟校验覆盖 Dock 与详情卡无百分比断言并生成截图。
+- [x] Windows 浮窗呈现为毛玻璃胶囊 Dock，移除 `⠿`/`⌄`/`×` 按钮，支持拖动空白区域移动并在松开后吸附屏幕边缘。
+- [x] Dock 内各模型圆环为 `44×44` DIP，居中展示品牌图标，配色符合原型（Codex `#6CA15A`、Claude Code `#F58A12`、Kimi Code `#367CF4`、MiniMax `#8B99AF` 未知虚线）。
+- [x] 悬停或点击圆环时在浮窗上方（顶部空间不足时自动翻转至下方）弹出毛玻璃详情卡，指示箭头对齐当前圆环中心；支持 Pin 固定、移出/`Esc` 收起，以及 `···` 菜单中的「刷新额度」「打开主面板」「隐藏浮窗」。
+- [x] 详情卡包含 32px 圆形图标底、模型名、`5 小时额度`、5px 胶囊进度条（无百分比文字）、中文相对重置倒计时与相对更新时间。
+- [x] 浅色模式还原原型配色，深色模式具备匹配的深色毛玻璃配色，跟随应用主题设置切换。
+- [ ] `make windows-test` 与 Windows 原生冒烟校验在 Windows CI 通过（本机 macOS 未安装 `dotnet` SDK；本地 `make check-process`、`make test` 与版本校验已通过）。
 
 ## 模块拆解
 

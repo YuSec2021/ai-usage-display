@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Upgrade the Windows floating window to a frosted-glass capsule dock and hover detail popover with empty-space dragging, aligned active indicator, pin toggle, light/dark glass palettes, and refresh/main-panel/hide menu actions. (#35)
+
 ## 1.2.8 — 2026-11-16
 
 - Add Grok personal subscription weekly quota display from the active Grok Bot account’s local cache, with accurate weekly rings, account isolation, expiry handling, and no API key or browser-cookie access. (#30)

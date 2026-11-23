@@ -35,6 +35,19 @@ internal static class Native
     [DllImport("user32.dll")] internal static extern uint TrackPopupMenuEx(nint menu, uint flags, int x, int y, nint owner, nint parameters);
     [DllImport("user32.dll")] internal static extern bool DestroyMenu(nint menu);
     [DllImport("user32.dll")] internal static extern bool DestroyIcon(nint icon);
+    [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(nint window, int attribute, ref int value, int size);
+
+    internal static void ApplyRoundedCorners(nint window)
+    {
+        try
+        {
+            var preference = 2; // DWMWCP_ROUND
+            _ = DwmSetWindowAttribute(window, 33, ref preference, sizeof(int));
+            var borderNone = unchecked((int)0xFFFFFFFE); // DWMWA_COLOR_NONE
+            _ = DwmSetWindowAttribute(window, 34, ref borderNone, sizeof(int));
+        }
+        catch { }
+    }
 
     internal static (WindowPlacement Bounds, string Device) WorkArea(int x, int y, string? preferredDevice = null)
     {

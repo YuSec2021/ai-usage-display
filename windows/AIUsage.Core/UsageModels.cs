@@ -18,8 +18,8 @@ public static class Providers
     };
     public static string Color(this ProviderId id) => id switch
     {
-        ProviderId.Codex => "#33AD40", ProviderId.Claude => "#F56105",
-        ProviderId.Kimi => "#3373F5", _ => "#F21A7A"
+        ProviderId.Codex => "#6CA15A", ProviderId.Claude => "#F58A12",
+        ProviderId.Kimi => "#367CF4", _ => "#8B99AF"
     };
 }
 

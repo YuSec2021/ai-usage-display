@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：新增 Grok 订阅周额度，通过 Grok Bot 本地缓存显示已用比例与重置时间；圆环明确区分周额度与其他模型的 5 小时额度。",
-                            "This build: adds Grok weekly subscription usage and reset times from the local Grok Bot cache, with weekly rings distinct from other models’ 5-hour quotas."
+                            "本次构建：升级 Windows 桌面浮窗为毛玻璃胶囊 Dock 与悬浮详情卡样式，支持空白区拖拽、悬停切换与固定详情、深浅色毛玻璃适配及「刷新额度 / 打开主面板 / 隐藏浮窗」菜单。",
+                            "This build: upgrades the Windows floating window to a frosted glass capsule dock and hover detail popover with empty-space dragging, pin toggle, light/dark glass palettes, and refresh/main-panel/hide actions."
                         ))
                     }
                     .font(.callout)
