@@ -2,7 +2,7 @@
   "issue": 35,
   "type": "feature",
   "branch": "codex/issue-35-windows-floating-dock",
-  "status": "implementing",
+  "status": "complete",
   "document": "docs/issues/issue-35-windows-floating-dock.md",
   "design": "docs/design/issue-35-windows-floating-dock.md",
   "research": null

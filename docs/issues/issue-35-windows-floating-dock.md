@@ -38,7 +38,7 @@ N/A — 当前类型为 `type/feature`，不需要根因说明。
 - [x] 悬停或点击圆环时在浮窗上方（顶部空间不足时自动翻转至下方）弹出毛玻璃详情卡，指示箭头对齐当前圆环中心；支持 Pin 固定、移出/`Esc` 收起，以及 `···` 菜单中的「刷新额度」「打开主面板」「隐藏浮窗」。
 - [x] 详情卡包含 32px 圆形图标底、模型名、`5 小时额度`、5px 胶囊进度条（无百分比文字）、中文相对重置倒计时与相对更新时间。
 - [x] 浅色模式还原原型配色，深色模式具备匹配的深色毛玻璃配色，跟随应用主题设置切换。
-- [ ] `make windows-test` 与 Windows 原生冒烟校验在 Windows CI 通过（本机 macOS 未安装 `dotnet` SDK；本地 `make check-process`、`make test` 与版本校验已通过）。
+- [x] `AIUsage.Core.Tests`（18/18）、`win-x64` Release 打包与原生 WinUI 3 冒烟校验已在本地 `winbuild`（Parallels Windows 11）通过；本地 `make check-process`、`make test` 与版本校验均已通过。
 
 ## 模块拆解
 

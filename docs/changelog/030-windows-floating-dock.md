@@ -15,4 +15,5 @@
 ## 验证记录
 
 - 已通过：`make check-process`（准备门禁、34 项 WorkflowTests 与 About/变更日志检查）、`make test`（90 项 macOS Swift 测试全部通过）与 `./scripts/verify-release-version.sh`（版本 1.2.8 校验通过）。
-- 未在本地验证：`make windows-test`（本机 macOS 未安装 `dotnet` SDK）、Windows 11 WinUI 3 Release 编译、原生 `--smoke-test` 截图渲染、桌面毛玻璃视觉效果及真实额度刷新，需在安装 .NET 10 SDK 的环境或 GitHub Actions Windows runner 中验证。
+- 已通过（本地 Parallels Windows 11 `winbuild`）：`AIUsage.Core.Tests`（18/18 通过）、`dotnet publish`（`win-x64` 自包含 Release）、AMD64 PE 架构校验与原生 WinUI 3 `--smoke-test`（验证 4 个托盘图标、置顶、Dock 与详情卡无百分比、零值/未知态与隐藏恢复，并生成 `floating-compact.png` / `floating-expanded.png` 截图）。
+- 边界说明：本地 `winbuild` 在 Windows 11 ARM64 虚拟机的 x64 兼容层下完成构建与冒烟校验，真实 x64 Windows 硬件的 GPU/驱动与真实额度刷新仍需实机复核。

@@ -29,11 +29,12 @@ internal static class RingView
         var trackColor = dockStyle
             ? (darkTheme ? Color.FromArgb(62, 200, 216, 240) : Color.FromArgb(46, 96, 117, 152))
             : Color.FromArgb(75, 128, 128, 128);
+        var inset = 1.0;
         var track = new Ellipse
         {
             Stroke = new SolidColorBrush(trackColor),
             StrokeThickness = strokeWidth,
-            Margin = new Thickness(strokeWidth / 2)
+            Margin = new Thickness(inset)
         };
         if (quota is null)
             track.StrokeDashArray = dockStyle ? new DoubleCollection { 2.4, 2.2 } : new DoubleCollection { 2, 2 };
@@ -43,13 +44,13 @@ internal static class RingView
         {
             var color = FloatingPresentation.RingColor(snapshot, now);
             Shape progress;
-            if (quota.Fraction >= 1) progress = new Ellipse { Margin = new Thickness(strokeWidth / 2) };
+            if (quota.Fraction >= 1) progress = new Ellipse { Margin = new Thickness(inset) };
             else
             {
                 var center = size / 2;
-                var radius = (size - strokeWidth) / 2;
+                var radius = center - inset - strokeWidth / 2;
                 var angle = quota.Fraction * Math.PI * 2;
-                var figure = new PathFigure { StartPoint = new Point(center, strokeWidth / 2), IsClosed = false };
+                var figure = new PathFigure { StartPoint = new Point(center, inset + strokeWidth / 2), IsClosed = false };
                 figure.Segments.Add(new ArcSegment
                 {
                     Point = new Point(center + radius * Math.Sin(angle), center - radius * Math.Cos(angle)),
