@@ -10,7 +10,7 @@
 
 在 macOS 菜单栏，一眼查看 **Codex、Claude Code、Kimi Code、MiniMax、Antigravity 和 Grok** 的用量、额度窗口与重置时间。
 
-> 当前版本：1.2.8。支持 Apple Silicon 与 Intel，运行需要 macOS 13+。
+> 当前版本：1.2.9。支持 Apple Silicon 与 Intel，运行需要 macOS 13+。
 
 [下载 macOS 稳定版](https://github.com/YuSec2021/ai-usage-display/releases/latest) · [Windows 预览版](docs/windows/README.md) · [使用指南](docs/USAGE.md) · [更新记录](CHANGELOG.md)
 

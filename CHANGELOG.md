@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.9 — 2026-11-23
+
 - Upgrade the Windows floating window to a frosted-glass capsule dock and hover detail popover with empty-space dragging, aligned active indicator, pin toggle, light/dark glass palettes, and refresh/main-panel/hide menu actions. (#35)
 
 ## 1.2.8 — 2026-11-16
