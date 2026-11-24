@@ -4,7 +4,7 @@
 
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/39
 - 类型：`type/refactor`
-- 状态：实施中
+- 状态：待验收
 - 工作分支：`codex/issue-39-shared-usage-fixtures`
 - 负责人：AI Usage 维护者
 - 设计或产出文档：`docs/design/issue-39-shared-usage-fixtures.md`
@@ -34,12 +34,12 @@ N/A — 当前类型为 `type/refactor`，不需要根因说明。
 
 ## 验收标准
 
-- [ ] `Tests/Fixtures/shared/` 包含 `codex`、`claude`、`kimi` 三个目录，每个目录至少包含 5 个匿名场景（正常累计、重复/增量去重、畸形行、7 天窗口截断、额度窗口），均附带符合 schema 的 `expected.json`。
-- [ ] `docs/design/issue-39-shared-usage-fixtures.md` 完整定义目录结构、`expected.json` schema、两端归一化与对比规则，以及基于源码审计的已知行为差异表。
-- [ ] Swift 测试（`make test`）自动遍历 `Tests/Fixtures/shared/` 全部用例并按 `expected.json` 断言通过。
-- [ ] C# 测试（`make windows-test`）自动遍历同一批 `Tests/Fixtures/shared/` 全部用例并按 `expected.json` 断言通过。
-- [ ] 所有已知两端差异均在设计文档中记录，并在对应 fixture 的 `platformExemptions` 中附带明确原因。
-- [ ] `SettingsView.swift` About 说明、`docs/changelog/032-shared-usage-fixtures.md`、`docs/changelog/README.md`、`CHANGELOG.md` 已同步更新，`make verify` 与 `make windows-test` 全部通过。
+- [x] `Tests/Fixtures/shared/` 包含 `codex`、`claude`、`kimi` 三个目录，每个目录至少包含 5 个匿名场景（正常累计、重复/增量去重、畸形行、7 天窗口截断、额度窗口），均附带符合 schema 的 `expected.json`。
+- [x] `docs/design/issue-39-shared-usage-fixtures.md` 完整定义目录结构、`expected.json` schema、两端归一化与对比规则，以及基于源码审计的已知行为差异表。
+- [x] Swift 测试（`make test`）自动遍历 `Tests/Fixtures/shared/` 全部用例并按 `expected.json` 断言通过。
+- [x] C# 测试（`make windows-test`）自动遍历同一批 `Tests/Fixtures/shared/` 全部用例并按 `expected.json` 断言通过。
+- [x] 所有已知两端差异均在设计文档中记录，并在对应 fixture 的 `platformExemptions` 中附带明确原因。
+- [x] `SettingsView.swift` About 说明、`docs/changelog/032-shared-usage-fixtures.md`、`docs/changelog/README.md`、`CHANGELOG.md` 已同步更新，`make verify` 与 `make windows-test` 全部通过。
 
 ## 模块拆解
 

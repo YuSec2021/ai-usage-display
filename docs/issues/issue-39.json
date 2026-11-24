@@ -2,7 +2,7 @@
   "issue": 39,
   "type": "refactor",
   "branch": "codex/issue-39-shared-usage-fixtures",
-  "status": "implementing",
+  "status": "complete",
   "document": "docs/issues/issue-39-shared-usage-fixtures.md",
   "design": "docs/design/issue-39-shared-usage-fixtures.md",
   "research": null
