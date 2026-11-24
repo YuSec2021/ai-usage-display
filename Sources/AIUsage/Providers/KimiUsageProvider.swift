@@ -7,6 +7,7 @@ actor KimiUsageProvider: UsageProvider {
     private let desktopLogURLs: [URL]
     private let calendar: Calendar
     private let rateLimitLoader: @Sendable () async -> KimiRateLimitSample?
+    private let now: @Sendable () -> Date
     private var fileStates: [URL: KimiFileState] = [:]
     private var desktopLogStates: [URL: KimiDesktopLogState] = [:]
     private let initialDesktopLogTailBytes: UInt64 = 1_048_576
@@ -15,12 +16,14 @@ actor KimiUsageProvider: UsageProvider {
         rootDirectory: URL = ProviderPaths.kimiDirectory,
         desktopLogURLs: [URL] = ProviderPaths.kimiDesktopLogURLs,
         calendar: Calendar = .current,
-        rateLimitLoader: (@Sendable () async -> KimiRateLimitSample?)? = nil
+        rateLimitLoader: (@Sendable () async -> KimiRateLimitSample?)? = nil,
+        now: @escaping @Sendable () -> Date = Date.init
     ) {
         self.rootDirectory = rootDirectory
         self.desktopLogURLs = desktopLogURLs
         self.calendar = calendar
         self.rateLimitLoader = rateLimitLoader ?? { await KimiUsageAPI.load() }
+        self.now = now
     }
 
     func load() async -> ProviderResult {
@@ -44,10 +47,11 @@ actor KimiUsageProvider: UsageProvider {
             )
         }
 
+        let currentDate = now()
         let cutoff = calendar.date(
             byAdding: .day,
             value: -7,
-            to: calendar.startOfDay(for: Date())
+            to: calendar.startOfDay(for: currentDate)
         ) ?? .distantPast
         let fileSet = Set(files)
         fileStates = fileStates.filter { fileSet.contains($0.key) }
@@ -96,7 +100,7 @@ actor KimiUsageProvider: UsageProvider {
             buckets[day, default: .zero] = buckets[day, default: .zero] + sample.usage
         }
 
-        let today = buckets[calendar.startOfDay(for: Date())]
+        let today = buckets[calendar.startOfDay(for: currentDate)]
         let observedAt = max(
             max(
                 latestTokenUsage?.date ?? .distantPast,

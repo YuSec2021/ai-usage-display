@@ -6,24 +6,28 @@ actor CodexUsageProvider: UsageProvider {
     private let rootDirectory: URL
     private let calendar: Calendar
     private let rateLimitReader: @Sendable () async -> CodexRateLimits?
+    private let now: @Sendable () -> Date
     private var fileStates: [URL: FileState] = [:]
     private let initialTailBytes = 1_048_576
 
     init(
         rootDirectory: URL = ProviderPaths.codexDirectory,
         calendar: Calendar = .current,
-        rateLimitReader: @escaping @Sendable () async -> CodexRateLimits? = { nil }
+        rateLimitReader: @escaping @Sendable () async -> CodexRateLimits? = { nil },
+        now: @escaping @Sendable () -> Date = Date.init
     ) {
         self.rootDirectory = rootDirectory
         self.calendar = calendar
         self.rateLimitReader = rateLimitReader
+        self.now = now
     }
 
     func load() async -> ProviderResult {
         let fileManager = FileManager.default
         let files = jsonlFiles(fileManager: fileManager)
+        let currentDate = now()
 
-        let cutoff = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: Date())) ?? .distantPast
+        let cutoff = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: currentDate)) ?? .distantPast
         let fileSet = Set(files)
         fileStates = fileStates.filter { fileSet.contains($0.key) }
 
@@ -55,12 +59,12 @@ actor CodexUsageProvider: UsageProvider {
                 ? .cliNotInstalled : files.isEmpty ? .waitingForFirstSample : .unsupportedFormat
             return ProviderResult(snapshot: .empty(id, availability: availability), dailyUsage: [])
         }
-        let observedAt = liveWindows.isEmpty ? (latest?.date ?? Date()) : Date()
+        let observedAt = liveWindows.isEmpty ? (latest?.date ?? currentDate) : currentDate
 
         let snapshot = UsageSnapshot(
             provider: id,
             windows: liveWindows.isEmpty ? Self.makeWindows(latest?.event.rateLimits) : liveWindows,
-            todayTokens: buckets[calendar.startOfDay(for: Date())],
+            todayTokens: buckets[calendar.startOfDay(for: currentDate)],
             estimatedCostUSD: nil,
             observedAt: observedAt,
             availability: .ready(lastUpdated: observedAt)
