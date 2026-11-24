@@ -1,0 +1,4 @@
+{"type":"usage.record","time":"2026-06-07T12:00:00Z","usage":{"inputOther":500,"output":50}}
+{"type":"usage.record","time":"2026-06-08T12:00:00Z","usage":{"inputOther":100,"inputCacheRead":10,"output":10}}
+{"type":"usage.record","time":"2026-06-09T12:00:00Z","usage":{"inputOther":200,"inputCacheRead":20,"output":20}}
+{"type":"usage.record","time":"2026-06-15T10:00:00Z","usage":{"inputOther":300,"inputCacheRead":30,"output":30}}

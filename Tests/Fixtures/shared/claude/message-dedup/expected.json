@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "provider": "claude",
+  "case": "message-dedup",
+  "description": "同一 message.id 多次出现时以后续记录覆盖去重",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 200,
+        "cached": 50,
+        "output": 40
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "provider": "codex",
+  "case": "normal-accumulation",
+  "description": "多会话跨日正常累计并忽略非 token_count 事件",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-14",
+      "tokens": {
+        "input": 250,
+        "cached": 50,
+        "output": 40
+      }
+    },
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 300,
+        "cached": 100,
+        "output": 80
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "provider": "codex",
+  "case": "window-cutoff",
+  "description": "7 天历史窗口截断边界（含 today-8、today-7、today-6、today）",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-09",
+      "tokens": {
+        "input": 220,
+        "cached": 20,
+        "output": 22
+      }
+    },
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 330,
+        "cached": 30,
+        "output": 33
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready",
+  "platformExemptions": {
+    "macos": {
+      "reason": "D1: macOS CodexUsageProvider 使用 startOfDay(now) - 7 天作为 cutoff（含 today-7 共 8 个自然日），Windows 使用 now - 6 天（共 7 个自然日）",
+      "dailyUsage": [
+        {
+          "date": "2026-06-08",
+          "tokens": {
+            "input": 110,
+            "cached": 10,
+            "output": 11
+          }
+        },
+        {
+          "date": "2026-06-09",
+          "tokens": {
+            "input": 220,
+            "cached": 20,
+            "output": 22
+          }
+        },
+        {
+          "date": "2026-06-15",
+          "tokens": {
+            "input": 330,
+            "cached": 30,
+            "output": 33
+          }
+        }
+      ]
+    }
+  }
+}

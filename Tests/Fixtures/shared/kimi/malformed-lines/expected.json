@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "provider": "kimi",
+  "case": "malformed-lines",
+  "description": "畸形行、截断行与非 usage wire 事件混排时跳过损坏行并保留合法累计",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 160,
+        "cached": 40,
+        "output": 35
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}
