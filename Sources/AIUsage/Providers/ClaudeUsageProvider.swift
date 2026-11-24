@@ -235,7 +235,7 @@ actor ClaudeUsageProvider: UsageProvider {
     }
 
     private var historyCutoff: Date {
-        calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: now()))
+        calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: now()))
             ?? .distantPast
     }
 

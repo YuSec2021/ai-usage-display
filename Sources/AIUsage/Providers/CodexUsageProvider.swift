@@ -27,7 +27,7 @@ actor CodexUsageProvider: UsageProvider {
         let files = jsonlFiles(fileManager: fileManager)
         let currentDate = now()
 
-        let cutoff = calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: currentDate)) ?? .distantPast
+        let cutoff = calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: currentDate)) ?? .distantPast
         let fileSet = Set(files)
         fileStates = fileStates.filter { fileSet.contains($0.key) }
 

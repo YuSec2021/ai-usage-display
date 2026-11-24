@@ -50,7 +50,7 @@ actor KimiUsageProvider: UsageProvider {
         let currentDate = now()
         let cutoff = calendar.date(
             byAdding: .day,
-            value: -7,
+            value: -6,
             to: calendar.startOfDay(for: currentDate)
         ) ?? .distantPast
         let fileSet = Set(files)
