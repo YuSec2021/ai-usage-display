@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：为 macOS 与 Windows 的 Codex、Claude Code、Kimi Code 用量统计建立跨平台匿名共享 fixture 与一致性测试，显式记录两端已知差异，防止统计逻辑漂移。",
-                            "This build: adds cross-platform anonymous shared fixtures and parity tests for macOS and Windows Codex, Claude Code, and Kimi Code usage parsing, documenting known platform differences to prevent drift."
+                            "本次构建：为 macOS 与 Windows 的 Codex、Claude Code、Kimi Code 用量统计建立跨平台匿名共享 fixture 与一致性测试；统一 macOS 端 7 天历史截断边界与 Windows 端 Claude 缓存 Token 口径，15 组共享用例零豁免通过。",
+                            "This build: adds cross-platform anonymous shared fixtures and parity tests for macOS and Windows Codex, Claude Code, and Kimi Code usage parsing; aligns the macOS 7-day history cutoff and Windows Claude cached token accounting so all 15 shared fixtures pass without exemptions."
                         ))
                     }
                     .font(.callout)
