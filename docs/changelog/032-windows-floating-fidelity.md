@@ -10,7 +10,8 @@
 - **精准 HWND 轮廓裁剪（`Native.cs`、`FloatingWindow.cs`、`FloatingDetailWindow.cs`）**：去除 Win32 残留框线并改用 `SetWindowRgn` 裁剪 `29` DIP 胶囊 Dock 与带 `9` DIP 独立箭头区的详情卡（总高 `115` DIP），在窗口尺寸、DPI 与活动模型变化时同步更新，避免虚拟机中 DWM 默认圆角不生效或残留矩形外框。
 - **圆环与图标视觉统一（`RingView.cs`、`FloatingDetailWindow.xaml`）**：胶囊圆环线宽调整为 `2.6` DIP，圆环与详情卡头像统一改用 WinUI `BitmapIcon` 单色前景，浅/深模式只切语义前景，去除深色亮圆底并保持未知状态虚线环。
 - **原生三角箭头、进出场动效与动画重入修复（`FloatingDetailWindow.cs`、`FloatingPresentation.cs`）**：将指示横条替换为同表面色原生 `Polygon` 三角箭头；增加 WinUI `Storyboard` 淡入/轻移/轻缩放动效与快速重入取消退出保护；修复主题切换或定时刷新触发 `Reposition` 时同目标 `arrowTimer` 动画被错误重启的问题。
-- **测试与文档（`UsageTests.cs`、`SmokeCapture.cs`、`docs/windows/`）**：扩展 1–4 模型与多 DPI 几何单测、原生 HWND 轮廓与浅/深双主题冒烟校验，并同步 Windows 文档截图。
+- **单应用托盘图标与跟手拖拽优化（`TrayIcons.cs`、`FloatingWindow.cs`、`Native.cs`、`FloatingPresentation.cs`）**：移除任务栏系统托盘按单个模型拆分的多图标显示，合并为 1 个统一应用托盘图标；浮窗拖拽改用指针捕获与 `SetWindowPos(SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE)` 轻量移动，支持全胶囊区域起拖、起拖立即隐藏非固定详情卡并暂缓拖拽期间的定时重绘。
+- **测试与文档（`UsageTests.cs`、`SmokeCapture.cs`、`windows/scripts/smoke.ps1`、`docs/windows/`）**：扩展 1–4 模型、多 DPI 与拖拽阈值单测，原生冒烟校验单托盘图标（`trayIcons == 1`）、等待箭头动画收敛后校验实际 HWND 轮廓与浅/深双主题，并同步 Windows 文档截图。
 
 ## 验证记录
 

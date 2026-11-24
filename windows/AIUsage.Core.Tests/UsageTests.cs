@@ -263,6 +263,16 @@ public sealed class UsageTests : IDisposable
         }
     }
 
+    [Theory]
+    [InlineData(1.0, 3, 3, false)]
+    [InlineData(1.0, 4, 0, true)]
+    [InlineData(2.0, 7, 7, false)]
+    [InlineData(2.0, 0, -8, true)]
+    public void FloatingDragThresholdScalesWithDpiAndTriggersReliably(double scale, int dx, int dy, bool expected)
+    {
+        Assert.Equal(expected, FloatingLayout.ShouldStartDrag(dx, dy, scale));
+    }
+
     private sealed class DelayedProvider(DateTimeOffset now) : IUsageProvider
     {
         public ProviderId Id => ProviderId.Kimi;

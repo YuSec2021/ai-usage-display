@@ -23,7 +23,9 @@
 - 胶囊圆环线宽调整为 `2.6` DIP，圆环与详情卡头像统一使用 WinUI `BitmapIcon` 单色前景，深/浅色只切换语义前景，无真实额度维持虚线环。
 - 详情卡指示器升级为同表面色原生 `Polygon` 三角箭头；补齐 `Storyboard` 淡入/轻移/轻缩放进出场动效与快速重入打断保护，并在系统禁用动画时直达终态。
 - 修复 `FloatingDetailWindow.Reposition` 在同目标动画进行中重复 `Stop()`/`Restart()` `arrowTimer` 的缺陷。
-- 扩展纯几何单元测试与原生 `SmokeCapture`（校验实际 HWND 轮廓、活动三角对齐、浅/深双主题截图与重入打断），通过 `make verify` 与本地 `winbuild`。
+- 移除系统托盘按单个模型拆分的多个图标，改为 1 个统一的应用托盘图标（使用 `Assets/app.ico`）。
+- 将浮窗拖拽改为基于 `CapturePointer` + `GetCursorPos` + `SetWindowPos(SWP_NOSIZE|SWP_NOZORDER|SWP_NOACTIVATE)` 的轻量跟手拖拽，起拖立即隐藏非固定详情卡并在拖拽期间暂缓 `Floating.Refresh()` 重建。
+- 扩展纯几何与拖拽阈值单元测试，以及原生 `SmokeCapture`（校验单托盘图标、实际 HWND 轮廓、浅/深双主题截图与重入打断），通过 `make verify` 与本地 `winbuild`。
 
 ### 非目标
 
@@ -57,9 +59,12 @@
    - `FloatingLayout.PopoverHeight = PopoverCardHeight + CaretHeight`（`115` DIP），为上下翻转时的原生 `Polygon` 三角预留 `9` DIP 空间。
    - `Storyboard` 驱动 `Opacity` / `TranslateY` / `ScaleX` / `ScaleY` 进出场动效；退出期间重入悬停/显示会立即取消退出并保留窗口；系统关闭动画时直接设置终态。
    - **同目标动画保护**：在 `Reposition(placement, scale)` 中，如果 `arrowTimer.IsEnabled`、窗口 `Bounds` 与 `PlacedAbove` 未变化，且新的 `target` 与当前正在动画的 `arrowTarget` 差值 `<= 0.1` DIP，则不停止、不重启 `arrowTimer`，避免主题切换事件或定时 `Render()` 打断正在进行的箭头滑动。
-4. **冒烟校验与文档（`SmokeCapture.cs`、`UsageTests.cs`、`docs/windows/`）**：
-   - `UsageTests.cs` 覆盖 1–4 模型宽度、多 DPI 与上下翻转几何断言。
-   - `SmokeCapture.cs` 校验实际 HWND 轮廓（含失败时输出具体坐标与 5 项判定布尔值）、浅/深双主题截图与退出动画重入打断。
+4. **单托盘图标与轻量跟手拖拽（`TrayIcons.cs`、`FloatingWindow.cs`、`Native.cs`、`FloatingPresentation.cs`）**：
+   - `TrayIcons` 改为仅注册 1 个固定 GUID 的应用托盘图标（加载 `Assets/app.ico`），`Update` 仅刷新提示文本而不反复重绘多个模型位图，保留左键打开主面板与右键菜单。
+   - `FloatingWindow` 放弃同步 `WM_NCLBUTTONDOWN(HTCAPTION)`，通过 `PointerPressed`（`handledEventsToo: true`）捕获指针，移动超过 `4` DIP 阈值后直接调用 `Native.MoveWindowPosition`（`SetWindowPos` 仅改位置、不改尺寸与 Z 序）1:1 跟随鼠标；起拖立即 `detail.HideDetail(immediate: true)` 并暂缓拖拽期间的 `Refresh()` 重建，松手后执行一次 `FitAndRemember()` 与延迟刷新。
+5. **冒烟校验与文档（`SmokeCapture.cs`、`windows/scripts/smoke.ps1`、`UsageTests.cs`、`docs/windows/`）**：
+   - `UsageTests.cs` 覆盖 1–4 模型宽度、多 DPI、上下翻转几何与拖拽阈值断言。
+   - `SmokeCapture.cs` 与 `smoke.ps1` 校验单托盘图标（`trayIcons == 1`）、等待箭头动画收敛后再校验实际 HWND 轮廓、浅/深双主题截图与退出动画重入打断。
 
 ### 接口与数据
 

@@ -35,6 +35,7 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
     internal bool IsPinned { get; private set; }
     internal bool IsMenuOpen => menuOpen;
     internal bool IsDetailVisible => Native.IsWindowVisible(handle);
+    internal bool IsCaretAnimating => arrowTimer.IsEnabled;
     internal ProviderId? ActiveProvider => currentSnapshot?.Provider;
 
     public FloatingDetailWindow(App app, Action onPointerEntered, Action onPointerExited, Action onDismissRequested)

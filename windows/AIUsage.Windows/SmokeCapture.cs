@@ -21,7 +21,7 @@ internal static class SmokeCapture
         var now = DateTimeOffset.UtcNow;
         var zero = app.Monitor.Snapshots.Single(snapshot => snapshot.Provider == ProviderId.Codex).FiveHour(now)?.Used;
         var unknown = app.Monitor.Snapshots.Single(snapshot => snapshot.Provider == ProviderId.MiniMax).FiveHour(now);
-        if (!Native.IsWindowVisible(main) || !Native.IsWindowVisible(floating) || !topmost || trayCount != 4 || percentages || zero != 0 || unknown is not null)
+        if (!Native.IsWindowVisible(main) || !Native.IsWindowVisible(floating) || !topmost || trayCount != 1 || percentages || zero != 0 || unknown is not null)
             throw new InvalidOperationException("原生窗口、置顶、托盘、无百分比或零值/未知状态验证失败");
         app.TraceSmoke("capturing-compact");
         await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, "floating-compact.png"));
@@ -40,11 +40,11 @@ internal static class SmokeCapture
             foreach (var provider in app.VisibleSnapshots().Select(snapshot => snapshot.Provider))
             {
                 app.Floating.ShowDetail(provider, pinned: false);
-                await Task.Delay(300);
+                await WaitForCaretSettledAsync(app.Floating.Detail);
                 AssertFloatingContours(app, provider);
             }
             app.Floating.ShowDetail(ProviderId.Claude, pinned: false);
-            await Task.Delay(260);
+            await WaitForCaretSettledAsync(app.Floating.Detail);
             await CaptureAsync((FrameworkElement)app.Floating.Content, Path.Combine(output, $"floating-{theme}-dock.png"));
             await CaptureAsync((FrameworkElement)app.Floating.Detail.Content, Path.Combine(output, $"floating-{theme}-detail.png"));
         }
@@ -76,6 +76,15 @@ internal static class SmokeCapture
             customWindowContours = true, activeCaretAligned = true, lightAndDark = true, animationReentry = true,
             hideRestore = true, navigationPages = true, scrollPreserved = true, isolated = true, source = "anonymous-fixture", windowsVersion = Environment.OSVersion.VersionString });
     }
+    private static async Task WaitForCaretSettledAsync(FloatingDetailWindow detail)
+    {
+        await Task.Delay(120);
+        var deadline = Environment.TickCount64 + 1500;
+        while (detail.IsCaretAnimating && Environment.TickCount64 < deadline)
+            await Task.Delay(30);
+        await Task.Delay(50);
+    }
+
     private static void AssertFloatingContours(App app, ProviderId provider)
     {
         var dock = WinRT.Interop.WindowNative.GetWindowHandle(app.Floating);

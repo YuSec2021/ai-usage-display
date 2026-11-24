@@ -46,6 +46,9 @@ internal static class Native
     [DllImport("gdi32.dll")] private static extern bool PtInRegion(nint region, int x, int y);
     [DllImport("gdi32.dll")] private static extern bool DeleteObject(nint value);
 
+    internal static bool MoveWindowPosition(nint window, int x, int y) =>
+        SetWindowPos(window, 0, x, y, 0, 0, 0x0015); // SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+
     internal static void ConfigureFloatingFrame(nint window)
     {
         var style = GetWindowLongPtr(window, -16).ToInt64();

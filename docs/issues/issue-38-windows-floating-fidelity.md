@@ -18,6 +18,8 @@
 - 使用 Win32 无框样式清理与 `SetWindowRgn` 实现精准的 `29` DIP 胶囊轮廓和带 `9` DIP 原生三角箭头的详情卡轮廓。
 - 将胶囊圆环线宽调整为 `2.6` DIP，统一使用 WinUI `BitmapIcon` 单色前景适配浅/深双主题。
 - 将详情卡指示器替换为同表面色原生 `Polygon` 三角箭头，补齐 `Storyboard` 进出场动效与快速重入打断保护，并修复同目标 `Reposition` 重启 `arrowTimer` 动画的问题。
+- 移除任务栏系统托盘按单个模型拆分的多图标显示，合并为 1 个统一的 AI Usage 应用托盘图标。
+- 将浮窗拖拽从同步 `WM_NCLBUTTONDOWN(HTCAPTION)` 替换为基于指针捕获与 `SetWindowPos` 的轻量跟手拖拽（支持全胶囊区域起拖、起拖立即隐藏详情、拖拽期间跳过定时重绘），并消除原生冒烟中箭头动画的偶发时序竞态。
 - 扩充纯几何单元测试、双主题原生冒烟轮廓校验与截图文档，通过 `make verify` 与本地 `winbuild`。
 
 ## 非目标
@@ -34,7 +36,9 @@ N/A — 当前类型为 `type/feature`，不需要根因说明。
 - [ ] Dock 与详情卡移除 Win32 残留框线并通过 `SetWindowRgn` 裁剪出胶囊轮廓及带 `9` DIP 三角箭头的复合轮廓，且在尺寸、DPI、活动模型变化时同步更新。
 - [ ] 胶囊圆环线宽为 `2.6` DIP，圆环与详情卡头像使用 `BitmapIcon` 单色前景，无深色亮圆底；无真实额度保持虚线环。
 - [ ] 详情卡具备原生 `Polygon` 三角箭头、`Storyboard` 淡入/轻移/轻缩放动效与快速重入保护；同目标 `Reposition` 不会打断或重启进行中的 `arrowTimer` 动画。
-- [ ] `AIUsage.Core.Tests` 扩展几何测试与原生 `SmokeCapture`（实际 HWND 轮廓、双主题、动画重入）在本地 `winbuild` 全部通过。
+- [ ] 系统托盘仅保留 1 个统一应用图标（不再按单个模型拆分多个托盘图标），保留左键打开主面板与右键菜单能力。
+- [ ] 浮窗支持全胶囊区域平滑跟手拖拽，起拖时立即隐藏非固定详情卡并暂缓定时重绘，松手后吸边并保存坐标。
+- [ ] `AIUsage.Core.Tests` 扩展几何与拖拽阈值测试，原生 `SmokeCapture`（单托盘图标、实际 HWND 轮廓、双主题、动画重入）在本地 `winbuild` 全部通过。
 - [ ] `make verify` 全部通过，About 与 `032` 编号变更记录、Windows 截图文档同步更新。
 
 ## 模块拆解
@@ -43,8 +47,9 @@ N/A — 当前类型为 `type/feature`，不需要根因说明。
 |---|---|---|---|
 | `windows/AIUsage.Core/FloatingPresentation.cs` & `UsageTests.cs` | 新增 `PopoverHeight` 常量并补充多模型/多 DPI/翻转几何测试 | 无 | `winbuild` `core-tests` 全绿 |
 | `windows/AIUsage.Windows/Native.cs` & `RingView.cs` | 无框样式清理、`SetWindowRgn` 轮廓裁剪、`2.6` DIP 单色前景圆环 | `AIUsage.Core` | 编译与原生冒烟通过 |
-| `windows/AIUsage.Windows/FloatingWindow.*` & `FloatingDetailWindow.*` | 胶囊/详情卡轮廓联动、原生 `Polygon` 箭头、`Storyboard` 动效与同目标 `arrowTimer` 保护 | `Native.cs`、`RingView.cs` | 轮廓、双主题与重入校验全绿 |
-| `windows/AIUsage.Windows/SmokeCapture.cs` & `App.xaml.cs` | 新增实际 HWND 轮廓、双主题与动画重入冒烟断言及详细诊断输出 | `FloatingWindow`、`FloatingDetailWindow` | `winbuild` `smoke-test` 全绿 |
+| `windows/AIUsage.Windows/FloatingWindow.*` & `FloatingDetailWindow.*` | 胶囊/详情卡轮廓联动、原生 `Polygon` 箭头、`Storyboard` 动效、同目标 `arrowTimer` 保护与 `SetWindowPos` 跟手拖拽 | `Native.cs`、`RingView.cs` | 轮廓、拖拽与双主题重入校验全绿 |
+| `windows/AIUsage.Windows/TrayIcons.cs` | 移除按单个模型拆分的多托盘图标，改为 1 个统一应用托盘图标 | `App.xaml.cs`、`Native.cs` | 托盘数量为 1 且右键菜单可用 |
+| `windows/AIUsage.Windows/SmokeCapture.cs`、`App.xaml.cs` & `windows/scripts/smoke.ps1` | 校验单托盘图标、实际 HWND 轮廓（等待箭头动画收敛）、双主题与动画重入断言 | `FloatingWindow`、`FloatingDetailWindow`、`TrayIcons` | `winbuild` `smoke-test` 全绿 |
 | `docs/windows/`、`Sources/AIUsage/Views/SettingsView.swift`、`CHANGELOG.md`、`docs/changelog/` | 同步 Windows 文档/截图、About 与 `032` 变更记录 | 实施与验证完成 | `make verify` 通过 |
 
 ## 风险、假设与待决策项
