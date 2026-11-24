@@ -17,7 +17,8 @@ AI Usage 在 macOS（Swift，`Sources/AIUsage/Providers/`）与 Windows（C#，`
 
 - 建立位于 `Tests/Fixtures/shared/{provider}/{case}/` 的跨平台共享匿名 fixture 资产，覆盖双端共有的 `codex`、`claude`、`kimi` 三个 Provider。
 - 定义版本化的 `expected.json` 契约与跨平台归一化对比规则，使 Swift XCTest 与 C# xUnit 可针对完全相同的输入与预期执行一致性断言。
-- 完整盘点两端 Codex / Claude / Kimi 实现的既有行为差异，区分“规则归一化”、“显式平台豁免（`platformExemptions`）”与“最小化可测试性补齐”。
+- 完整盘点两端 Codex / Claude / Kimi 实现的既有行为差异，区分“规则归一化”、“统一修复（D1、D2）”、“可选平台豁免（`platformExemptions`）”与“最小化可测试性补齐”。
+- 范围扩展（已确认）：统一修复已暴露的 D1（macOS Codex/Claude/Kimi 7 天历史截断边界对齐为 `today-6 ~ today` 共 7 个自然日）与 D2（Windows Claude `Cached` 统一计入 `cache_read_input_tokens + cache_creation_input_tokens`），移除全部 4 处 `platformExemptions`，实现 15/15 共享 fixture 零豁免通过。
 - 确保每个 Provider 至少覆盖 5 类典型场景：正常累计、重复/增量去重、畸形行容错、7 天窗口截断、额度窗口解析。
 
 ### 非目标
@@ -168,8 +169,8 @@ Tests/Fixtures/shared/
 
 | 编号 | Provider | 差异项 | macOS（Swift）行为 | Windows（C#）行为 | 本次处理策略 |
 |---|---|---|---|---|---|
-| D1 | 全部 | 7 天历史窗口截断边界 | `cutoff = startOfDay(now) - 7天`，保留 `today-7` 至 `today` 共 8 个自然日（`CodexUsageProvider.swift:26`、`ClaudeUsageProvider.swift:238`、`KimiUsageProvider.swift:48`） | `cutoff = DateOnly(now) - 6天`，保留 `today-6` 至 `today` 共 7 个自然日（`LogUsageProvider.cs:37`） | 在各 Provider `window-cutoff` 用例同时放入 `today-8`、`today-7`、`today-6`、`today`，顶层采用 7 天（`today-6..today`），对 macOS 端在 `platformExemptions.macos` 中显式豁免 `today-7` 并记录 D1 |
-| D2 | Claude | `cached` 字段统计口径 | `cachedInput = cache_creation_input_tokens + cache_read_input_tokens`（`ClaudeUsageProvider.swift:423`） | `Cached = cache_read_input_tokens`，不含 `cache_creation_input_tokens`（`QuotaParsers.cs:105`）；两者 `Input` 均含 creation + read | 在 Claude 含 `cache_creation_input_tokens` 的用例中通过 `platformExemptions.windows` 显式记录 D2 差异，确保两端口径均受断言保护 |
+| D1 | 全部 | 7 天历史窗口截断边界 | 原实现为 `startOfDay(now) - 7天`（保留 8 个自然日）；**已统一修改为 `startOfDay(now) - 6天`（保留 `today-6` 至 `today` 共 7 个自然日）** | `cutoff = DateOnly(now) - 6天`，保留 `today-6` 至 `today` 共 7 个自然日（`LogUsageProvider.cs:37`） | **已统一修复（范围扩展）**：修改 macOS 端 Codex / Claude / Kimi 截断边界对齐 Windows 与「7 天历史」语义；移除 3 个 `window-cutoff` 用例的 `platformExemptions.macos`，零豁免通过 |
+| D2 | Claude | `cached` 字段统计口径 | `cachedInput = cache_creation_input_tokens + cache_read_input_tokens`（`ClaudeUsageProvider.swift:423`） | 原实现仅统计 `cache_read_input_tokens`；**已统一修改为 `cache_read_input_tokens + cache_creation_input_tokens`**（`QuotaParsers.cs`），与 macOS 及 Windows Kimi 口径一致 | **已统一修复（范围扩展）**：修改 Windows 端 `QuotaParsers.Tokens` 对 Claude 的 `Cached` 计算逻辑；移除 `claude/normal-accumulation` 的 `platformExemptions.windows`，零豁免通过 |
 | D3 | Claude | 无 `message.id` 或顶层 `usage` / `metrics/costs.jsonl` | 支持无 `message.id` 的匿名累计，支持顶层 `usage` 与 `metrics/costs.jsonl` 取大值 | 仅读取带 `message.id` 的 `message.usage`，忽略匿名记录与 `metrics/costs.jsonl`（`LogUsageProvider.cs:139-142`） | 共享 fixture 的 Claude transcript 统一携带 `message.id` 与 `message.usage`；macOS 扩展路径继续由 `ProviderTests.swift` 单独覆盖 |
 | D4 | Claude | 跨文件 `message.id` 去重 | 跨所有 transcript 文件全局去重（`seenMessages`） | 单文件内按 `message.id` 去重（`state.Messages`） | 共享 `message-dedup` 用例聚焦单文件内重复/更新 `message.id`；跨文件行为记入差异表 |
 | D5 | Claude | 已过期额度窗口过滤时机 | `load()` 内过滤 `expiresAt ≤ now`，全部过期时直接返回空窗口与 `.stale`（`ClaudeUsageProvider.swift:87,98`） | `LoadAsync` 原样保留 `Snapshot.Windows`，由 `FiveHour(now)` / `IsStale(now)` 判定过期 | 共享 `quota-windows` 用例使用未过期窗口验证双端解析一致性；过期语义由两端既有单测分别覆盖 |
@@ -183,19 +184,21 @@ Tests/Fixtures/shared/
 
 | 模块 / 路径 | 修改内容 | 调用方或依赖 | 验证方式 |
 |---|---|---|---|
-| `Sources/AIUsage/Providers/CodexUsageProvider.swift` | 增加默认值为 `Date.init` 的 `now` 注入参数 | `UsageStore`、`ProviderTests`、`SharedFixtureTests` | `make test` |
-| `Sources/AIUsage/Providers/KimiUsageProvider.swift` | 增加默认值为 `Date.init` 的 `now` 注入参数 | `UsageStore`、`ProviderTests`、`SharedFixtureTests` | `make test` |
+| `Sources/AIUsage/Providers/CodexUsageProvider.swift` | 增加默认值为 `Date.init` 的 `now` 注入参数；将 7 天历史截断边界统一为 `today-6 ~ today`（D1） | `UsageStore`、`ProviderTests`、`SharedFixtureTests` | `make test` |
+| `Sources/AIUsage/Providers/ClaudeUsageProvider.swift` | 将 7 天历史截断边界（含 transcript 与 metrics 等）统一为 `today-6 ~ today`（D1） | `UsageStore`、`ProviderTests`、`SharedFixtureTests` | `make test` |
+| `Sources/AIUsage/Providers/KimiUsageProvider.swift` | 增加默认值为 `Date.init` 的 `now` 注入参数；将 7 天历史截断边界统一为 `today-6 ~ today`（D1） | `UsageStore`、`ProviderTests`、`SharedFixtureTests` | `make test` |
 | `windows/AIUsage.Core/LogUsageProvider.cs` | 增加默认值为 `TimeZoneInfo.Local` 的 `timeZone` 注入参数 | `UsageMonitor`、`UsageTests`、`SharedFixtureTests` | `make windows-test` |
-| `Tests/Fixtures/shared/` | 新增 3 个 Provider 共 15 个匿名共享 fixture 与 `expected.json` | 双端 `SharedFixtureTests` | 双端测试自动遍历 |
-| `Tests/AIUsageTests/SharedFixtureTests.swift` | 新增 Swift 共享 fixture 测试加载器与断言 | `CodexUsageProvider`、`ClaudeUsageProvider`、`KimiUsageProvider`、`KimiUsageAPI` | `make test` |
-| `windows/AIUsage.Core.Tests/SharedFixtureTests.cs` | 新增 C# 共享 fixture 测试加载器与断言 | `LogUsageProvider`、`QuotaParsers` | `make windows-test` |
+| `windows/AIUsage.Core/QuotaParsers.cs` | 将 Claude `Cached` 统计统一为 `cache_read_input_tokens + cache_creation_input_tokens`（D2） | `LogUsageProvider`、`UsageTests`、`SharedFixtureTests` | `make windows-test` |
+| `Tests/Fixtures/shared/` | 新增 3 个 Provider 共 15 个匿名共享 fixture 与 `expected.json`（移除全部 4 处 `platformExemptions`，实现零豁免基线） | 双端 `SharedFixtureTests` | 双端测试自动遍历 |
+| `Tests/AIUsageTests/SharedFixtureTests.swift` & `ProviderTests.swift` | 新增 Swift 共享 fixture 测试加载器与断言；同步更新受 D1 影响的既有单测与回归覆盖 | `CodexUsageProvider`、`ClaudeUsageProvider`、`KimiUsageProvider`、`KimiUsageAPI` | `make test` |
+| `windows/AIUsage.Core.Tests/SharedFixtureTests.cs` & `UsageTests.cs` | 新增 C# 共享 fixture 测试加载器与断言；同步更新受 D2 影响的既有单测与回归覆盖 | `LogUsageProvider`、`QuotaParsers` | `make windows-test` |
 | `Sources/AIUsage/Views/SettingsView.swift`、`docs/changelog/`、`CHANGELOG.md`、`docs/windows/README.md`、`docs/DEVELOPMENT.md` | 更新 About 说明、变更记录与开发文档 | 项目更新流程检查 | `make verify` |
 
 ## 6. 异常、安全与兼容性
 
 - 失败处理：fixture 解析或目录缺失时测试应立即失败并输出具体路径与字段差异，禁止静默跳过用例。
 - 安全与隐私：所有 fixture 为 100% 匿名合成样本，不包含真实用户路径、用户名、会话内容、API Key 或真实日志片段；测试在隔离临时目录执行，绝不接触用户真实 `~/.codex`、`~/.claude`、`~/.kimi-code` 目录。
-- 兼容与迁移：生产代码仅新增带默认值的可选构造参数，对所有既有调用方完全向后兼容，无数据格式或配置迁移影响。
+- 兼容与迁移：时钟/时区参数均带默认值，对所有既有调用方完全向后兼容；D1 修正后 macOS Codex/Claude/Kimi 的 7 天历史统计由 8 个自然日收敛为 7 个自然日（`today-6 ~ today`），D2 修正后 Windows Claude `Cached` 包含 `cache_creation_input_tokens`（与 `Input` 子集口径及 macOS/Kimi 一致），无配置文件或持久化数据迁移影响。
 
 ## 7. 可观测性与埋点
 

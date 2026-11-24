@@ -18,8 +18,8 @@ macOS（Swift，`Sources/AIUsage/Providers`）与 Windows（C#，`windows/AIUsag
 - 在 `Tests/Fixtures/shared/{provider}/{case}/` 下建立匿名、可复现的跨平台共享 fixture 集合与统一 `expected.json` 契约，覆盖 Codex、Claude、Kimi 三个双端共有 Provider。
 - 每个 Provider 至少覆盖 5 类核心场景：正常累计、重复或增量去重、畸形行容错、7 天窗口截断、额度窗口解析。
 - 在 macOS（`Tests/AIUsageTests`）与 Windows Core（`windows/AIUsage.Core.Tests`）各自新增共享 fixture 一致性测试 harness，读取同一批输入并对比同一份 `expected.json`，任何一端行为漂移即触发测试失败。
-- 盘点并记录两端已知行为差异，通过统一归一化规则或 `platformExemptions` 显式声明差异原因，避免静默漂移。
-- 保持最小、向后兼容的生产代码变更（仅为可测试性补充默认参数级的时钟/时区注入），不合并两端实现。
+- 盘点并记录两端已知行为差异；在范围扩展中统一修复已暴露的 D1（macOS Codex/Claude/Kimi 7 天历史窗口截断边界对齐为 `today-6 ~ today` 共 7 个自然日）与 D2（Windows Claude `Cached` 统一计入 `cache_read_input_tokens + cache_creation_input_tokens`），移除全部 4 处 `platformExemptions`，实现 15/15 共享 fixture 零豁免通过。
+- 保持最小、向后兼容的生产代码变更，不合并两端实现。
 
 ## 非目标
 
@@ -36,28 +36,28 @@ N/A — 当前类型为 `type/refactor`，不需要根因说明。
 
 - [x] `Tests/Fixtures/shared/` 包含 `codex`、`claude`、`kimi` 三个目录，每个目录至少包含 5 个匿名场景（正常累计、重复/增量去重、畸形行、7 天窗口截断、额度窗口），均附带符合 schema 的 `expected.json`。
 - [x] `docs/design/issue-39-shared-usage-fixtures.md` 完整定义目录结构、`expected.json` schema、两端归一化与对比规则，以及基于源码审计的已知行为差异表。
-- [x] Swift 测试（`make test`）自动遍历 `Tests/Fixtures/shared/` 全部用例并按 `expected.json` 断言通过。
-- [x] C# 测试（`make windows-test`）自动遍历同一批 `Tests/Fixtures/shared/` 全部用例并按 `expected.json` 断言通过。
-- [x] 所有已知两端差异均在设计文档中记录，并在对应 fixture 的 `platformExemptions` 中附带明确原因。
+- [x] 已完成 D1（macOS Codex/Claude/Kimi 7 天历史截断统一为 `today-6 ~ today`）与 D2（Windows Claude `Cached` 统一为 `cache_read_input_tokens + cache_creation_input_tokens`）修复，并移除全部 4 处 `platformExemptions`。
+- [x] Swift 测试（`make test`）自动遍历 `Tests/Fixtures/shared/` 全部 15 个用例并零豁免断言通过。
+- [x] C# 测试（`make windows-test`）自动遍历同一批 `Tests/Fixtures/shared/` 全部 15 个用例并零豁免断言通过。
 - [x] `SettingsView.swift` About 说明、`docs/changelog/032-shared-usage-fixtures.md`、`docs/changelog/README.md`、`CHANGELOG.md` 已同步更新，`make verify` 与 `make windows-test` 全部通过。
 
 ## 模块拆解
 
 | 模块 / 路径 | 修改内容 | 依赖 | 完成条件 |
 |---|---|---|---|
-| `docs/issues/issue-39*` & `docs/design/issue-39-shared-usage-fixtures.md` | 准备记录、Issue 文档、共享 fixture 契约设计与两端差异表 | 无 | 独立提交并通过 `make check-prepare` |
-| `Sources/AIUsage/Providers/CodexUsageProvider.swift` & `KimiUsageProvider.swift` | 为构造函数补充默认值为 `Date.init` 的可选 `now` 时钟参数，使共享 fixture 可按固定时间点确定性测试 | 准备门禁 | 既有调用方零改动，`make test` 编译通过 |
-| `windows/AIUsage.Core/LogUsageProvider.cs` | 为构造函数补充默认值为 `TimeZoneInfo.Local` 的可选 `timeZone` 参数，使日桶切分可按固定时区确定性测试 | 准备门禁 | 既有调用方零改动，`make windows-test` 编译通过 |
-| `Tests/Fixtures/shared/{codex,claude,kimi}/` | 编写 3 个 Provider 共 15 个匿名合成用例与 `expected.json` | 准备门禁 | 输入布局与真实目录一致，不含任何真实数据或凭证 |
-| `Tests/AIUsageTests/SharedFixtureTests.swift` | 新增 Swift 共享 fixture 自动发现、隔离复制、归一化与断言测试 | 共享 fixture + 时钟注入 | `make test` 全量通过 |
-| `windows/AIUsage.Core.Tests/SharedFixtureTests.cs` | 新增 C# 共享 fixture 自动发现、隔离复制、归一化与断言测试 | 共享 fixture + 时区注入 | `make windows-test` 全量通过 |
+| `docs/issues/issue-39*` & `docs/design/issue-39-shared-usage-fixtures.md` | 准备记录、Issue 文档、共享 fixture 契约设计、两端差异表及 D1/D2 范围扩展 | 无 | 独立提交并通过 `make check-prepare` |
+| `Sources/AIUsage/Providers/CodexUsageProvider.swift`、`ClaudeUsageProvider.swift` & `KimiUsageProvider.swift` | 补充默认值为 `Date.init` 的可选 `now` 时钟参数（Codex/Kimi）；统一 7 天历史截断边界为 `today-6 ~ today`（D1） | 准备门禁 | `make test` 全量通过（含受影响既有单测更新） |
+| `windows/AIUsage.Core/LogUsageProvider.cs` & `QuotaParsers.cs` | 补充默认值为 `TimeZoneInfo.Local` 的可选 `timeZone` 参数；将 Claude `Cached` 统一为 `cache_read_input_tokens + cache_creation_input_tokens`（D2） | 准备门禁 | `make windows-test` 全量通过（含受影响既有单测更新） |
+| `Tests/Fixtures/shared/{codex,claude,kimi}/` | 编写 3 个 Provider 共 15 个匿名合成用例与 `expected.json`，并移除全部 4 处 `platformExemptions` | 准备门禁 | 输入布局与真实目录一致，不含任何真实数据或凭证，15/15 零豁免 |
+| `Tests/AIUsageTests/SharedFixtureTests.swift` & `ProviderTests.swift` | 新增 Swift 共享 fixture 自动发现、隔离复制、归一化与断言测试；更新受 D1 影响的既有单测 | 共享 fixture + D1 修复 | `make test` 全量通过 |
+| `windows/AIUsage.Core.Tests/SharedFixtureTests.cs` & `UsageTests.cs` | 新增 C# 共享 fixture 自动发现、隔离复制、归一化与断言测试；更新受 D2 影响的既有单测 | 共享 fixture + D2 修复 | `make windows-test` 全量通过 |
 | `Sources/AIUsage/Views/SettingsView.swift`、`docs/changelog/`、`CHANGELOG.md`、`docs/windows/README.md`、`docs/DEVELOPMENT.md` | 同步 About 说明、变更记录与开发文档 | 双端测试通过 | `make verify` 与 `make windows-test` 通过 |
 
 ## 风险、假设与待决策项
 
-- 风险：两端在部分边界条件（如 7 天窗口边界 `-7` 天与 `-6` 天、Claude `cached` 口径、Kimi 毫秒时间戳）存在既有历史差异；若直接强行改动生产逻辑可能破坏已有端侧单测或预期行为。缓解方式：先在 `platformExemptions` 中显式记录并锁定当前行为，仅在必要时经设计评审后最小化统一。
+- 风险：统一修复 D1（macOS 8 天→7 天历史截断）与 D2（Windows Claude `Cached` 含 `cache_creation_input_tokens`）会影响两端依赖旧口径的既有单元测试。缓解方式：两端同步检查并更新既有单测及回归验证；其余非目标差异（D3–D10）继续记录在设计文档差异表中，不越界修改。
 - 假设：共享 fixture 的时间戳统一采用固定 `now` 与 `UTC` 时区，测试 harness 在运行前将临时目录内 fixture 文件的修改时间设置为 `now`，以消除宿主机器时区与系统时间差异。
-- 待决策：N/A — 无阻塞项。
+- 待决策：N/A — D1、D2 统一修复方案已确认，无阻塞项。
 
 ## 验证计划
 
