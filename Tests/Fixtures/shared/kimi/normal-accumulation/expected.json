@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "provider": "kimi",
+  "case": "normal-accumulation",
+  "description": "多会话 wire.jsonl 累计，覆盖原生字段与 OpenAI 兼容 prompt_tokens 字段",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-14",
+      "tokens": {
+        "input": 130,
+        "cached": 30,
+        "output": 30
+      }
+    },
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 200,
+        "cached": 60,
+        "output": 45
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

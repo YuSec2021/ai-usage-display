@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "provider": "kimi",
+  "case": "legacy-message-dedup",
+  "description": "旧版 StatusUpdate 按 message_id 保留最新累计值，无 message_id 时累加",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 200,
+        "cached": 40,
+        "output": 30
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

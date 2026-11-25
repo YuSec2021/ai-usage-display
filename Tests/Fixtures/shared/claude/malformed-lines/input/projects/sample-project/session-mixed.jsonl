@@ -1,0 +1,5 @@
+{broken json
+{"timestamp":"2026-06-15T09:00:00Z","message":{"id":"msg-ok-1","usage":{"input_tokens":80,"output_tokens":15,"cache_read_input_tokens":20,"cache_creation_input_tokens":0}}}
+{"timestamp":"2026-06-15T09:01:00Z","message":
+{"timestamp":"2026-06-15T09:05:00Z","type":"system"}
+{"timestamp":"2026-06-15T09:10:00Z","message":{"id":"msg-ok-2","usage":{"input_tokens":40,"output_tokens":5,"cache_read_input_tokens":10,"cache_creation_input_tokens":0}}}

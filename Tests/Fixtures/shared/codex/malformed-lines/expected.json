@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "provider": "codex",
+  "case": "malformed-lines",
+  "description": "畸形 JSON 行与截断行混排时跳过损坏行并保留合法累计",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 200,
+        "cached": 50,
+        "output": 40
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

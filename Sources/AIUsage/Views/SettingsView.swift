@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：Windows x64 预览包与 SHA-256 校验文件可直接从 GitHub Release 下载，完整解压后即可运行。",
-                            "This build: Windows x64 preview packages and SHA-256 checksums are available from GitHub Releases. Extract the entire ZIP to run the app."
+                            "本次构建：Windows x64 预览包与 SHA-256 校验文件随同 macOS DMG 自动发布至 GitHub Release；同时包含 macOS/Windows 共享用量 fixture 与双端口径统一修复。",
+                            "This build: publishes Windows x64 preview ZIPs and SHA-256 checksums alongside the macOS DMG on GitHub Releases, and includes cross-platform shared usage fixtures with aligned macOS/Windows accounting."
                         ))
                     }
                     .font(.callout)

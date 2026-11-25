@@ -10,4 +10,10 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.5" PrivateAssets="all" />
     <ProjectReference Include="../AIUsage.Core/AIUsage.Core.csproj" />
   </ItemGroup>
+  <ItemGroup>
+    <Content Include="../../Tests/Fixtures/shared/**">
+      <Link>Fixtures/shared/%(RecursiveDir)%(Filename)%(Extension)</Link>
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
 </Project>

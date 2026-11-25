@@ -3,6 +3,11 @@
 ## Unreleased
 
 - Publish the Windows x64 portable preview ZIP and SHA-256 alongside the macOS DMG, building both platforms from the same release tag and requiring both to pass before publication. Backfill the verified v1.2.8 Windows assets. (#33)
+- Add cross-platform anonymous shared usage fixtures (`Tests/Fixtures/shared/`) and parity test harnesses for macOS (Swift) and Windows (.NET Core) covering Codex, Claude Code, and Kimi Code; align the macOS 7-day history cutoff (`today-6 ~ today`) and Windows Claude `Cached` token accounting (`cache_read + cache_creation`) so all 15 shared fixtures pass with zero platform exemptions. (#39)
+
+## 1.2.9 — 2026-11-23
+
+- Upgrade the Windows floating window to a frosted-glass capsule dock and hover detail popover with empty-space dragging, aligned active indicator, pin toggle, light/dark glass palettes, and refresh/main-panel/hide menu actions. (#35)
 
 ## 1.2.8 — 2026-11-16
 

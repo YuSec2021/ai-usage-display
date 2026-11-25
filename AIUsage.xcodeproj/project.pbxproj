@@ -39,6 +39,7 @@
 		DA8FCEA9A3E390F4374A6668 /* ClaudeIntegrationManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 86865F4A4958DC065925E66E /* ClaudeIntegrationManager.swift */; };
 		E5E84A08C5BC3EA306B5FEEA /* ISODateParser.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66EEEB42DB80DF67FA285913 /* ISODateParser.swift */; };
 		EB16947CE18625B6EA06FBB5 /* AntigravityUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = BEA33189D3EB7B830F1CB3F2 /* AntigravityUsageProvider.swift */; };
+		EE7087B7FE60DE124F165E2B /* SharedFixtureTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6C1D64CD090875F6DC5EDF9 /* SharedFixtureTests.swift */; };
 		F3A53B64E9454D2050BE6DE9 /* GrokUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6D16399ACB607C9AC66548D8 /* GrokUsageProvider.swift */; };
 		F8084AC996C8C3670E636651 /* CodexUsageProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = FBFF3BC3667F1686DE8843B9 /* CodexUsageProvider.swift */; };
 		F8A72D9FB9AD86F8FEAAD548 /* ISODateParserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6F9A54B12114D6D731B8A11F /* ISODateParserTests.swift */; };
@@ -89,6 +90,7 @@
 		B625E0FD17B0A8ECABCC172E /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
 		B660901612C9B73678D920A4 /* KimiCredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = KimiCredentialStore.swift; sourceTree = "<group>"; };
 		BEA33189D3EB7B830F1CB3F2 /* AntigravityUsageProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AntigravityUsageProvider.swift; sourceTree = "<group>"; };
+		C6C1D64CD090875F6DC5EDF9 /* SharedFixtureTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedFixtureTests.swift; sourceTree = "<group>"; };
 		CCED67D9F06BDEA8FAD86DA5 /* CodexRateLimitClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CodexRateLimitClient.swift; sourceTree = "<group>"; };
 		CD3DF2A0D600E39C03692805 /* AIUsageTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = AIUsageTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		DFC78E3A5C975EB78E0EAC6F /* IncrementalLineReader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IncrementalLineReader.swift; sourceTree = "<group>"; };
@@ -227,6 +229,7 @@
 				9199C130B382CD16346C36B7 /* MiniMaxCacheTests.swift */,
 				601A3EEA695F215C3FD7ADFE /* PresentationTests.swift */,
 				E761DB0B70E7FFD0A4E86A6E /* ProviderTests.swift */,
+				C6C1D64CD090875F6DC5EDF9 /* SharedFixtureTests.swift */,
 				6F7C4F0AAABAFB505163CA91 /* UsageStoreTests.swift */,
 			);
 			path = AIUsageTests;
@@ -336,6 +339,7 @@
 				ACFD9E182BC157E7E16AB88D /* MiniMaxCacheTests.swift in Sources */,
 				3FDEB42806A21425702FAF60 /* PresentationTests.swift in Sources */,
 				7B8E2C78E06FE85FA820F463 /* ProviderTests.swift in Sources */,
+				EE7087B7FE60DE124F165E2B /* SharedFixtureTests.swift in Sources */,
 				3AD82D3F8A9C9432A4421ECA /* UsageStoreTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -388,7 +392,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -400,7 +404,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.8;
+				MARKETING_VERSION = 1.2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yusec.aiusage;
 				PRODUCT_NAME = AIUsage;
 				SDKROOT = macosx;
@@ -413,7 +417,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 12;
+				CURRENT_PROJECT_VERSION = 13;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -425,7 +429,7 @@
 					"$(inherited)",
 					"@executable_path/../Frameworks",
 				);
-				MARKETING_VERSION = 1.2.8;
+				MARKETING_VERSION = 1.2.9;
 				PRODUCT_BUNDLE_IDENTIFIER = com.yusec.aiusage;
 				PRODUCT_NAME = AIUsage;
 				SDKROOT = macosx;

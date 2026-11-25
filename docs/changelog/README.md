@@ -4,8 +4,10 @@
 
 ## 最新更新
 
-- [030：补齐 Windows Release 附件与自动发布](030-windows-release-assets.md)：复用 Windows 验证流程按同一 Tag 构建，双平台成功后共同发布安装包与 SHA-256。
-
+- [033：补齐 Windows Release 附件与自动发布](033-windows-release-assets.md)：复用 Windows 验证流程按同一 Tag 构建，双平台成功后共同发布安装包与 SHA-256。
+- [032：macOS/Windows 用量统计共享 fixture 与一致性测试](032-shared-usage-fixtures.md)：为 Codex、Claude Code、Kimi Code 建立 15 组匿名共享 fixture 与统一 `expected.json`，统一修复 macOS 7 天历史截断（D1）与 Windows Claude 缓存 Token 口径（D2），双端 15/15 零豁免通过。
+- [031：发布 1.2.9](031-release-1.2.9.md)：自动补丁升版为 1.2.9（Build 13），发布结果以 Actions 为准。
+- [030：Windows 毛玻璃胶囊浮窗与悬浮详情卡](030-windows-floating-dock.md)：将 Windows 桌面浮窗升级为毛玻璃胶囊 Dock 与联动悬浮详情卡，支持空白区拖拽、悬停切换、固定详情、深浅色毛玻璃适配及核心布局测试。
 - [029：发布 1.2.8](029-release-1.2.8.md)：自动补丁升版为 1.2.8（Build 12），发布结果以 Actions 为准。
 - [028：显示 Grok 订阅周额度](028-grok-subscription-usage.md)：只读当前 Grok Bot 个人账号缓存，显示共享周额度、重置时间与缓存状态，不将周额度混作 5 小时或 Token。
 
@@ -81,4 +83,7 @@
 | [026](026-antigravity-usage.md) | feature | 新增 Google Antigravity 用量与多分组额度监控 | 2026-11-16 |
 | [028](028-grok-subscription-usage.md) | feature | 显示 Grok 订阅周额度 | 2026-11-17 |
 | [029](029-release-1.2.8.md) | release | 发布 1.2.8 | 2026-11-16 |
-| [030](030-windows-release-assets.md) | bugfix | 补齐 Windows Release 附件与自动发布 | 2026-11-17 |
+| [030](030-windows-floating-dock.md) | feature | Windows 毛玻璃胶囊浮窗与悬浮详情卡 | 2026-11-22 |
+| [031](031-release-1.2.9.md) | release | 发布 1.2.9 | 2026-11-23 |
+| [032](032-shared-usage-fixtures.md) | refactor | macOS/Windows 用量统计共享 fixture 与一致性测试 | 2026-11-24 |
+| [033](033-windows-release-assets.md) | bugfix | 补齐 Windows Release 附件与自动发布 | 2026-11-17 |

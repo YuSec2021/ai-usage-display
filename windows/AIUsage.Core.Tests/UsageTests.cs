@@ -86,7 +86,12 @@ public sealed class UsageTests : IDisposable
         var snapshot = Write("snapshot.json", JsonSerializer.Serialize(new { collected_at = now.ToUnixTimeSeconds(), rate_limits = new
             { five_hour = new { used_percentage = 74, resets_at = now.AddHours(1).ToUnixTimeSeconds() } } }));
         var result = await new LogUsageProvider(ProviderId.Claude, root, snapshot, clock: () => now).LoadAsync(default);
-        Assert.Equal(190, result.History.Single().Tokens.Total); Assert.Equal(74, result.Snapshot.FiveHour(now)!.Used);
+        var tokens = result.History.Single().Tokens;
+        Assert.Equal(170, tokens.Input);
+        Assert.Equal(70, tokens.Cached);
+        Assert.Equal(20, tokens.Output);
+        Assert.Equal(190, tokens.Total);
+        Assert.Equal(74, result.Snapshot.FiveHour(now)!.Used);
     }
 
     [Fact] public async Task KimiIncludesAllSessionsRatherThanCollapsingWireFileNames()
@@ -191,6 +196,43 @@ public sealed class UsageTests : IDisposable
     {
         var provider = new DelayedProvider(now); using var monitor = new UsageMonitor([provider], _ => false);
         await monitor.RefreshAsync(); Assert.Equal(0, provider.Calls);
+    }
+
+    [Fact] public void FloatingPresentationFormatsCountdownUpdatedAgeAndColors()
+    {
+        var claude = new UsageSnapshot(ProviderId.Claude, [new(300, 68, now.AddHours(2).AddMinutes(18))], now.AddSeconds(-20), SourceState.Ready, "ok");
+        Assert.Equal("2 小时 18 分钟后重置", FloatingPresentation.FormatResetCountdown(claude, now));
+        Assert.Equal("刚刚更新", FloatingPresentation.FormatUpdatedAge(claude, now));
+        Assert.Equal("#F58A12", FloatingPresentation.RingColor(claude, now));
+
+        var high = new UsageSnapshot(ProviderId.Codex, [new(300, 92, now.AddMinutes(25))], now.AddMinutes(-5), SourceState.Ready, "ok");
+        Assert.Equal("25 分钟后重置", FloatingPresentation.FormatResetCountdown(high, now));
+        Assert.Equal("5 分钟前更新", FloatingPresentation.FormatUpdatedAge(high, now));
+        Assert.Equal("#E84141", FloatingPresentation.RingColor(high, now));
+
+        var minimax = UsageSnapshot.Empty(ProviderId.MiniMax, SourceState.Unsupported, "Windows 缓存格式尚未验证，首版暂不支持");
+        Assert.Equal("Windows 端暂不支持", FloatingPresentation.FormatResetCountdown(minimax, now));
+        Assert.Equal("暂无数据", FloatingPresentation.FormatUpdatedAge(minimax, now));
+        Assert.Equal("#8B99AF", FloatingPresentation.RingColor(minimax, now));
+    }
+
+    [Fact] public void FloatingLayoutComputesDockSizePopoverFlipAndArrowAlignment()
+    {
+        Assert.Equal((256, 64), FloatingLayout.ComputeDockSize(4));
+        Assert.Equal(41, FloatingLayout.RingCenterX(256, 4, 0), 2);
+        Assert.Equal(215, FloatingLayout.RingCenterX(256, 4, 3), 2);
+
+        var work = new WindowPlacement(0, 0, 1920, 1040);
+        var bottomDock = new WindowPlacement(1600, 950, 256, 64);
+        var above = FloatingLayout.PlacePopover(bottomDock, work, 240, 106, 10, FloatingLayout.RingCenterX(256, 4, 1));
+        Assert.True(above.PlacedAbove);
+        Assert.Equal(950 - 10 - 106, above.Bounds.Y);
+        Assert.InRange(above.ArrowOffsetPx, 22, 218);
+
+        var topDock = new WindowPlacement(100, 12, 256, 64);
+        var below = FloatingLayout.PlacePopover(topDock, work, 240, 106, 10, FloatingLayout.RingCenterX(256, 4, 0));
+        Assert.False(below.PlacedAbove);
+        Assert.Equal(12 + 64 + 10, below.Bounds.Y);
     }
 
     private sealed class DelayedProvider(DateTimeOffset now) : IUsageProvider

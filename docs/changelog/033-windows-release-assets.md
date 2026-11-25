@@ -1,4 +1,4 @@
-# 030：补齐 Windows Release 附件与自动发布
+# 033：补齐 Windows Release 附件与自动发布
 
 日期：2026-11-17
 
@@ -24,4 +24,4 @@ Windows ZIP SHA-256：`6cdf1263daff86219de6576439827e35a36900256aac0ceb1b0ba7670
 - 未执行 macOS About 实际界面检查、Windows 用户机器真实登录/额度刷新、多屏/DPI 或 Explorer 重启验证；CI 原生烟雾使用匿名 fixture。
 - 首个新版本 Tag 的完整双平台自动发布须在工作流合入后验收；本次不修改数据采集或 UI 行为。
 
-开发版本继续为 1.2.8（Build 12），未手动升版，未替换本地已安装应用。后续版本仍通过版本 PR、维护者合并与既有 Tag/Release 流程发布。
+开发版本继续为 1.2.9（Build 13），未手动升版，未替换本地已安装应用。后续版本仍通过版本 PR、维护者合并与既有 Tag/Release 流程发布。
