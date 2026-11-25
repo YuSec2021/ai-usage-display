@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "provider": "codex",
+  "case": "incremental-dedup",
+  "description": "会话累计值重复、递增与回落时的非负差值去重",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 230,
+        "cached": 80,
+        "output": 50
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

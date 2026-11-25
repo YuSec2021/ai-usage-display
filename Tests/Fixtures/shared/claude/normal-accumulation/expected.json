@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "provider": "claude",
+  "case": "normal-accumulation",
+  "description": "跨日 transcript 累计与缓存输入子集归并",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-14",
+      "tokens": {
+        "input": 170,
+        "cached": 70,
+        "output": 20
+      }
+    },
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 250,
+        "cached": 50,
+        "output": 60
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

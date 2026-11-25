@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "provider": "kimi",
+  "case": "quota-windows",
+  "description": "解析 Kimi 官方额度 API JSON（5 小时与每周窗口）并保留本地 wire.jsonl 统计",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 100,
+        "cached": 10,
+        "output": 25
+      }
+    }
+  ],
+  "quotaWindows": [
+    {
+      "minutes": 300,
+      "usedPercent": 27.5,
+      "resetsAt": "2026-06-15T15:00:00Z"
+    },
+    {
+      "minutes": 10080,
+      "usedPercent": 35.0,
+      "resetsAt": "2026-06-20T00:00:00Z"
+    }
+  ],
+  "state": "ready"
+}

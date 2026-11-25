@@ -18,15 +18,17 @@ public sealed class LogUsageProvider : IUsageProvider
     private readonly string? snapshotPath;
     private readonly Func<CancellationToken, Task<IReadOnlyList<QuotaWindow>?>>? liveReader;
     private readonly Func<DateTimeOffset> clock;
+    private readonly TimeZoneInfo timeZone;
     private readonly JsonlReader reader;
     private readonly Dictionary<string, FileState> states = new(StringComparer.OrdinalIgnoreCase);
 
     public LogUsageProvider(ProviderId id, string directory, string? snapshotPath = null,
         Func<CancellationToken, Task<IReadOnlyList<QuotaWindow>?>>? liveReader = null,
-        Func<DateTimeOffset>? clock = null, JsonlReader? reader = null)
+        Func<DateTimeOffset>? clock = null, JsonlReader? reader = null, TimeZoneInfo? timeZone = null)
     {
         Id = id; this.directory = directory; this.snapshotPath = snapshotPath;
-        this.liveReader = liveReader; this.clock = clock ?? (() => DateTimeOffset.UtcNow); this.reader = reader ?? new();
+        this.liveReader = liveReader; this.clock = clock ?? (() => DateTimeOffset.UtcNow);
+        this.reader = reader ?? new(); this.timeZone = timeZone ?? TimeZoneInfo.Local;
     }
 
     public async Task<ProviderResult> LoadAsync(CancellationToken cancellationToken)
@@ -34,7 +36,7 @@ public sealed class LogUsageProvider : IUsageProvider
         if (Id == ProviderId.MiniMax)
             return new(UsageSnapshot.Empty(Id, SourceState.Unsupported, "Windows 缓存格式尚未验证，首版暂不支持"), []);
         var now = clock();
-        var cutoff = DateOnly.FromDateTime(now.LocalDateTime).AddDays(-6);
+        var cutoff = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(now, timeZone).DateTime).AddDays(-6);
         var roots = Id switch
         {
             ProviderId.Codex => new[] { Path.Combine(directory, "sessions"), Path.Combine(directory, "archived_sessions") },
@@ -117,7 +119,7 @@ public sealed class LogUsageProvider : IUsageProvider
             var value = json.RootElement;
             var date = (value.Field("timestamp").Timestamp() ?? value.Field("time").Timestamp());
             if (date is null) return;
-            var day = DateOnly.FromDateTime(date.Value.LocalDateTime);
+            var day = DateOnly.FromDateTime(TimeZoneInfo.ConvertTime(date.Value, timeZone).DateTime);
             if (Id == ProviderId.Codex)
             {
                 var payload = value.Field("payload");

@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：升级 Windows 桌面浮窗为毛玻璃胶囊 Dock 与悬浮详情卡样式，支持空白区拖拽、悬停切换与固定详情、深浅色毛玻璃适配及「刷新额度 / 打开主面板 / 隐藏浮窗」菜单。",
-                            "This build: upgrades the Windows floating window to a frosted glass capsule dock and hover detail popover with empty-space dragging, pin toggle, light/dark glass palettes, and refresh/main-panel/hide actions."
+                            "本次构建：为 macOS 与 Windows 的 Codex、Claude Code、Kimi Code 用量统计建立跨平台匿名共享 fixture 与一致性测试；统一 macOS 端 7 天历史截断边界与 Windows 端 Claude 缓存 Token 口径，15 组共享用例零豁免通过。",
+                            "This build: adds cross-platform anonymous shared fixtures and parity tests for macOS and Windows Codex, Claude Code, and Kimi Code usage parsing; aligns the macOS 7-day history cutoff and Windows Claude cached token accounting so all 15 shared fixtures pass without exemptions."
                         ))
                     }
                     .font(.callout)

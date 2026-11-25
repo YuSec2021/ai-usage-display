@@ -224,7 +224,7 @@ final class ProviderTests: XCTestCase {
         let calendar = Calendar(identifier: .gregorian)
         let clock = MutableTestClock(date: Date())
         let timestamp = ISO8601DateFormatter().string(
-            from: calendar.date(byAdding: .day, value: -7, to: calendar.startOfDay(for: clock.date))!
+            from: calendar.date(byAdding: .day, value: -6, to: calendar.startOfDay(for: clock.date))!
         )
         try """
         {"timestamp":"\(timestamp)","message":{"id":"boundary","usage":{"input_tokens":100,"output_tokens":10}}}

@@ -282,6 +282,7 @@ sequenceDiagram
 - 文件最后一行尚未写完。
 - 损坏 JSON 与未知事件类型。
 - 跨午夜和夏令时边界。
+- 跨平台共享匿名 fixture（`Tests/Fixtures/shared/{codex,claude,kimi}/`）：macOS（`SharedFixtureTests.swift`）与 Windows Core（`SharedFixtureTests.cs`）读取同一批输入与 `expected.json`，通过 `make test` 与 `make windows-test` 验证一致性并显式锁定已知差异。
 
 ### 集成测试
 

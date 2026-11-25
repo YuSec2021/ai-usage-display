@@ -35,7 +35,7 @@ Windows 11 x64 原生应用，采用 C#、.NET 10 LTS 与 WinUI 3。每个模型
 
 ## 开发与验证
 
-安装 .NET 10 SDK。跨平台核心不引用 WinUI，可在 macOS 或 Windows 运行：
+安装 .NET 10 SDK。跨平台核心不引用 WinUI，可在 macOS 或 Windows 运行（包含位于 `Tests/Fixtures/shared/` 的 macOS/Windows 共享匿名用量 fixture 一致性测试）：
 
 ```bash
 make windows-test

@@ -99,8 +99,14 @@ public static class QuotaParsers
         }
     }
 
-    public static TokenUsage Tokens(JsonElement usage, bool claude = false) => new(
-        claude ? TokenUsage.Add(usage.Field("input_tokens").Count(), TokenUsage.Add(
-            usage.Field("cache_read_input_tokens").Count(), usage.Field("cache_creation_input_tokens").Count())) : usage.Field("input_tokens").Count(),
-        usage.Field(claude ? "cache_read_input_tokens" : "cached_input_tokens").Count(), usage.Field("output_tokens").Count());
+    public static TokenUsage Tokens(JsonElement usage, bool claude = false)
+    {
+        var cached = claude
+            ? TokenUsage.Add(usage.Field("cache_read_input_tokens").Count(), usage.Field("cache_creation_input_tokens").Count())
+            : usage.Field("cached_input_tokens").Count();
+        var input = claude
+            ? TokenUsage.Add(usage.Field("input_tokens").Count(), cached)
+            : usage.Field("input_tokens").Count();
+        return new(input, cached, usage.Field("output_tokens").Count());
+    }
 }

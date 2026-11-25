@@ -86,7 +86,12 @@ public sealed class UsageTests : IDisposable
         var snapshot = Write("snapshot.json", JsonSerializer.Serialize(new { collected_at = now.ToUnixTimeSeconds(), rate_limits = new
             { five_hour = new { used_percentage = 74, resets_at = now.AddHours(1).ToUnixTimeSeconds() } } }));
         var result = await new LogUsageProvider(ProviderId.Claude, root, snapshot, clock: () => now).LoadAsync(default);
-        Assert.Equal(190, result.History.Single().Tokens.Total); Assert.Equal(74, result.Snapshot.FiveHour(now)!.Used);
+        var tokens = result.History.Single().Tokens;
+        Assert.Equal(170, tokens.Input);
+        Assert.Equal(70, tokens.Cached);
+        Assert.Equal(20, tokens.Output);
+        Assert.Equal(190, tokens.Total);
+        Assert.Equal(74, result.Snapshot.FiveHour(now)!.Used);
     }
 
     [Fact] public async Task KimiIncludesAllSessionsRatherThanCollapsingWireFileNames()
