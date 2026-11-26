@@ -4,6 +4,7 @@
 
 ## 最新更新
 
+- [034：发布 1.2.10](034-release-1.2.10.md)：自动补丁升版为 1.2.10（Build 14），发布结果以 Actions 为准。
 - [033：补齐 Windows Release 附件与自动发布](033-windows-release-assets.md)：复用 Windows 验证流程按同一 Tag 构建，双平台成功后共同发布安装包与 SHA-256。
 - [032：macOS/Windows 用量统计共享 fixture 与一致性测试](032-shared-usage-fixtures.md)：为 Codex、Claude Code、Kimi Code 建立 15 组匿名共享 fixture 与统一 `expected.json`，统一修复 macOS 7 天历史截断（D1）与 Windows Claude 缓存 Token 口径（D2），双端 15/15 零豁免通过。
 - [031：发布 1.2.9](031-release-1.2.9.md)：自动补丁升版为 1.2.9（Build 13），发布结果以 Actions 为准。
@@ -87,3 +88,4 @@
 | [031](031-release-1.2.9.md) | release | 发布 1.2.9 | 2026-11-23 |
 | [032](032-shared-usage-fixtures.md) | refactor | macOS/Windows 用量统计共享 fixture 与一致性测试 | 2026-11-24 |
 | [033](033-windows-release-assets.md) | bugfix | 补齐 Windows Release 附件与自动发布 | 2026-11-17 |
+| [034](034-release-1.2.10.md) | release | 发布 1.2.10 | 2026-11-26 |
