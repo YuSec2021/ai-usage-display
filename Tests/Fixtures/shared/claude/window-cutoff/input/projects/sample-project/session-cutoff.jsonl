@@ -1,0 +1,4 @@
+{"timestamp":"2026-06-07T12:00:00Z","message":{"id":"msg-d8","usage":{"input_tokens":500,"output_tokens":50,"cache_read_input_tokens":0,"cache_creation_input_tokens":0}}}
+{"timestamp":"2026-06-08T12:00:00Z","message":{"id":"msg-d7","usage":{"input_tokens":100,"output_tokens":10,"cache_read_input_tokens":20,"cache_creation_input_tokens":0}}}
+{"timestamp":"2026-06-09T12:00:00Z","message":{"id":"msg-d6","usage":{"input_tokens":200,"output_tokens":20,"cache_read_input_tokens":30,"cache_creation_input_tokens":0}}}
+{"timestamp":"2026-06-15T10:00:00Z","message":{"id":"msg-d0","usage":{"input_tokens":300,"output_tokens":30,"cache_read_input_tokens":40,"cache_creation_input_tokens":0}}}

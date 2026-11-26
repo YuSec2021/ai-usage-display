@@ -5,7 +5,7 @@
 - ISSUE：https://github.com/YuSec2021/ai-usage-display/issues/38
 - 状态：已确认
 - 负责人：AI Usage 维护者
-- 更新日期：2026-11-23
+- 更新日期：2026-11-25
 
 ## 2. 背景与目标
 
@@ -83,7 +83,7 @@
 | `windows/AIUsage.Windows/FloatingWindow.*` | 接入无框样式与胶囊 `SetWindowRgn`，统一点击/悬停联动 | `App`、`SmokeCapture` | `winbuild` 冒烟 |
 | `windows/AIUsage.Windows/FloatingDetailWindow.*` | 原生 `Polygon` 三角箭头、`Storyboard` 动效、同目标 `arrowTimer` 重入保护 | `FloatingWindow`、`SmokeCapture` | `winbuild` 冒烟与截图 |
 | `windows/AIUsage.Windows/SmokeCapture.cs` & `App.xaml.cs` | 校验实际 HWND 轮廓、双主题截图与动画重入，增强轮廓失败诊断信息 | `windows/scripts/smoke.ps1` | `winbuild` 原生冒烟 |
-| `docs/windows/README.md`、`docs/windows/screenshots/`、`Sources/AIUsage/Views/SettingsView.swift`、`CHANGELOG.md`、`docs/changelog/` | 更新 Windows 说明、截图、About 与 `032` 变更记录 | 发布与流程检查 | `make verify` |
+| `docs/windows/README.md`、`docs/windows/screenshots/`、`Sources/AIUsage/Views/SettingsView.swift`、`CHANGELOG.md`、`docs/changelog/` | 更新 Windows 说明、截图、About 与 `034` 变更记录 | 发布与流程检查 | `make verify` |
 
 ## 6. 异常、安全与兼容性
 

@@ -1,0 +1,28 @@
+{
+  "schemaVersion": 1,
+  "provider": "kimi",
+  "case": "window-cutoff",
+  "description": "7 天历史窗口截断边界（含 today-8、today-7、today-6、today）",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-09",
+      "tokens": {
+        "input": 220,
+        "cached": 20,
+        "output": 20
+      }
+    },
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 330,
+        "cached": 30,
+        "output": 30
+      }
+    }
+  ],
+  "quotaWindows": [],
+  "state": "ready"
+}

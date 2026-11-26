@@ -1,0 +1,31 @@
+{
+  "schemaVersion": 1,
+  "provider": "codex",
+  "case": "quota-windows",
+  "description": "解析 primary/secondary 额度窗口且后续无额度事件不覆盖最新额度",
+  "now": "2026-06-15T12:00:00Z",
+  "timeZone": "UTC",
+  "dailyUsage": [
+    {
+      "date": "2026-06-15",
+      "tokens": {
+        "input": 180,
+        "cached": 40,
+        "output": 30
+      }
+    }
+  ],
+  "quotaWindows": [
+    {
+      "minutes": 300,
+      "usedPercent": 48.25,
+      "resetsAt": "2026-06-15T15:00:00Z"
+    },
+    {
+      "minutes": 10080,
+      "usedPercent": 14.5,
+      "resetsAt": "2026-06-20T00:00:00Z"
+    }
+  ],
+  "state": "ready"
+}

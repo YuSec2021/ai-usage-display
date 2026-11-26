@@ -4,7 +4,7 @@
 
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/38
 - 类型：`type/feature`
-- 状态：待实施
+- 状态：实施与本地验证完成，待 PR 远程检查与合并
 - 工作分支：`codex/issue-38-windows-floating-fidelity`
 - 负责人：AI Usage 维护者
 - 设计或产出文档：`docs/design/issue-38-windows-floating-fidelity.md`
@@ -33,13 +33,13 @@ N/A — 当前类型为 `type/feature`，不需要根因说明。
 
 ## 验收标准
 
-- [ ] Dock 与详情卡移除 Win32 残留框线并通过 `SetWindowRgn` 裁剪出胶囊轮廓及带 `9` DIP 三角箭头的复合轮廓，且在尺寸、DPI、活动模型变化时同步更新。
-- [ ] 胶囊圆环线宽为 `2.6` DIP，圆环与详情卡头像使用 `BitmapIcon` 单色前景，无深色亮圆底；无真实额度保持虚线环。
-- [ ] 详情卡具备原生 `Polygon` 三角箭头、`Storyboard` 淡入/轻移/轻缩放动效与快速重入保护；同目标 `Reposition` 不会打断或重启进行中的 `arrowTimer` 动画。
-- [ ] 系统托盘仅保留 1 个统一应用图标（不再按单个模型拆分多个托盘图标），保留左键打开主面板与右键菜单能力。
-- [ ] 浮窗支持全胶囊区域平滑跟手拖拽，起拖时立即隐藏非固定详情卡并暂缓定时重绘，松手后吸边并保存坐标。
-- [ ] `AIUsage.Core.Tests` 扩展几何与拖拽阈值测试，原生 `SmokeCapture`（单托盘图标、实际 HWND 轮廓、双主题、动画重入）在本地 `winbuild` 全部通过。
-- [ ] `make verify` 全部通过，About 与 `032` 编号变更记录、Windows 截图文档同步更新。
+- [x] Dock 与详情卡移除 Win32 残留框线并通过 `SetWindowRgn` 裁剪出胶囊轮廓及带 `9` DIP 三角箭头的复合轮廓，且在尺寸、DPI、活动模型变化时同步更新。
+- [x] 胶囊圆环线宽为 `2.6` DIP，圆环与详情卡头像使用 `BitmapIcon` 单色前景，无深色亮圆底；无真实额度保持虚线环。
+- [x] 详情卡具备原生 `Polygon` 三角箭头、`Storyboard` 淡入/轻移/轻缩放动效与快速重入保护；同目标 `Reposition` 不会打断或重启进行中的 `arrowTimer` 动画。
+- [x] 系统托盘仅保留 1 个统一应用图标（不再按单个模型拆分多个托盘图标），保留左键打开主面板与右键菜单能力。
+- [x] 浮窗支持全胶囊区域平滑跟手拖拽，起拖时立即隐藏非固定详情卡并暂缓定时重绘，松手后吸边并保存坐标。
+- [x] `AIUsage.Core.Tests` 扩展几何与拖拽阈值测试，原生 `SmokeCapture`（单托盘图标、实际 HWND 轮廓、双主题、动画重入）在本地 `winbuild` 全部通过。
+- [x] `make verify` 全部通过，About 与 `034` 编号变更记录、Windows 截图文档同步更新。
 
 ## 模块拆解
 
@@ -50,7 +50,7 @@ N/A — 当前类型为 `type/feature`，不需要根因说明。
 | `windows/AIUsage.Windows/FloatingWindow.*` & `FloatingDetailWindow.*` | 胶囊/详情卡轮廓联动、原生 `Polygon` 箭头、`Storyboard` 动效、同目标 `arrowTimer` 保护与 `SetWindowPos` 跟手拖拽 | `Native.cs`、`RingView.cs` | 轮廓、拖拽与双主题重入校验全绿 |
 | `windows/AIUsage.Windows/TrayIcons.cs` | 移除按单个模型拆分的多托盘图标，改为 1 个统一应用托盘图标 | `App.xaml.cs`、`Native.cs` | 托盘数量为 1 且右键菜单可用 |
 | `windows/AIUsage.Windows/SmokeCapture.cs`、`App.xaml.cs` & `windows/scripts/smoke.ps1` | 校验单托盘图标、实际 HWND 轮廓（等待箭头动画收敛）、双主题与动画重入断言 | `FloatingWindow`、`FloatingDetailWindow`、`TrayIcons` | `winbuild` `smoke-test` 全绿 |
-| `docs/windows/`、`Sources/AIUsage/Views/SettingsView.swift`、`CHANGELOG.md`、`docs/changelog/` | 同步 Windows 文档/截图、About 与 `032` 变更记录 | 实施与验证完成 | `make verify` 通过 |
+| `docs/windows/`、`Sources/AIUsage/Views/SettingsView.swift`、`CHANGELOG.md`、`docs/changelog/` | 同步 Windows 文档/截图、About 与 `034` 变更记录 | 实施与验证完成 | `make verify` 通过 |
 
 ## 风险、假设与待决策项
 
@@ -67,7 +67,7 @@ N/A — 当前类型为 `type/feature`，不需要根因说明。
 
 ## 完成定义
 
-- [ ] 设计和拆解与最终实现一致。
-- [ ] 所有验收标准已完成。
-- [ ] 必要测试、评测、构建和审查已通过。
-- [ ] 文档、埋点、迁移、发布及回滚事项已处理或明确标记不适用。
+- [x] 设计和拆解与最终实现一致。
+- [x] 所有验收标准已完成。
+- [x] 必要测试、评测、构建和审查已通过。
+- [x] 文档、埋点、迁移、发布及回滚事项已处理或明确标记不适用。

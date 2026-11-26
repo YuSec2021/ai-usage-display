@@ -1,6 +1,6 @@
-# 032：Windows 浮窗轮廓裁剪、原生三角箭头与过渡动效还原度优化
+# 034：Windows 浮窗轮廓裁剪、原生三角箭头与过渡动效还原度优化
 
-- 日期：2026-11-23
+- 日期：2026-11-25
 - 类型：feature
 - 关联 Issue：[#38](https://github.com/YuSec2021/ai-usage-display/issues/38)
 - 准备记录：`docs/issues/issue-38.json`、`docs/issues/issue-38-windows-floating-fidelity.md`、`docs/design/issue-38-windows-floating-fidelity.md`

@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：修正 Windows 毛玻璃浮窗的实际窗口轮廓与三角指示箭头，恢复细圆环与无底板图标，合并系统托盘为单一应用图标，并优化全胶囊跟手拖拽与详情过渡动效。",
-                            "This build: corrects the Windows glass dock contour and triangular pointer, restores thin quota rings and direct monochrome logos, consolidates the system tray into a single app icon, and improves responsive floating-dock dragging and detail transitions."
+                            "本次构建：修正 Windows 毛玻璃浮窗的实际窗口轮廓与原生三角箭头，恢复细圆环与无底板单色图标，合并系统托盘为单一应用图标，优化全胶囊跟手拖拽与详情过渡动效；同时保留双平台自动发布与共享用量 fixture 一致性验证。",
+                            "This build: refines the Windows glass dock contour and native triangular pointer, restores thin quota rings and monochrome logos, consolidates the system tray into a single app icon, and improves responsive floating-dock dragging and detail transitions, alongside dual-platform releases and shared usage fixture parity."
                         ))
                     }
                     .font(.callout)

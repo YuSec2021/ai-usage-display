@@ -282,6 +282,7 @@ sequenceDiagram
 - 文件最后一行尚未写完。
 - 损坏 JSON 与未知事件类型。
 - 跨午夜和夏令时边界。
+- 跨平台共享匿名 fixture（`Tests/Fixtures/shared/{codex,claude,kimi}/`）：macOS（`SharedFixtureTests.swift`）与 Windows Core（`SharedFixtureTests.cs`）读取同一批输入与 `expected.json`，通过 `make test` 与 `make windows-test` 验证一致性并显式锁定已知差异。
 
 ### 集成测试
 
@@ -344,16 +345,18 @@ main 合入普通 PR 后，`auto-release.yml` 在来源提交上调用版本脚�
 自动调用、Tag 推送或手动重建时，`.github/workflows/release.yml` 会再次检查 Tag、项目配置和“关于”页的版本来源，
 运行 `make verify`，再调用原有打包脚本构建 Release，检查 App 的 `CFBundleShortVersionString`、
 双架构及临时签名。原来的 `verify-release-tag.yml` 已合并到该流程，避免重复构建。
-任一版本不一致或测试失败时，依赖构建结果的发布任务不会执行。
+同时调用可复用 `.github/workflows/windows.yml`，按同一 Tag 检出，核对项目版本，运行核心回归、自包含 Windows x64 打包及解压后的原生烟雾验证。任一平台版本不一致、测试或构建失败时，发布任务不会执行。
 
 也可在 GitHub「Actions → Release → Run workflow」中填写已有的 `vX.Y.Z` 或 `X.Y.Z` Tag。
 输入先校验格式，再以 `refs/tags/<tag>` 检出，防止将同名分支或默认分支当作发布来源。
 该 Tag 的源码需包含当前 Makefile、版本检查和打包入口。工作流在 `macos-15` 上明确选择 Xcode 26，
 构建任务仅有仓库读取权限；只有成功构建后的发布任务获得 `contents: write`。
 
-构建产物上传为 Actions Artifact `AI-Usage-<tag>-universal`。发布任务下载并复核 SHA-256 后，
-为对应 Tag 创建或更新 GitHub Release，并附上 DMG 与 `.dmg.sha256`；相同 Tag 重跑会更新附件。
-流程使用内置 `GITHUB_TOKEN`，不需要额外 PAT。发布说明注明临时签名、未公证；远程运行结果需在实际推送 Tag 后确认。
+构建产物上传为 Actions Artifact `AI-Usage-<tag>-universal` 和 `AI-Usage-Windows-x64-preview`。发布任务等待双平台成功，下载两个 Artifact 并复核全部 SHA-256 后，
+为对应 Tag 创建或更新 GitHub Release，附上 DMG、Windows 预览 ZIP 与各自校验文件；相同 Tag 重跑会更新附件。
+流程使用内置 `GITHUB_TOKEN`，不需要额外 PAT。发布说明注明 macOS 临时签名/未公证、Windows 未签名及预览支持范围；远程运行结果需在实际推送 Tag 后确认。
+
+仅验证 Windows Tag 构建时，可在 Windows Actions 手动运行中填写可选 tag，不触发 Release 发布；省略时构建所选分支提交。版本任务使用 Tag 独立并发组，且不取消进行中的版本构建。
 
 直接发布脚本也会执行同样的发布前与构建后检查，然后重新生成 Xcode 工程、
 构建 Release、添加临时代码签名、创建带“应用程序”快捷方式的 DMG，并生成
