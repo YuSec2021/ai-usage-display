@@ -15,6 +15,6 @@
 
 ## 验证记录
 
-- 已通过：`make verify`（准备门禁、34 项 WorkflowTests、About/变更日志检查、90 项 macOS Swift 测试与版本校验）。
-- 已通过（本地 Parallels Windows 11 `winbuild`）：`AIUsage.Core.Tests`（22/22 通过）、`dotnet publish`（`win-x64` 自包含 Release）、AMD64 PE 架构校验与原生 WinUI 3 `--smoke-test`（含 HWND 轮廓、活动三角对齐、浅/深双主题与退出重入断言）。
+- 已通过：`make verify BASE_REF=origin/main`（准备门禁、38 项 WorkflowTests、About/变更日志检查、91 项 macOS Swift 测试（1 项 GPU 预览跳过，0 失败）与 1.2.9 版本校验）。
+- 已通过（本地 Parallels Windows 11 `winbuild`，提交 `1043992`）：`AIUsage.Core.Tests`（22/22 通过）、`dotnet publish`（`win-x64` 自包含 Release）、AMD64 PE 架构校验与原生 WinUI 3 `--smoke-test`（含单托盘图标、HWND 轮廓、活动三角对齐、浅/深双主题与退出重入断言）；合入最新 `main` 后的全量 Windows 核心测试（含共享 fixture）与原生冒烟交由 PR `Windows x64` CI 复验。
 - 边界说明：本地 `winbuild` 在 Windows 11 ARM64 虚拟机的 x64 兼容层下完成构建与冒烟校验，原生系统 Acrylic 材质与真实 x64 Windows 硬件桌面交互、真实额度刷新仍需实机复核。
