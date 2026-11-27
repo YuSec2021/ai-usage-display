@@ -2,6 +2,7 @@ using AIUsage.Core;
 using Microsoft.UI.Windowing;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Input;
 using Microsoft.UI.Xaml.Media;
 using Windows.Graphics;
 using Windows.System;
@@ -19,6 +20,14 @@ public sealed partial class FloatingWindow : Window, IDisposable
     private bool moving;
     private bool pointerInDock;
     private bool pointerInDetail;
+    private bool pointerTracking;
+    private bool dragging;
+    private bool suppressRingTap;
+    private bool pendingRefresh;
+    private uint dragPointerId;
+    private Native.Point dragStartCursor;
+    private int dragStartWindowX;
+    private int dragStartWindowY;
     private ProviderId? activeProvider;
 
     internal FloatingDetailWindow Detail => detail;
@@ -37,36 +46,33 @@ public sealed partial class FloatingWindow : Window, IDisposable
         presenter.IsMinimizable = false;
         presenter.IsAlwaysOnTop = app.Preferences.AlwaysOnTop;
         AppWindow.IsShownInSwitchers = false;
-        Native.ApplyRoundedCorners(handle);
+        Native.ConfigureFloatingFrame(handle);
         AppWindow.Closing += (_, args) => { if (!app.Exiting) { args.Cancel = true; app.ShowFloating(false); } };
         AppWindow.Changed += (_, args) =>
         {
-            if (args.DidVisibilityChange && !AppWindow.IsVisible)
-                detail.HideDetail();
+            if (args.DidVisibilityChange && !AppWindow.IsVisible && detail is { } panel)
+                panel.HideDetail(immediate: true);
         };
 
         hideTimer = new DispatcherTimer { Interval = TimeSpan.FromMilliseconds(180) };
         hideTimer.Tick += (_, _) =>
         {
             hideTimer.Stop();
-            if (!pointerInDock && !pointerInDetail && !detail.IsPinned && !detail.IsMenuOpen)
-                detail.HideDetail();
+            if (!pointerInDock && !pointerInDetail && detail is { } panel && !panel.IsPinned && !panel.IsMenuOpen)
+                panel.HideDetail();
         };
 
         detail = new FloatingDetailWindow(
             app,
             onPointerEntered: () => { pointerInDetail = true; hideTimer.Stop(); },
             onPointerExited: () => { pointerInDetail = false; ScheduleDetailHide(); },
-            onDismissRequested: () => detail.HideDetail(resetPin: true));
+            onDismissRequested: () => detail?.HideDetail(resetPin: true));
 
-        surface.PointerPressed += (_, args) =>
-        {
-            if (args.Handled || !args.GetCurrentPoint(surface).Properties.IsLeftButtonPressed || IsInsideRing(args.OriginalSource)) return;
-            if (!detail.IsPinned) detail.HideDetail();
-            Native.ReleaseCapture();
-            Native.SendMessageW(handle, 0x00A1, 2, 0);
-            args.Handled = true;
-        };
+        surface.AddHandler(UIElement.PointerPressedEvent, new PointerEventHandler(OnSurfacePointerPressed), true);
+        surface.AddHandler(UIElement.PointerMovedEvent, new PointerEventHandler(OnSurfacePointerMoved), true);
+        surface.AddHandler(UIElement.PointerReleasedEvent, new PointerEventHandler(OnSurfacePointerReleased), true);
+        surface.PointerCanceled += (_, args) => EndDrag(args.Pointer, commit: false);
+        surface.PointerCaptureLost += (_, args) => EndDrag(args.Pointer, commit: true);
         surface.PointerEntered += (_, _) => { pointerInDock = true; hideTimer.Stop(); };
         surface.PointerExited += (_, _) => { pointerInDock = false; ScheduleDetailHide(); };
         surface.KeyDown += (_, args) =>
@@ -123,12 +129,13 @@ public sealed partial class FloatingWindow : Window, IDisposable
     internal void Hide()
     {
         hideTimer.Stop();
-        detail.HideDetail(resetPin: true);
+        detail.HideDetail(resetPin: true, immediate: true);
         AppWindow.Hide();
     }
 
     internal void ShowDetail(ProviderId provider, bool? pinned = null)
     {
+        if (detail.IsPinned && pinned is null && detail.ActiveProvider != provider) return;
         var snapshots = app.VisibleSnapshots();
         var index = -1;
         for (var i = 0; i < snapshots.Count; i++)
@@ -160,22 +167,69 @@ public sealed partial class FloatingWindow : Window, IDisposable
         var dock = new WindowPlacement(rect.Left, rect.Top, dockWidth, dockHeight);
         var work = Native.WorkArea(dock.X, dock.Y, app.Preferences.FloatingDisplay).Bounds;
         var popoverWidth = (int)Math.Round(FloatingLayout.PopoverWidth * scale);
-        var popoverHeight = (int)Math.Round(FloatingLayout.PopoverCardHeight * scale);
-        var gap = (int)Math.Round(10 * scale);
+        var popoverHeight = (int)Math.Round(FloatingLayout.PopoverHeight * scale);
+        var gap = (int)Math.Round(FloatingLayout.PopoverGap * scale);
         var ringCenterPx = FloatingLayout.RingCenterX(dockDipWidth, count, index) * scale;
         return FloatingLayout.PlacePopover(dock, work, popoverWidth, popoverHeight, gap, ringCenterPx, 22 * scale);
     }
 
-    private bool IsInsideRing(object? source)
+    private void OnSurfacePointerPressed(object sender, PointerRoutedEventArgs args)
     {
-        var current = source as DependencyObject;
-        while (current is not null)
+        if (!args.GetCurrentPoint(surface).Properties.IsLeftButtonPressed) return;
+        if (!Native.GetCursorPos(out dragStartCursor) || !Native.GetWindowRect(handle, out var rect)) return;
+        dragStartWindowX = rect.Left;
+        dragStartWindowY = rect.Top;
+        dragPointerId = args.Pointer.PointerId;
+        pointerTracking = true;
+        dragging = false;
+        suppressRingTap = false;
+        surface.CapturePointer(args.Pointer);
+    }
+
+    private void OnSurfacePointerMoved(object sender, PointerRoutedEventArgs args)
+    {
+        if (!pointerTracking || args.Pointer.PointerId != dragPointerId) return;
+        if (!args.GetCurrentPoint(surface).Properties.IsLeftButtonPressed)
         {
-            if (current == dockRow) return false;
-            if (current is FrameworkElement element && dockRow.Children.Contains(element)) return true;
-            current = VisualTreeHelper.GetParent(current);
+            EndDrag(args.Pointer, commit: dragging);
+            return;
         }
-        return false;
+        if (!Native.GetCursorPos(out var cursor)) return;
+        var dx = cursor.X - dragStartCursor.X;
+        var dy = cursor.Y - dragStartCursor.Y;
+        if (!dragging)
+        {
+            if (!FloatingLayout.ShouldStartDrag(dx, dy, Scale)) return;
+            dragging = true;
+            suppressRingTap = true;
+            hideTimer.Stop();
+            if (!detail.IsPinned) detail.HideDetail(immediate: true);
+        }
+        Native.MoveWindowPosition(handle, dragStartWindowX + dx, dragStartWindowY + dy);
+        args.Handled = true;
+    }
+
+    private void OnSurfacePointerReleased(object sender, PointerRoutedEventArgs args)
+    {
+        if (!pointerTracking || args.Pointer.PointerId != dragPointerId) return;
+        var wasDragging = dragging;
+        EndDrag(args.Pointer, commit: wasDragging);
+        if (wasDragging) args.Handled = true;
+    }
+
+    private void EndDrag(Pointer pointer, bool commit)
+    {
+        if (!pointerTracking || pointer.PointerId != dragPointerId) return;
+        var wasDragging = dragging;
+        pointerTracking = false;
+        dragging = false;
+        surface.ReleasePointerCapture(pointer);
+        if (wasDragging && commit) FitAndRemember();
+        if (pendingRefresh)
+        {
+            pendingRefresh = false;
+            Refresh();
+        }
     }
 
     private void ScheduleDetailHide()
@@ -198,6 +252,11 @@ public sealed partial class FloatingWindow : Window, IDisposable
 
     internal void Refresh()
     {
+        if (dragging)
+        {
+            pendingRefresh = true;
+            return;
+        }
         var snapshots = app.VisibleSnapshots();
         var dark = surface.ActualTheme == ElementTheme.Dark;
         dockRow.Children.Clear();
@@ -205,9 +264,14 @@ public sealed partial class FloatingWindow : Window, IDisposable
         {
             var snapshot = snapshots[i];
             var provider = snapshot.Provider;
-            var ring = RingView.Create(snapshot, FloatingLayout.RingSize, () => ShowDetail(provider), dockStyle: true, darkTheme: dark);
+            var ring = RingView.Create(snapshot, FloatingLayout.RingSize, () =>
+            {
+                if (suppressRingTap) { suppressRingTap = false; return; }
+                ShowDetail(provider, pinned: false);
+            }, dockStyle: true, darkTheme: dark);
             ring.PointerEntered += (_, _) =>
             {
+                if (dragging) return;
                 pointerInDock = true;
                 hideTimer.Stop();
                 ShowDetail(provider);
@@ -217,6 +281,7 @@ public sealed partial class FloatingWindow : Window, IDisposable
         ((OverlappedPresenter)AppWindow.Presenter).IsAlwaysOnTop = app.Preferences.AlwaysOnTop;
         var size = DesiredSize();
         AppWindow.Resize(new SizeInt32(size.Width, size.Height));
+        Native.ApplyFloatingRegion(handle, size.Width, size.Height, 29 * Scale);
 
         if (detail.IsDetailVisible && activeProvider is { } current)
         {
@@ -250,6 +315,7 @@ public sealed partial class FloatingWindow : Window, IDisposable
             var position = new WindowPlacement(rect.Left, rect.Top, size.Width, size.Height).Fit(work.Bounds,
                 (int)(14 * Scale));
             AppWindow.MoveAndResize(new RectInt32(position.X, position.Y, position.Width, position.Height));
+            Native.ApplyFloatingRegion(handle, size.Width, size.Height, 29 * Scale);
             app.Preferences.FloatingX = position.X;
             app.Preferences.FloatingY = position.Y;
             app.Preferences.FloatingDisplay = work.Device;

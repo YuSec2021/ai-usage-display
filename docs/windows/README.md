@@ -1,16 +1,20 @@
 # AI Usage for Windows · 首版预览
 
-[返回项目首页](../../README.md) · [设计](../design/issue-24-windows-rings.md) · [Issue #24](https://github.com/YuSec2021/ai-usage-display/issues/24)
+[返回项目首页](../../README.md) · [浮窗设计](../design/issue-35-windows-floating-dock.md) · [Issue #35](https://github.com/YuSec2021/ai-usage-display/issues/35)
 
 Windows 11 x64 原生应用，采用 C#、.NET 10 LTS 与 WinUI 3。每个模型使用 Logo 和外圈表示 **5 小时已用额度**；托盘与浮窗不显示百分比文字。零用量是空轨道，未知是虚线，过期窗口不会继续作为当前额度；周额度与 Token 不替代主圆环。
 
 ## 原生浮窗效果
 
-以下为 Windows CI 中渲染的真实 WinUI 界面，使用匿名样本；生产模式从实际数据源读取。
+以下为 Windows 11 虚拟机中运行 x64 应用导出的 WinUI 组件图，使用匿名样本（含 Codex 真零值）。导出图不包含桌面 Acrylic 材质；原生冒烟另外检查实际 HWND 轮廓和活动箭头。生产模式从实际数据源读取。
 
 ![紧凑圆环浮窗，匿名样本](screenshots/floating-compact.png)
 
-![展开浮窗，匿名样本](screenshots/floating-expanded.png)
+![详情卡，匿名样本](screenshots/floating-expanded.png)
+
+![深色胶囊浮窗，匿名样本](screenshots/floating-dark-dock.png)
+
+![深色详情卡，匿名样本](screenshots/floating-dark-detail.png)
 
 ## 下载与运行
 
@@ -22,7 +26,7 @@ Windows 11 x64 原生应用，采用 C#、.NET 10 LTS 与 WinUI 3。每个模型
 
 产物包含 .NET 与 Windows App SDK 自包含运行文件，不需要先安装 .NET SDK。首版未做 Authenticode 签名，不是 Microsoft Store 安装包；Windows 可能显示未知发布者提示。不要把 exe 单独移出目录。开发工具与测试模式均不替换现有应用或启动项。
 
-首次打开显示主窗口和浮窗。主窗口有用量、7 天历史与设置；最小化保留任务栏按钮，关闭主窗口收起到托盘。浮窗可拖动把手、靠边吸附、置顶、展开/收起和隐藏；托盘右键可恢复浮窗、刷新或退出。再次启动会恢复已有主窗口，不另开采集进程。托盘最终排列和折叠由 Windows 设置决定。
+首次打开显示主窗口和浮窗。主窗口有用量、7 天历史与设置；最小化保留任务栏按钮，关闭主窗口收起到系统托盘（单一应用图标，不再按单个模型拆分多个托盘图标）。浮窗支持整个胶囊区域平滑拖拽、靠边吸附与置顶，悬停或点击圆环打开联动详情卡，支持固定、Esc 收起和菜单隐藏；托盘左键打开主窗口，右键可恢复浮窗、刷新或退出。再次启动会恢复已有主窗口，不另开采集进程。托盘最终排列和折叠由 Windows 设置决定。
 
 ## 数据源
 
@@ -62,4 +66,6 @@ Release 复用同一 Windows workflow，按已有版本 Tag 构建并校验版�
 ./windows/scripts/smoke.ps1 -Executable dist/windows-x64/AIUsage.Windows.exe -Output "$env:TEMP/ai-usage-smoke"
 ```
 
-实际执行结果及未验证范围见 [024 变更记录](../changelog/024-windows-rings.md)；Windows 用户机器上的登录、真实额度刷新、多显示器/DPI、Explorer 重启和交互体验需单独验收，不能由编译结果替代。
+如需观察匿名测试窗口，可在运行 `--smoke-test` 前设置进程环境变量 `AIUSAGE_SMOKE_REVIEW=1`；测试通过后会保留浅色详情 45 秒，随后退出。此开关只作用于显式 smoke 模式。
+
+实际执行结果及未验证范围见 [031 变更记录](../changelog/031-windows-floating-fidelity.md)；Windows 用户机器上的登录、真实额度刷新、多显示器/DPI、Explorer 重启和交互体验需单独验收，不能由编译结果替代。

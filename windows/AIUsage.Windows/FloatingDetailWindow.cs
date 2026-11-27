@@ -5,6 +5,9 @@ using Microsoft.UI.Xaml.Automation;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
 using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Media.Animation;
+using System.Diagnostics;
+using Windows.Foundation;
 using Windows.Graphics;
 using Windows.System;
 using Windows.UI;
@@ -21,10 +24,18 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
     private UsageSnapshot? currentSnapshot;
     private double currentFraction;
     private bool menuOpen;
+    private bool hiding;
+    private Storyboard? motion, contentMotion;
+    private readonly global::Windows.UI.ViewManagement.UISettings uiSettings = new();
+    private readonly DispatcherTimer arrowTimer = new() { Interval = TimeSpan.FromMilliseconds(16) };
+    private readonly Stopwatch arrowClock = new();
+    private PopoverPlacement? currentPlacement;
+    private double currentScale = 1, arrowDip, arrowFrom, arrowTarget;
 
     internal bool IsPinned { get; private set; }
     internal bool IsMenuOpen => menuOpen;
     internal bool IsDetailVisible => Native.IsWindowVisible(handle);
+    internal bool IsCaretAnimating => arrowTimer.IsEnabled;
     internal ProviderId? ActiveProvider => currentSnapshot?.Provider;
 
     public FloatingDetailWindow(App app, Action onPointerEntered, Action onPointerExited, Action onDismissRequested)
@@ -44,10 +55,18 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
         presenter.IsMinimizable = false;
         presenter.IsAlwaysOnTop = app.Preferences.AlwaysOnTop;
         AppWindow.IsShownInSwitchers = false;
-        Native.ApplyRoundedCorners(handle);
+        Native.ConfigureFloatingFrame(handle);
         AppWindow.Closing += (_, args) => { if (!app.Exiting) { args.Cancel = true; HideDetail(); } };
 
-        root.PointerEntered += (_, _) => this.onPointerEntered();
+        root.PointerEntered += (_, _) =>
+        {
+            if (hiding)
+            {
+                hiding = false;
+                AnimateDetail(closing: false);
+            }
+            this.onPointerEntered();
+        };
         root.PointerExited += (_, _) => this.onPointerExited();
         root.KeyDown += (_, args) =>
         {
@@ -58,7 +77,14 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
             }
         };
         root.ActualThemeChanged += (_, _) => ApplyThemePalette();
+        root.Loaded += (_, _) => { if (IsDetailVisible && !hiding) AnimateDetail(closing: false, fresh: true); };
         quotaTrack.SizeChanged += (_, _) => UpdateProgressWidth();
+        arrowTimer.Tick += (_, _) =>
+        {
+            var t = Math.Clamp(arrowClock.Elapsed.TotalMilliseconds / 180, 0, 1);
+            SetCaretPosition(arrowFrom + (arrowTarget - arrowFrom) * (1 - Math.Pow(1 - t, 3)));
+            if (t >= 1) arrowTimer.Stop();
+        };
 
         pinButton.Click += (_, _) =>
         {
@@ -100,11 +126,32 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
 
     internal void ShowFor(UsageSnapshot snapshot, PopoverPlacement placement, double scale, bool? pinned = null)
     {
+        var visible = IsDetailVisible;
+        var wasHiding = hiding;
+        var changed = currentSnapshot?.Provider != snapshot.Provider;
         if (pinned is { } pinValue) IsPinned = pinValue;
         UpdateSnapshot(snapshot);
         Reposition(placement, scale);
         ((OverlappedPresenter)AppWindow.Presenter).IsAlwaysOnTop = app.Preferences.AlwaysOnTop;
-        if (!Native.IsWindowVisible(handle)) AppWindow.Show(false);
+        hiding = false;
+        if (!visible || wasHiding)
+        {
+            if (!visible)
+            {
+                root.Opacity = 0;
+                AppWindow.Show(false);
+            }
+            if (root.IsLoaded) AnimateDetail(closing: false, fresh: !visible);
+        }
+        else if (changed && uiSettings.AnimationsEnabled)
+        {
+            contentMotion?.Stop();
+            contentMotion = new Storyboard();
+            AddAnimation(contentMotion, cardContent, "Opacity", 0.3, 1, 150);
+            var current = contentMotion;
+            current.Completed += (_, _) => { cardContent.Opacity = 1; current.Stop(); };
+            contentMotion.Begin();
+        }
     }
 
     internal void UpdateSnapshot(UsageSnapshot snapshot)
@@ -114,7 +161,7 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
         var quota = snapshot.FiveHour(now);
         var color = FloatingPresentation.RingColor(snapshot, now);
         providerTitle.Text = snapshot.Provider.Name();
-        avatarIcon.Source = new BitmapImage(new Uri("ms-appx:///Assets/" + snapshot.Provider.Logo() + ".png"));
+        avatarIcon.UriSource = new Uri("ms-appx:///Assets/" + snapshot.Provider.Logo() + ".png");
         avatarIcon.Opacity = quota is null ? 0.72 : 0.84;
 
         currentFraction = quota?.Fraction ?? 0;
@@ -130,19 +177,111 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
 
     internal void Reposition(PopoverPlacement placement, double scale)
     {
+        var sameWindow = currentPlacement is { } previous
+            && previous.Bounds == placement.Bounds && previous.PlacedAbove == placement.PlacedAbove;
+        var nextScale = Math.Max(scale, 0.5);
+        var nextTarget = placement.ArrowOffsetPx / nextScale;
+        if (IsDetailVisible && !hiding && sameWindow && arrowTimer.IsEnabled
+            && Math.Abs(nextTarget - arrowTarget) <= 0.1 && Math.Abs(nextScale - currentScale) <= 0.001)
+            return;
+        var animateCaret = IsDetailVisible && !hiding && uiSettings.AnimationsEnabled && sameWindow;
         AppWindow.MoveAndResize(new RectInt32(placement.Bounds.X, placement.Bounds.Y, placement.Bounds.Width, placement.Bounds.Height));
-        var arrowDip = placement.ArrowOffsetPx / Math.Max(scale, 0.5);
+        currentPlacement = placement;
+        currentScale = nextScale;
+        arrowTimer.Stop();
+        card.Margin = placement.PlacedAbove ? new Thickness(0, 0, 0, FloatingLayout.CaretHeight) : new Thickness(0, FloatingLayout.CaretHeight, 0, 0);
         caretIndicator.VerticalAlignment = placement.PlacedAbove ? VerticalAlignment.Bottom : VerticalAlignment.Top;
-        caretIndicator.Margin = placement.PlacedAbove
-            ? new Thickness(Math.Max(14, arrowDip - 9), 0, 0, 2)
-            : new Thickness(Math.Max(14, arrowDip - 9), 2, 0, 0);
+        caretIndicator.Points = placement.PlacedAbove
+            ? new PointCollection { new(0, 0), new(18, 0), new(9, 10) }
+            : new PointCollection { new(0, 10), new(18, 10), new(9, 0) };
+        root.RenderTransformOrigin = new Point(placement.ArrowOffsetPx / placement.Bounds.Width, placement.PlacedAbove ? 1 : 0);
+        arrowTarget = nextTarget;
+        if (animateCaret && Math.Abs(arrowTarget - arrowDip) > 0.1)
+        {
+            arrowFrom = arrowDip;
+            arrowClock.Restart();
+            arrowTimer.Start();
+        }
+        else SetCaretPosition(arrowTarget);
     }
 
-    internal void HideDetail(bool resetPin = false)
+    private void SetCaretPosition(double center)
+    {
+        arrowDip = center;
+        caretIndicator.Margin = new Thickness(center - 9, 0, 0, 0);
+        if (currentPlacement is not { } placement) return;
+        Native.ApplyFloatingRegion(handle, placement.Bounds.Width, placement.Bounds.Height, 15 * currentScale,
+            (int)Math.Round(FloatingLayout.CaretHeight * currentScale), center * currentScale, placement.PlacedAbove,
+            (int)Math.Round(9 * currentScale));
+    }
+
+    internal void HideDetail(bool resetPin = false, bool immediate = false)
     {
         if (resetPin) IsPinned = false;
         UpdatePinAppearance();
-        if (Native.IsWindowVisible(handle)) AppWindow.Hide();
+        if (!IsDetailVisible) return;
+        if (immediate || app.Exiting || !uiSettings.AnimationsEnabled)
+        {
+            motion?.Stop();
+            arrowTimer.Stop();
+            hiding = false;
+            AppWindow.Hide();
+        }
+        else if (!hiding)
+        {
+            hiding = true;
+            AnimateDetail(closing: true);
+        }
+    }
+
+    private void AnimateDetail(bool closing, bool fresh = false)
+    {
+        var opacity = fresh ? 0 : root.Opacity;
+        var offset = fresh ? (currentPlacement?.PlacedAbove == false ? -6 : 6) : detailTransform.TranslateY;
+        var size = fresh ? .96 : detailTransform.ScaleX;
+        motion?.Stop();
+        contentMotion?.Stop();
+        if (!uiSettings.AnimationsEnabled)
+        {
+            root.Opacity = 1;
+            detailTransform.TranslateY = 0;
+            detailTransform.ScaleX = detailTransform.ScaleY = 1;
+            return;
+        }
+        var storyboard = new Storyboard();
+        var duration = closing ? 140 : 180;
+        AddAnimation(storyboard, root, "Opacity", opacity, closing ? 0 : 1, duration);
+        AddAnimation(storyboard, detailTransform, "TranslateY", offset, closing ? (currentPlacement?.PlacedAbove == false ? -4 : 4) : 0, duration);
+        AddAnimation(storyboard, detailTransform, "ScaleX", size, closing ? .98 : 1, duration);
+        AddAnimation(storyboard, detailTransform, "ScaleY", size, closing ? .98 : 1, duration);
+        storyboard.Completed += (_, _) =>
+        {
+            if (!ReferenceEquals(motion, storyboard)) return;
+            if (hiding && ReferenceEquals(motion, storyboard))
+            {
+                arrowTimer.Stop();
+                AppWindow.Hide();
+                hiding = false;
+            }
+            root.Opacity = 1;
+            detailTransform.TranslateY = 0;
+            detailTransform.ScaleX = detailTransform.ScaleY = 1;
+            storyboard.Stop();
+        };
+        motion = storyboard;
+        storyboard.Begin();
+    }
+
+    private static void AddAnimation(Storyboard storyboard, DependencyObject target, string property, double from, double to, int duration)
+    {
+        var animation = new DoubleAnimation
+        {
+            From = from, To = to, Duration = new Duration(TimeSpan.FromMilliseconds(duration)),
+            EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+        };
+        Storyboard.SetTarget(animation, target);
+        Storyboard.SetTargetProperty(animation, property);
+        storyboard.Children.Add(animation);
     }
 
     private void UpdateProgressWidth()
@@ -163,11 +302,12 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
             ? Color.FromArgb(44, 255, 255, 255)
             : Color.FromArgb(184, 255, 255, 255));
         avatar.Background = new SolidColorBrush(dark
-            ? Color.FromArgb(215, 232, 239, 249)
+            ? Color.FromArgb(34, 158, 176, 200)
             : Color.FromArgb(31, 88, 112, 150));
         providerTitle.Foreground = new SolidColorBrush(dark
             ? Color.FromArgb(255, 238, 243, 250)
             : Color.FromArgb(255, 23, 35, 50));
+        avatarIcon.Foreground = providerTitle.Foreground;
         var muted = new SolidColorBrush(dark
             ? Color.FromArgb(255, 158, 176, 200)
             : Color.FromArgb(255, 100, 113, 135));
@@ -178,10 +318,7 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
         quotaTrack.Background = new SolidColorBrush(dark
             ? Color.FromArgb(42, 255, 255, 255)
             : Color.FromArgb(44, 96, 117, 152));
-        var accent = currentSnapshot is not null
-            ? FloatingPresentation.RingColor(currentSnapshot, DateTimeOffset.UtcNow)
-            : "#8B99AF";
-        caretIndicator.Background = RingView.Brush(accent, dark ? (byte)190 : (byte)165);
+        caretIndicator.Fill = card.Background;
         UpdatePinAppearance();
     }
 
@@ -209,5 +346,11 @@ public sealed partial class FloatingDetailWindow : Window, IDisposable
         }
     }
 
-    public void Dispose() => Close();
+    public void Dispose()
+    {
+        arrowTimer.Stop();
+        motion?.Stop();
+        contentMotion?.Stop();
+        Close();
+    }
 }

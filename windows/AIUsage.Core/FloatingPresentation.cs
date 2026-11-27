@@ -50,7 +50,17 @@ public static class FloatingLayout
     public const int PopoverWidth = 240;
     public const int PopoverCardHeight = 106;
     public const int CaretHeight = 9;
+    public const int PopoverHeight = PopoverCardHeight + CaretHeight;
     public const int PopoverGap = 4;
+    public const int DragThresholdDip = 4;
+
+    public static int DragThresholdPx(double scale) => Math.Max(DragThresholdDip, (int)Math.Round(DragThresholdDip * Math.Max(scale, 0.5)));
+
+    public static bool ShouldStartDrag(int deltaX, int deltaY, double scale)
+    {
+        var threshold = DragThresholdPx(scale);
+        return Math.Abs(deltaX) >= threshold || Math.Abs(deltaY) >= threshold;
+    }
 
     public static (int Width, int Height) ComputeDockSize(int providerCount)
     {

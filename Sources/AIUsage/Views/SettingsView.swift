@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：Windows x64 预览包与 SHA-256 校验文件随同 macOS DMG 自动发布至 GitHub Release；同时包含 macOS/Windows 共享用量 fixture 与双端口径统一修复。",
-                            "This build: publishes Windows x64 preview ZIPs and SHA-256 checksums alongside the macOS DMG on GitHub Releases, and includes cross-platform shared usage fixtures with aligned macOS/Windows accounting."
+                            "本次构建：修正 Windows 毛玻璃浮窗的实际窗口轮廓与原生三角箭头，恢复细圆环与无底板单色图标，合并系统托盘为单一应用图标，优化全胶囊跟手拖拽与详情过渡动效；同时保留双平台自动发布与共享用量 fixture 一致性验证。",
+                            "This build: refines the Windows glass dock contour and native triangular pointer, restores thin quota rings and monochrome logos, consolidates the system tray into a single app icon, and improves responsive floating-dock dragging and detail transitions, alongside dual-platform releases and shared usage fixture parity."
                         ))
                     }
                     .font(.callout)

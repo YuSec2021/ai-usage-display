@@ -1,0 +1,9 @@
+{
+  "issue": 38,
+  "type": "feature",
+  "branch": "codex/issue-38-windows-floating-fidelity",
+  "status": "complete",
+  "document": "docs/issues/issue-38-windows-floating-fidelity.md",
+  "design": "docs/design/issue-38-windows-floating-fidelity.md",
+  "research": null
+}

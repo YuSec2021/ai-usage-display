@@ -36,17 +36,70 @@ internal static class Native
     [DllImport("user32.dll")] internal static extern bool DestroyMenu(nint menu);
     [DllImport("user32.dll")] internal static extern bool DestroyIcon(nint icon);
     [DllImport("dwmapi.dll")] private static extern int DwmSetWindowAttribute(nint window, int attribute, ref int value, int size);
+    [DllImport("user32.dll")] private static extern bool SetWindowPos(nint window, nint after, int x, int y, int width, int height, uint flags);
+    [DllImport("user32.dll")] private static extern int SetWindowRgn(nint window, nint region, bool redraw);
+    [DllImport("user32.dll")] private static extern int GetWindowRgn(nint window, nint region);
+    [DllImport("gdi32.dll")] private static extern nint CreateRoundRectRgn(int left, int top, int right, int bottom, int ellipseWidth, int ellipseHeight);
+    [DllImport("gdi32.dll")] private static extern nint CreateRectRgn(int left, int top, int right, int bottom);
+    [DllImport("gdi32.dll")] private static extern nint CreatePolygonRgn([In] Point[] points, int count, int mode);
+    [DllImport("gdi32.dll")] private static extern int CombineRgn(nint destination, nint first, nint second, int mode);
+    [DllImport("gdi32.dll")] private static extern bool PtInRegion(nint region, int x, int y);
+    [DllImport("gdi32.dll")] private static extern bool DeleteObject(nint value);
 
-    internal static void ApplyRoundedCorners(nint window)
+    internal static bool MoveWindowPosition(nint window, int x, int y) =>
+        SetWindowPos(window, 0, x, y, 0, 0, 0x0015); // SWP_NOSIZE | SWP_NOZORDER | SWP_NOACTIVATE
+
+    internal static void ConfigureFloatingFrame(nint window)
     {
+        var style = GetWindowLongPtr(window, -16).ToInt64();
+        SetWindowLongPtr(window, -16, (nint)(style & ~0x00C40000L)); // caption, border and resize frame
+        var extended = GetWindowLongPtr(window, -20).ToInt64();
+        SetWindowLongPtr(window, -20, (nint)(extended & ~0x00000301L)); // dialog/client/window edges
+        _ = SetWindowPos(window, 0, 0, 0, 0, 0, 0x0037); // frame changed, no move/size/activation
         try
         {
-            var preference = 2; // DWMWCP_ROUND
+            var preference = 1; // The explicit region supplies the full custom contour, including in VMs.
             _ = DwmSetWindowAttribute(window, 33, ref preference, sizeof(int));
             var borderNone = unchecked((int)0xFFFFFFFE); // DWMWA_COLOR_NONE
             _ = DwmSetWindowAttribute(window, 34, ref borderNone, sizeof(int));
         }
         catch { }
+    }
+
+    internal static bool ApplyFloatingRegion(nint window, int width, int height, double radius,
+        int caretHeight = 0, double caretCenter = 0, bool placedAbove = true, int caretHalfWidth = 9)
+    {
+        var top = caretHeight > 0 && !placedAbove ? caretHeight : 0;
+        var bottom = height - (caretHeight > 0 && placedAbove ? caretHeight : 0);
+        var diameter = (int)Math.Round(radius * 2);
+        var region = CreateRoundRectRgn(0, top, width + 1, bottom + 1, diameter, diameter);
+        if (region == 0) return false;
+        try
+        {
+            if (caretHeight > 0)
+            {
+                var center = (int)Math.Round(caretCenter);
+                var baseY = placedAbove ? bottom - 1 : top + 1;
+                var tipY = placedAbove ? height : 0;
+                Point[] points = [new(center - caretHalfWidth, baseY), new(center, tipY), new(center + caretHalfWidth, baseY)];
+                var caret = CreatePolygonRgn(points, points.Length, 1);
+                if (caret == 0) return false;
+                try { if (CombineRgn(region, region, caret, 2) == 0) return false; } // RGN_OR
+                finally { DeleteObject(caret); }
+            }
+            if (SetWindowRgn(window, region, true) == 0) return false;
+            region = 0; // Success transfers HRGN ownership to Windows.
+            return true;
+        }
+        finally { if (region != 0) DeleteObject(region); }
+    }
+
+    internal static bool WindowRegionContains(nint window, int x, int y)
+    {
+        var region = CreateRectRgn(0, 0, 0, 0);
+        if (region == 0) return false;
+        try { return GetWindowRgn(window, region) > 0 && PtInRegion(region, x, y); }
+        finally { DeleteObject(region); }
     }
 
     internal static (WindowPlacement Bounds, string Device) WorkArea(int x, int y, string? preferredDevice = null)
