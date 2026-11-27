@@ -4,6 +4,7 @@
 
 ## 最新更新
 
+- [035：发布 1.2.10](035-release-1.2.10.md)：自动补丁升版为 1.2.10（Build 14），发布结果以 Actions 为准。
 - [034：Windows 浮窗轮廓裁剪、原生三角箭头与过渡动效还原度优化](034-windows-floating-fidelity.md)：使用 `SetWindowRgn` 裁剪胶囊与带原生三角箭头的详情卡轮廓，升级 `2.6` DIP 单色前景圆环、`Storyboard` 动效，合并系统托盘为单一应用图标并优化全胶囊跟手拖拽。
 - [033：补齐 Windows Release 附件与自动发布](033-windows-release-assets.md)：复用 Windows 验证流程按同一 Tag 构建，双平台成功后共同发布安装包与 SHA-256。
 - [032：macOS/Windows 用量统计共享 fixture 与一致性测试](032-shared-usage-fixtures.md)：为 Codex、Claude Code、Kimi Code 建立 15 组匿名共享 fixture 与统一 `expected.json`，统一修复 macOS 7 天历史截断（D1）与 Windows Claude 缓存 Token 口径（D2），双端 15/15 零豁免通过。
@@ -89,3 +90,4 @@
 | [032](032-shared-usage-fixtures.md) | refactor | macOS/Windows 用量统计共享 fixture 与一致性测试 | 2026-11-24 |
 | [033](033-windows-release-assets.md) | bugfix | 补齐 Windows Release 附件与自动发布 | 2026-11-17 |
 | [034](034-windows-floating-fidelity.md) | feature | Windows 浮窗轮廓裁剪、原生三角箭头与过渡动效还原度优化 | 2026-11-23 |
+| [035](035-release-1.2.10.md) | release | 发布 1.2.10 | 2026-11-27 |
