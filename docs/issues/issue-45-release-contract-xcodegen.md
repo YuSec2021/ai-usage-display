@@ -4,7 +4,7 @@
 
 - Issue：https://github.com/YuSec2021/ai-usage-display/issues/45
 - 类型：`type/bug`
-- 状态：待实施
+- 状态：实现与本地验证完成，待 PR 远程检查与合并
 - 唯一工作分支：`codex/issue-45-release-contract-xcodegen`
 - 负责人：YuSec2021
 - 设计或产出文档：N/A — Bug 使用四行根因说明，不要求模块设计。
@@ -34,10 +34,10 @@
 
 ## 验收标准
 
-- [ ] `scripts/release-contract.py` 允许 `AIUsage.xcodeproj/xcshareddata/xcschemes/AIUsage.xcscheme` 并仅规范化 `LastUpgradeCheck`、`LastUpgradeVersion` 与 `buildArchitectures = "Automatic"` 三项 XcodeGen 版本元数据，其余内容仍严格逐字节校验。
-- [ ] `Tests/WorkflowTests/test_release_contract.py` 新增回归测试在修复前复现失败、修复后通过，且篡改 `AIUsage.xcscheme`（如追加参数或修改 `buildArchitectures` 值）、篡改 `project.pbxproj` 或新增额外 `.xcscheme` 仍被拒绝。
-- [ ] `.github/workflows/release.yml` 在 Tag 检出后先执行 `make verify` 再执行 `make generate`，`Tests/WorkflowTests/test_release_workflows.py` 新增对应回归验证。
-- [ ] `make verify BASE_REF=origin/main` 与 `git diff --check` 全部通过，About 说明、`docs/changelog/035-release-contract-xcodegen.md`、索引与 `CHANGELOG.md` 同步更新，且不手动升版。
+- [x] `scripts/release-contract.py` 允许 `AIUsage.xcodeproj/xcshareddata/xcschemes/AIUsage.xcscheme` 并仅规范化 `LastUpgradeCheck`、`LastUpgradeVersion` 与 `buildArchitectures = "Automatic"` 三项 XcodeGen 版本元数据，其余内容仍严格逐字节校验。
+- [x] `Tests/WorkflowTests/test_release_contract.py` 新增回归测试在修复前复现失败、修复后通过，且篡改 `AIUsage.xcscheme`（如追加参数或修改 `buildArchitectures` 值）、篡改 `project.pbxproj` 或新增额外 `.xcscheme` 仍被拒绝。
+- [x] `.github/workflows/release.yml` 在 Tag 检出后先执行 `make verify` 再执行 `make generate`，`Tests/WorkflowTests/test_release_workflows.py` 新增对应回归验证。
+- [x] `make verify BASE_REF=origin/main` 与 `git diff --check` 全部通过，About 说明、`docs/changelog/035-release-contract-xcodegen.md`、索引与 `CHANGELOG.md` 同步更新，且不手动升版。
 - [ ] PR 远端 `Verify arm64`、`Verify x86_64` 与 `Windows x64` 检查全部通过；合入 `main` 后新生成的 `v1.2.10` 版本 PR 双架构检查通过。
 
 ## 模块拆解

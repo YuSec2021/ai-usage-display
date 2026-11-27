@@ -65,3 +65,9 @@ class ReleaseWorkflowTests(unittest.TestCase):
     def test_release_workflow_changes_trigger_windows_validation(self):
         for event in ("pull_request", "push"):
             self.assertIn("'.github/workflows/release.yml'", block(self.windows, event, 2))
+
+    def test_release_verifies_tagged_checkout_before_regenerating_project(self):
+        build_job = block(self.release, "build", 2)
+        self.assertIn("make verify", build_job)
+        self.assertIn("make generate", build_job)
+        self.assertLess(build_job.index("make verify"), build_job.index("make generate"))

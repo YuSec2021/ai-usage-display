@@ -78,8 +78,8 @@ struct SettingsView: View {
                             "Released: updates the login item when the app moves, preventing an older copy from launching."
                         ))
                         Text(L10n.text(
-                            "本次构建：修正 Windows 毛玻璃浮窗的实际窗口轮廓与原生三角箭头，恢复细圆环与无底板单色图标，合并系统托盘为单一应用图标，优化全胶囊跟手拖拽与详情过渡动效；同时保留双平台自动发布与共享用量 fixture 一致性验证。",
-                            "This build: refines the Windows glass dock contour and native triangular pointer, restores thin quota rings and monochrome logos, consolidates the system tray into a single app icon, and improves responsive floating-dock dragging and detail transitions, alongside dual-platform releases and shared usage fixture parity."
+                            "本次构建：修复自动版本 PR 在跨架构 Runner 上因 XcodeGen 版本元数据差异导致的发布契约误报，并调整 Release 工作流先验证 Tag 提交再重新生成工程；保留 Windows 浮窗轮廓与单托盘优化、双平台自动发布及共享用量 fixture 一致性验证。",
+                            "This build: fixes release-PR contract false failures caused by cross-runner XcodeGen metadata drift and verifies tagged checkouts before regenerating Xcode projects in Release CI, alongside the Windows floating-dock refinements, dual-platform releases, and shared usage fixture parity."
                         ))
                     }
                     .font(.callout)
