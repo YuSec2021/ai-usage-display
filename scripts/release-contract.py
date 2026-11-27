@@ -15,6 +15,21 @@ spec = importlib.util.spec_from_file_location("bump_release", Path(__file__).wit
 bump = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(bump)
 
+GENERATED_XCODE_FILES = (
+    "AIUsage.xcodeproj/project.pbxproj",
+    "AIUsage.xcodeproj/xcshareddata/xcschemes/AIUsage.xcscheme",
+)
+
+
+def normalize_generated_xcode(name: str, text: str) -> str:
+    """Normalize known runner-dependent XcodeGen metadata without relaxing structural checks."""
+    if name == "AIUsage.xcodeproj/project.pbxproj":
+        return re.sub(r"(?m)^(\t+LastUpgradeCheck = )\d+;$", r"\g<1>NORMALIZED;", text)
+    if name == "AIUsage.xcodeproj/xcshareddata/xcschemes/AIUsage.xcscheme":
+        text = re.sub(r'(?m)^([ \t]*LastUpgradeVersion = ")\d+(")$', r"\g<1>NORMALIZED\g<2>", text)
+        text = re.sub(r'(?m)^[ \t]*buildArchitectures = "Automatic"\r?\n', "", text)
+    return text
+
 
 def git(root: Path, *args: str) -> str:
     return subprocess.check_output(["git", *args], cwd=root, text=True).strip()
@@ -34,7 +49,7 @@ def validate_release(root: Path, base: str, generate: bool = True) -> list[str]:
     if len(records) != 1:
         return ["版本 PR 必须包含且只包含一条新发布记录"]
     allowed = {"project.yml", "README.md", "CHANGELOG.md", "docs/changelog/README.md", records[0],
-               "AIUsage.xcodeproj/project.pbxproj"}
+               *GENERATED_XCODE_FILES}
     if changed - allowed:
         return ["版本 PR 含非版本产物：" + ", ".join(sorted(changed - allowed))]
     entry = (root / records[0]).read_text()
@@ -58,10 +73,17 @@ def validate_release(root: Path, base: str, generate: bool = True) -> list[str]:
             subprocess.run(["xcodegen", "generate"], cwd=expected, check=True, stdout=subprocess.DEVNULL)
         errors = []
         for name in allowed:
-            if not generate and name == "AIUsage.xcodeproj/project.pbxproj":
+            if not generate and name in GENERATED_XCODE_FILES:
                 continue
             target = expected / name
-            if not target.is_file() or not (root / name).is_file() or target.read_bytes() != (root / name).read_bytes():
+            actual = root / name
+            if not target.is_file() or not actual.is_file():
+                errors.append(f"版本 PR 内容不符合发布脚本生成结果：{name}")
+                continue
+            if name in GENERATED_XCODE_FILES:
+                if normalize_generated_xcode(name, target.read_text()) != normalize_generated_xcode(name, actual.read_text()):
+                    errors.append(f"版本 PR 内容不符合发布脚本生成结果：{name}")
+            elif target.read_bytes() != actual.read_bytes():
                 errors.append(f"版本 PR 内容不符合发布脚本生成结果：{name}")
         return errors
 

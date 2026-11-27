@@ -1,0 +1,9 @@
+{
+  "issue": 45,
+  "type": "bug",
+  "branch": "codex/issue-45-release-contract-xcodegen",
+  "status": "complete",
+  "document": "docs/issues/issue-45-release-contract-xcodegen.md",
+  "design": null,
+  "research": null
+}

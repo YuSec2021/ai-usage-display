@@ -60,10 +60,10 @@ jobs:
           HOMEBREW_NO_AUTO_UPDATE: '1'
         run: brew install xcodegen
 
-      - name: Generate project and run verification
+      - name: Verify tagged commit and regenerate project
         run: |
-          make generate
           make verify
+          make generate
 
       - name: Build and verify universal release package
         run: |
