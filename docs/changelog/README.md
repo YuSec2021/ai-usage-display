@@ -4,6 +4,7 @@
 
 ## 最新更新
 
+- [036：发布 1.2.10](036-release-1.2.10.md)：自动补丁升版为 1.2.10（Build 14），发布结果以 Actions 为准。
 - [035：修复自动版本 PR 跨 Runner XcodeGen 发布契约失败](035-release-contract-xcodegen.md)：将 `AIUsage.xcscheme` 纳入版本 PR 生成白名单并规范跨 XcodeGen 版本元数据差异，同时调整 `release.yml` 在 Tag 检出上先验证再重新生成工程。
 - [034：Windows 浮窗轮廓裁剪、原生三角箭头与过渡动效还原度优化](034-windows-floating-fidelity.md)：使用 `SetWindowRgn` 裁剪胶囊与带原生三角箭头的详情卡轮廓，升级 `2.6` DIP 单色前景圆环、`Storyboard` 动效，合并系统托盘为单一应用图标并优化全胶囊跟手拖拽。
 - [033：补齐 Windows Release 附件与自动发布](033-windows-release-assets.md)：复用 Windows 验证流程按同一 Tag 构建，双平台成功后共同发布安装包与 SHA-256。
@@ -91,3 +92,4 @@
 | [033](033-windows-release-assets.md) | bugfix | 补齐 Windows Release 附件与自动发布 | 2026-11-17 |
 | [034](034-windows-floating-fidelity.md) | feature | Windows 浮窗轮廓裁剪、原生三角箭头与过渡动效还原度优化 | 2026-11-23 |
 | [035](035-release-contract-xcodegen.md) | bugfix | 修复自动版本 PR 跨 Runner XcodeGen 发布契约失败 | 2026-11-27 |
+| [036](036-release-1.2.10.md) | release | 发布 1.2.10 | 2026-11-27 |
