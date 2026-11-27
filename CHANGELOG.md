@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+## 1.2.10 — 2026-11-27
+
 - Fix automated release PR contract validation across macOS runners with differing XcodeGen versions by allowing and normalizing known XcodeGen metadata (`LastUpgradeCheck`, `LastUpgradeVersion`, and default `buildArchitectures = "Automatic"`) in `project.pbxproj` and `AIUsage.xcscheme` while still rejecting any tampering, and verify tagged checkouts before regenerating the project in `release.yml`. (#45)
 - Refine the Windows floating dock with Win32 `SetWindowRgn` capsule/card contours, a native triangular caret aligned to the active ring, 2.6 DIP rings with monochrome `BitmapIcon` foregrounds, `Storyboard` transitions with reentry protection, a single consolidated system tray icon, and responsive `SetWindowPos` full-dock dragging. (#38)
 - Publish the Windows x64 portable preview ZIP and SHA-256 alongside the macOS DMG, building both platforms from the same release tag and requiring both to pass before publication. Backfill the verified v1.2.8 Windows assets. (#33)
